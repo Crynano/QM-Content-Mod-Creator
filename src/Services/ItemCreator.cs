@@ -5,7 +5,6 @@ using QM_ImporterAPI.Services.Importing;
 using QM_ImporterAPI.Templates;
 using QM_ImporterAPI.Templates.Descriptors;
 using System;
-using System.Linq;
 using UnityEngine;
 
 namespace QM_ImporterAPI.Services
@@ -17,7 +16,7 @@ namespace QM_ImporterAPI.Services
 
         public static ImportOperationResult CreateWeapon(WeaponRecord weapon, CustomWeaponDescriptor weaponDescriptor, string assetFolderPath)
         {
-            Debug.Log($"Called {nameof(CreateWeapon)} with ID: " + weapon.Id);
+            Logger.LogDebug($"Called {nameof(CreateWeapon)} with ID: " + weapon.Id);
             var operationResult = new ImportOperationResult();
 
             var weaponPropertiesResult = CheckWeaponPropertiesRestrictions(weapon);
@@ -36,7 +35,7 @@ namespace QM_ImporterAPI.Services
 
             AddItemToGame(weapon);
             operationResult.ContentList.Add(weapon.Id);
-            Debug.Log("Successfully added weapon with ID: " + weapon.Id);
+            Logger.LogDebug("Successfully added weapon with ID: " + weapon.Id);
             return operationResult;
         }
 
@@ -83,7 +82,7 @@ namespace QM_ImporterAPI.Services
             var operationResult = new ImportOperationResult();
 
             CompositeItemRecord itemRecord = (CompositeItemRecord)MGSC.Data.Items.GetRecord(datadisk.Id);
-            if (itemRecord != null) // Append to existing chip if already exists
+            if (itemRecord != null)
             {
                 DatadiskRecord dataChip = itemRecord.GetRecord<DatadiskRecord>();
                 var addOnlyThoseNotInChip = datadisk.UnlockIds.FindAll(id => !dataChip.UnlockIds.Contains(id));

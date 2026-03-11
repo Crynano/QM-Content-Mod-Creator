@@ -14,9 +14,7 @@ namespace QM_ImporterAPI.Services.Helpers
         #region QUASI
         public static bool IsGameId(string id)
         {
-            var result = !string.IsNullOrEmpty(id) && Data.Items._records.ContainsKey(id);
-            Debug.Log("Is " + id + " a game ID? " + result);
-            return result;
+            return !string.IsNullOrEmpty(id) && Data.Items._records.ContainsKey(id);
         }
 
         public static bool DoesItemExistInList<T>(string id, ConfigRecordCollection<T> list)
