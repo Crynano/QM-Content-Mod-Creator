@@ -3,5 +3,9 @@
   "Assemblies": [
     "QM_ImporterAPI.dll"
   ],
-  "Dependencies": []
+  "Dependencies": [],
+  "SteamTags": [
+    "0.9.9",
+    "Utility"
+  ]
 }

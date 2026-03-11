@@ -11,6 +11,7 @@ It handles folder creation, settings, image, audio and configuration so you can 
 - [Features](#features)
 - [Quick Commands](#quick-commands)
 - [Create a Mod from Scratch](#create-a-mod-from-scratch)
+- [Quick Guide](#quick-guide)
 - [Import a Mod](#import-a-mod)
 - [Upload to Steam Workshop](#upload-to-steam-workshop)
 - [Tips and Tricks](#tips-and-tricks)
@@ -44,6 +45,13 @@ create-mod "C:/Temp/Mod"
 ```
 
 6. Navigate to that folder and edit the generated files.
+
+## Quick Guide
+- TransformationRecords are what you could get when disassembling/dismantling the weapon.
+- ItemProduceReceipt or Crafting Recipes, define costs and time to craft and upgrade the item in the spaceship. 
+- FactionRewards define which faction and at what level the item will be given as reward.
+- You can create as many JSONs as you need, separate localization, crafting recipes or faction rewards at your will.
+- You currently can't add custom recipes without adding a weapon first. It will be added in the future.
 
 ## Import a Mod
 1. Install Content Mod Creator
