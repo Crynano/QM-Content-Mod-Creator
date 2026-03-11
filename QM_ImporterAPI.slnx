@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/Code/">
+    <Project Path="src/QM_ImporterAPI.csproj" />
+  </Folder>
+  <Folder Name="/Test/">
+    <Project Path="test/QM_ImporterAPI.Test/QM_ImporterAPI.Test.csproj" />
+  </Folder>
+</Solution>

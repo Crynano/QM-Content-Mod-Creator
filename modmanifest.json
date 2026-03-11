@@ -1,0 +1,7 @@
+{
+  "UniqueModName": "Crynano_QM_ImporterAPI",
+  "Assemblies": [
+    "QM_ImporterAPI.dll"
+  ],
+  "Dependencies": []
+}
