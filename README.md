@@ -3,8 +3,8 @@
 [![Support on Ko-fi](https://img.shields.io/badge/Support-Ko--fi-ff5f5f?logo=kofi&logoColor=white)](https://ko-fi.com/crynano)
 [![Author: Crynano](https://img.shields.io/badge/Author-Crynano-2f6f91)](https://github.com/Crynano)
 
-Importer v2 helps you create Quasimorph weapon and item mods without fighting boilerplate code.
-It handles folder creation, settings, image importing, audio importing, and configuration loading so you can focus on building fun content.
+Importer v2 helps you create Quasimorph weapon and item mods without having to touch code!
+It handles folder creation, settings, image, audio and configuration so you can focus on building fun content! (Can't wait to see more content mods)
 
 ## Table of Contents
 - [Features](#features)
