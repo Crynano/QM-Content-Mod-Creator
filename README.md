@@ -33,7 +33,7 @@ It handles folder creation, settings, image, audio and configuration so you can 
 | `export-weapons "PathToAFolder"` | Exports 250+ in-game weapons for reference |
 
 ## Create a Mod from Scratch
-1. Install Importer v2.
+1. Install Content Mod Creator
 2. Install a developer console mod.
 3. Start Quasimorph.
 4. In the main menu, open developer console with `~` (key left of `1`).
@@ -46,7 +46,7 @@ create-mod "C:/Temp/Mod"
 6. Navigate to that folder and edit the generated files.
 
 ## Import a Mod
-1. Install Importer v2.
+1. Install Content Mod Creator
 2. Install a developer console mod.
 3. Start Quasimorph.
 4. In the main menu, open developer console with `~`.
@@ -97,7 +97,7 @@ export-weapons "C:/Temp/WeaponDump"
 ## Support
 If this project helps your workflow and you want to support updates:
 
-- [Support Importer v2 on Ko-fi](https://ko-fi.com/crynano)
+- [Support Content Mod Creator on Ko-fi](https://ko-fi.com/crynano)
 
 ## Special Thanks
 - Raigir (incredible designer)
