@@ -22,14 +22,32 @@ namespace QM_ImporterAPI.Commands
         {
             try
             {
-                var path = Path.Combine(Plugin.ConfigDirectories.ModPersistenceFolder, "Exports", "Weapons");
-                Directory.CreateDirectory(path);
+                if (tokens.Length == 0)
+                {
+                    return "<color=red>ERROR: </color>No folder path provided. Syntax: create-mod <folder-path>";
+                }
+
+                var providedPath = tokens[0];
+
+                if (string.IsNullOrEmpty(providedPath))
+                {
+                    return "<color=red>ERROR: </color>No folder path provided. Syntax: create-mod <folder-path>";
+                }
+                else if (!Path.IsPathRooted(providedPath))
+                {
+                    return "<color=red>ERROR: </color>Provided path must be an absolute path.";
+                }
+                else if (!Directory.Exists(providedPath))
+                {
+                    return "<color=red>ERROR: </color>Provided path does not exist.";
+                }
+                
                 var items = Data.Items;
 
                 var exportedCount = Data.Items.Ids
                     .Select(id => items.GetSimpleRecord<WeaponRecord>(id))
                     .Where(weapon => weapon != null)
-                    .Select(weapon => { ExportItems(weapon, path); return weapon; })
+                    .Select(weapon => { ExportItems(weapon, providedPath); return weapon; })
                     .Count();
 
                 return $"<color=green>Exported {exportedCount} weapons to JSON files.</color>";

@@ -12,7 +12,7 @@ using UnityEngine;
 namespace QM_ImporterAPI.Commands
 {
     [ConsoleCommand(new string[] { "import-mod", "api-import-mod" })]
-    public class ImportWeaponsCommand
+    public class ImportModCommand
     {
         public static string Help(string command, bool verbose)
         {
