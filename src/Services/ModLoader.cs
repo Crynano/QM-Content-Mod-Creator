@@ -6,6 +6,7 @@ using QM_ImporterAPI.Services.Importing;
 using QM_ImporterAPI.Templates;
 using QM_ImporterAPI.Templates.Descriptors;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -15,7 +16,7 @@ namespace QM_ImporterAPI.Services
     {
         private const string ASSETS_FOLDER_NAME = "Assets";
 
-        private List<ImportableJson> importableJsons = new List<ImportableJson>();
+        private List<ImportableJson> ImportableJsons = new List<ImportableJson>();
 
         public void LoadModFromContext(IModContext modContext)
         {
@@ -24,15 +25,16 @@ namespace QM_ImporterAPI.Services
 
         public void LoadModFromDirectory(string givenPath)
         {
-            var operationResult = new ImportOperationResult();
+            var stopWatch = Stopwatch.StartNew();
             // Search for the ASSET folder in the given path
             // Search for all the json assets in the subfolders.
             // Maybe add a specific name for the Folders?
             // Load the json assets and add them to the game
             // Report all added and unadded items to the game.
+            Logger.LogInfo("Starting mod loading process...");
             if (!Directory.Exists(givenPath))
             {
-                operationResult.AddError($"The given path '{givenPath}' does not exist.");
+                Logger.LogError($"The given path '{givenPath}' does not exist. Please provide a valid path to the mod folder.");
                 return;
             }
 
@@ -40,12 +42,19 @@ namespace QM_ImporterAPI.Services
             var assetFolderPath = Path.Combine(givenPath, ASSETS_FOLDER_NAME);
             if (!Directory.Exists(assetFolderPath))
             {
-                operationResult.AddError($"The ASSET folder was not found in the given path '{givenPath}'.");
+                Logger.LogError($"Missing 'Assets' folder in {givenPath}");
+                return;
             }
 
             var jsonFiles = Directory.GetFiles(assetFolderPath, "*.json", SearchOption.AllDirectories);
+            Logger.LogInfo($"Found {jsonFiles.Length} json files in the ASSET folder. Starting to load them...");
+
             LoadImportableJsons(jsonFiles);
             ProcessImportableJsons(assetFolderPath);
+            Logger.LogInfo("Finished mod loading process!");
+            
+            stopWatch.Stop();
+            Logger.LogInfo($"Mod Loading Process: {stopWatch.ElapsedMilliseconds}ms");
         }
 
         private void LoadImportableJsons(string[] jsonFilesPath)
@@ -56,49 +65,52 @@ namespace QM_ImporterAPI.Services
             {
                 var json = File.ReadAllText(jsonFile);
                 var importableJson = JsonConvert.DeserializeObject<ImportableJson>(json, JsonExporterSettings.DeserializerSettings);
-                if (importableJson != null)
+                if (importableJson != null && !string.IsNullOrEmpty(importableJson.RecordType))
                 {
-                    importableJsons.Add(importableJson);
+                    ImportableJsons.Add(importableJson);
                 }
             }
         }
 
         private void ProcessImportableJsons(string assetFolderPath)
         {
-            // We have two major types of JSONs. Records and Descriptors.
-            // Descriptors have to be parsed before the record.
-            // If no descriptor is found, we SKIP the record and report an error.
-            // To know the descriptor type, we need to parse the RecordType into a type and check its inheritance.
-            // If it inherits from ItemRecordDescriptor, then we know it's a descriptor.
-            // If it inherits from ConfigTableRecord, then we know it's a record.
-            var deserializedImportableJsons = importableJsons
+            Logger.LogDebug("Processing importable jsons...");
+            var deserializedImportableJsons = ImportableJsons
                 .Select(json => json.Deserialize())
+                .Where(json => json != null)
                 .ToList();
 
             var descriptors = deserializedImportableJsons
                 .Where(obj => obj.GetType().IsSubclassOf(typeof(CustomItemContentDescriptor)))
                 .ToList();
 
+            Logger.LogDebug($"Found {descriptors.Count} descriptors in the imported jsons.");
             var weaponDescriptors = descriptors
                 .OfType<CustomWeaponDescriptor>()
                 .ToList();
 
+            Logger.LogDebug($"Found {weaponDescriptors.Count} weapon descriptors in the imported jsons.");
+
+            // Game Records
             var records = deserializedImportableJsons
                .Where(obj => obj.GetType().IsSubclassOf(typeof(ConfigTableRecord)))
                .ToList();
 
-            var datadisks = deserializedImportableJsons
+            Logger.LogDebug($"Filtering records by type from {records.Count} records");
+
+            var datadisks = records
                 .OfType<DatadiskRecord>()
                 .ToList();
 
-            var transformationRecords = deserializedImportableJsons
+            var transformationRecords = records
                 .OfType<ItemTransformationRecord>()
                 .ToList();
 
-            var craftingRecords = deserializedImportableJsons
+            var craftingRecords = records
                 .OfType<ItemProduceReceipt>()
                 .ToList();
 
+            // Non-game records
             var factionRecords = deserializedImportableJsons
                 .OfType<FactionTemplate>()
                 .ToList();
@@ -113,14 +125,15 @@ namespace QM_ImporterAPI.Services
                 .OfType<WeaponRecord>()
                 .ToList();
 
+            Logger.LogDebug($"Found {weaponRecords.Count} weapon records and {descriptors.Count} descriptors records.");
             foreach (var descriptor in weaponDescriptors)
             {
                 var weaponRecord = weaponRecords.First(x => x.Id.Equals(descriptor.ItemId));
                 if (weaponRecord != null)
                 {
-                    UnityEngine.Debug.Log($"Trying to add weapon '{weaponRecord.Id}' (with descriptor) to the game!");
+                    Logger.LogDebug($"Trying to add weapon '{weaponRecord.Id}' (with descriptor) to the game!");
                     var opResult = ItemCreator.CreateWeapon(weaponRecord, descriptor, assetFolderPath);
-                    UnityEngine.Debug.LogWarning(opResult.Print());
+                    Logger.LogWarning(opResult.Print());
 
                     if (!opResult.IsSuccess) continue;
 
@@ -156,7 +169,6 @@ namespace QM_ImporterAPI.Services
 
             // Let's see how many records we have to debug lawl.
             //Console.WriteLine($"Found {weaponRecords.Count} weapon records and {armorRecords.Count} armor records.");
-            UnityEngine.Debug.Log($"Found {weaponRecords.Count} weapon records and {descriptors.Count} descriptors records.");
         }
     }
 }

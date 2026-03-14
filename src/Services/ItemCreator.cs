@@ -168,7 +168,7 @@ namespace QM_ImporterAPI.Services
             }
             weaponDescriptor._muzzles = new Muzzle[1] { muzzleResult.Result };
 
-            LoadSprites(weaponDescriptor, customWeaponDescriptor, assetFolderPath);
+            LoadSprites(ref weaponDescriptor, customWeaponDescriptor, assetFolderPath);
 
             var textureResult = LoadTexture(customWeaponDescriptor, assetFolderPath);
             operationResult.AddErrors(textureResult.ErrorMessages);
@@ -184,7 +184,7 @@ namespace QM_ImporterAPI.Services
             return operationResult;
         }
 
-        private static void LoadSprites(WeaponDescriptor weaponDescriptor, CustomWeaponDescriptor customWeaponDescriptor, string assetFolderPath)
+        private static void LoadSprites(ref WeaponDescriptor weaponDescriptor, CustomWeaponDescriptor customWeaponDescriptor, string assetFolderPath)
         {
             var imageProps = customWeaponDescriptor.ImageProperties;
 

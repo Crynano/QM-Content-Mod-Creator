@@ -46,6 +46,11 @@ namespace QM_ImporterAPI.Services.ErrorManagement
             return this;
         }
 
+        public void SetExecutionTime(double executionTime)
+        {
+            ExecutionTime = executionTime;
+        }
+
         /// <summary>
         /// Returns a stringified version of the ResultInfo, ready to log.
         /// </summary>
