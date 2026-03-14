@@ -85,7 +85,7 @@ namespace QM_ImporterAPI.Services.Importing
             }
             else
             {
-                var audioImportResult = ImportAudio(fullPath);
+                var audioImportResult = UnityAudioFileImporter.Import(fullPath);
                 if (audioImportResult.IsSuccess)
                 {
                     operationResult.SetResult(audioImportResult.Result);

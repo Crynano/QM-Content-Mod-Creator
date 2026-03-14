@@ -5,9 +5,9 @@ using UnityEngine.Networking;
 
 namespace QM_ImporterAPI.Services.Audio
 {
-    internal class UnityFileAudioImporter
+    internal static class UnityAudioFileImporter
     {
-        public ImportOperationResult<AudioClip> Import(string path)
+        public static ImportOperationResult<AudioClip> Import(string path)
         {
             var operationResult = new ImportOperationResult<AudioClip>();
             AudioType audioType = AnalyzeAudioType(path, out string fileName);
