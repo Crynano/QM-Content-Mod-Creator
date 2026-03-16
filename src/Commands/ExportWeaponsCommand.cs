@@ -46,7 +46,7 @@ namespace QM_ImporterAPI.Commands
 
                 var exportedCount = Data.Items.Ids
                     .Select(id => items.GetSimpleRecord<WeaponRecord>(id))
-                    .Where(weapon => weapon != null)
+                    .Where(weapon => weapon != null && !weapon.Id.Contains("_custom"))
                     .Select(weapon => { ExportItems(weapon, providedPath); return weapon; })
                     .Count();
 
