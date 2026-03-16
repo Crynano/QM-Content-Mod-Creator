@@ -89,6 +89,10 @@ namespace QM_ImporterAPI.Services
                 .OfType<CustomWeaponDescriptor>()
                 .ToList();
 
+            var armorDescriptors = descriptors
+                .OfType<CustomArmorDescriptor>()
+                .ToList();
+
             Logger.LogDebug($"Found {weaponDescriptors.Count} weapon descriptors in the imported jsons.");
 
             // Game Records
@@ -110,7 +114,6 @@ namespace QM_ImporterAPI.Services
                 .OfType<ItemProduceReceipt>()
                 .ToList();
 
-            // Non-game records
             var factionRecords = deserializedImportableJsons
                 .OfType<FactionTemplate>()
                 .ToList();
@@ -119,13 +122,60 @@ namespace QM_ImporterAPI.Services
                 .OfType<LocalizationTemplate>()
                 .ToList();
 
-            // After parsing the records, we shoud determine which specific Type are, so we can add them to the game. We can do this by checking their inheritance as well.
-            // So we should filter by weapons, armors and consumablers, and add them to the game with the corresponding method.
             var weaponRecords = records
                 .OfType<WeaponRecord>()
                 .ToList();
 
-            Logger.LogDebug($"Found {weaponRecords.Count} weapon records and {descriptors.Count} descriptors records.");
+            var armorRecords = records
+                .Where(obj => obj.GetType().IsSubclassOf(typeof(ResistRecord)))
+                .ToList();
+
+            var cumulativeOperation = new ImportOperationResult();
+
+            var weaponsLoadResult = LoadWeapons(assetFolderPath, weaponRecords, weaponDescriptors, datadisks);
+            cumulativeOperation.AddErrors(weaponsLoadResult.ErrorMessages);
+
+            var armorLoadResult = LoadArmors(assetFolderPath, armorRecords, armorDescriptors, datadisks);
+            cumulativeOperation.AddErrors(armorLoadResult.ErrorMessages);
+
+            var craftsLoadResult = AddCrafts(transformationRecords, craftingRecords);
+            cumulativeOperation.AddErrors(craftsLoadResult.ErrorMessages);
+
+            factionRecords.ForEach(faction =>
+            {
+                var opResult = ItemCreator.AddFactionRewards(faction);
+                cumulativeOperation.AddErrors(opResult.ErrorMessages);
+            });
+
+            localizationFiles.ForEach(loc => QuasimorphHelper.AddLocalization(loc));
+
+            Logger.LogWarning(cumulativeOperation.Print());
+        }
+
+        private static ImportOperationResult AddCrafts(List<ItemTransformationRecord> transformationRecords, List<ItemProduceReceipt> craftingRecords)
+        {
+            var operationResult = new ImportOperationResult();
+
+            transformationRecords.ForEach(transformationRecord =>
+            {
+                var result = ItemCreator.AddItemTransformation(transformationRecord);
+                operationResult.AddErrors(result.ErrorMessages);
+            });
+
+            craftingRecords.ForEach(craftingRecord =>
+            {
+                var result = ItemCreator.AddItemCraftRecipe(craftingRecord);
+                operationResult.AddErrors(result.ErrorMessages);
+            });
+
+            return operationResult;
+        }
+
+
+        private static ImportOperationResult LoadWeapons(string assetFolderPath, List<WeaponRecord> weaponRecords, List<CustomWeaponDescriptor> weaponDescriptors, List<DatadiskRecord> datadisks)
+        {
+            var operationResult = new ImportOperationResult();
+            Logger.LogDebug($"Found {weaponRecords.Count} records and {weaponDescriptors.Count} descriptors.");
             foreach (var descriptor in weaponDescriptors)
             {
                 var weaponRecord = weaponRecords.First(x => x.Id.Equals(descriptor.ItemId));
@@ -133,42 +183,56 @@ namespace QM_ImporterAPI.Services
                 {
                     Logger.LogDebug($"Trying to add weapon '{weaponRecord.Id}' (with descriptor) to the game!");
                     var opResult = ItemCreator.CreateWeapon(weaponRecord, descriptor, assetFolderPath);
-                    Logger.LogWarning(opResult.Print());
 
-                    if (!opResult.IsSuccess) continue;
+                    if (!opResult.IsSuccess)
+                    {
+                        operationResult.AddErrors(opResult.ErrorMessages);
+                        continue;
+                    }
 
-                    // Add to datadisks if the weapon is unlockable by any of them
                     datadisks
                         .Where(dd => dd.UnlockIds.Contains(weaponRecord.Id))
                         .ToList()
                         .ForEach(dataDisk => ItemCreator.AddItemToDatadisk(dataDisk, weaponRecord));
 
-                    // Add destroy recipe
-                    var transformationRecord = transformationRecords
-                        .First(tr => tr.Id.Equals(weaponRecord.Id));
-
-                    ItemCreator.AddItemTransformation(transformationRecord);
-
-                    // Add craft and upgrade recipe
-                    var craftingRecord = craftingRecords.First(cr => cr.OutputItem.Equals(weaponRecord.Id));
-                    ItemCreator.AddItemCraftRecipe(craftingRecord);
-                    UnityEngine.Debug.Log($"Weapon '{weaponRecord.Id}' added to the game successfully!");
+                    Logger.LogDebug($"Weapon '{weaponRecord.Id}' added to the game successfully!");
                 }
             }
 
-            factionRecords.ForEach(faction => ItemCreator.AddFactionRewards(faction));
-            localizationFiles.ForEach(loc => QuasimorphHelper.AddLocalization(loc));
+            return operationResult;
+        }
 
-            //var equipableArmorRecords = records
-            //    .Where(record => record.GetType().IsSubclassOf(typeof(ResistRecord)))
-            //    .ToList();
+        private static ImportOperationResult LoadArmors(string assetFolderPath, List<object> equipmentRecords, List<CustomArmorDescriptor> equipmentDescriptors, List<DatadiskRecord> datadisks)
+        {
+            var operationResult = new ImportOperationResult();
 
-            //var armorRecords = equipableArmorRecords
-            //    .OfType<ArmorRecord>()
-            //    .ToList();
+            if (equipmentRecords.Count == 0)
+            {
+                Logger.LogDebug("No armor records found to load.");
+                return operationResult;
+            }
+            Logger.LogDebug($"Found {equipmentRecords.Count} equipment records and {equipmentDescriptors.Count} descriptors.");
 
-            // Let's see how many records we have to debug lawl.
-            //Console.WriteLine($"Found {weaponRecords.Count} weapon records and {armorRecords.Count} armor records.");
+            // Filter all armor records.
+            var armorRecords = equipmentRecords
+                .OfType<ArmorRecord>()
+                .ToList();
+
+            var bootsRecords = equipmentRecords
+                .OfType<BootsRecord>()
+                .ToList();
+
+            var helmetRecords = equipmentRecords
+                .OfType<HelmetRecord>()
+                .ToList();
+
+            var leggingRecords = equipmentRecords
+                .OfType<LeggingsRecord>()
+                .ToList();
+
+            // And some other shit
+
+            return operationResult;
         }
     }
 }
