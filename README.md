@@ -10,15 +10,16 @@ It handles folder creation, settings, image, audio and configuration so you can 
 ## Table of Contents
 - [Features](#features)
 - [Quick Commands](#quick-commands)
-- [Create a Mod from Scratch](#create-a-mod-from-scratch)
-- [Quick Guide](#quick-guide)
+- [Create a Mod](#create-a-mod-from-scratch)
 - [Import a Mod](#import-a-mod)
 - [Upload to Steam Workshop](#upload-to-steam-workshop)
+- [Quick Guide](#quick-guide)
 - [Tips and Tricks](#tips-and-tricks)
+- [Restrictions](#restrictions)
 - [Troubleshooting](#troubleshooting)
 - [Support](#support)
 - [Special Thanks](#special-thanks)
-- [Other Mods](#other-mods)
+- [Other Mods](#my-other-quasimorph-mods)
 
 ## Features
 - Creates mod folder structure and settings for you.
@@ -43,23 +44,7 @@ It handles folder creation, settings, image, audio and configuration so you can 
 ```console
 create-mod "C:/Temp/Mod"
 ```
-
 6. Navigate to that folder and edit the generated files.
-
-## Quick Guide
-### Mod
-- You can create as many JSONs as you need, separate localization, crafting recipes or faction rewards at your will.
-- There is no required nor fixed naming, organize folders as you wish.
-- All config (records and descriptors) file extensions must be .json to be taken into account.
-- Weapon ID and Descriptor ID must match for the weapon to be loaded. Same rule applies to all other configs except for crafting, which is OutputItem.
-### Records
-- TransformationRecords are what you could get when disassembling/dismantling the weapon.
-- ItemProduceReceipt or Crafting Recipes, define costs and time to craft and upgrade the item in the spaceship. 
-- FactionRewards define which faction and at what level the item will be given as reward.
-
-## Restrictions & WIP
-- You can't add custom recipes without adding a weapon first. It will be added in the future.
-- Custom models can't be added yet, unless bundled in a Unity Assetbundle file. You can find tutorials online explaining this process. Requires Unity Engine installed but no prior knowledge of it.
 
 ## Import a Mod
 1. Install Content Mod Creator
@@ -92,6 +77,20 @@ QM_ImporterAPI.Services.ImporterApi.LoadModFromContext(IModContext);
 5. Publish to Workshop and subscribe to verify it loads correctly.
 
 > This is a concise workflow summary. For full walkthroughs, check the Quasimorph Discord and Steam Guides.
+
+## Quick Guide
+### Mod
+- You can create as many JSONs as you need, separate localization, crafting recipes or faction rewards at your will.
+- There is no required nor fixed naming, organize folders as you wish.
+- All config (records and descriptors) file extensions must be .json to be taken into account.
+- Weapon ID and Descriptor ID must match for the weapon to be loaded. Same rule applies to all other configs except for crafting, which is OutputItem.
+### Records
+- TransformationRecords are what you could get when disassembling/dismantling the weapon.
+- ItemProduceReceipt or Crafting Recipes, define costs and time to craft and upgrade the item in the spaceship. 
+- FactionRewards define which faction and at what level the item will be given as reward.
+### Restrictions
+- You can't add custom recipes without adding a weapon first. It will be added in the future.
+- Custom models can't be added unless bundled in a Unity Assetbundle file. You can find tutorials online explaining this process. Requires Unity Engine installed but no prior knowledge of it.
 
 ## Tips and Tricks
 - If a variable ends with `Id`, it can copy properties from an in-game item (icons, sprites, audio, models, and more).
