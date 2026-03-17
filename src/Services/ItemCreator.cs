@@ -5,8 +5,8 @@ using QM_ImporterAPI.Services.Importing;
 using QM_ImporterAPI.Templates;
 using QM_ImporterAPI.Templates.Descriptors;
 using System;
-using UnityEngine;
 using System.Linq;
+using UnityEngine;
 
 namespace QM_ImporterAPI.Services
 {
@@ -21,22 +21,44 @@ namespace QM_ImporterAPI.Services
             var operationResult = new ImportOperationResult();
 
             var weaponPropertiesResult = CheckWeaponPropertiesRestrictions(weapon);
+            operationResult.CopyMessages(weaponPropertiesResult);
             if (!weaponPropertiesResult.IsSuccess)
             {
-                operationResult.AddErrors(weaponPropertiesResult.ErrorMessages);
                 return operationResult;
             }
 
             var descriptorPropertiesResult = SetDescriptorProperties(weapon, weaponDescriptor, assetFolderPath);
+            operationResult.CopyMessages(descriptorPropertiesResult);
             if (!descriptorPropertiesResult.IsSuccess)
             {
-                operationResult.AddErrors(descriptorPropertiesResult.ErrorMessages);
                 return operationResult;
             }
 
             AddItemToGame(weapon);
             operationResult.ContentList.Add(weapon.Id);
-            Logger.LogDebug("Successfully added weapon with ID: " + weapon.Id);
+            return operationResult;
+        }
+
+        public static ImportOperationResult AddAmmo(AmmoRecord ammo, CustomAmmoDescriptor customAmmoDescriptor, string assetFolderPath)
+        {
+            var operationResult = new ImportOperationResult();
+            Logger.LogDebug($"Attempting to add ammo");
+            if (ammo is null || customAmmoDescriptor is null)
+            {
+                operationResult.AddError("Can't add ammo because one of the parameters is null.");
+                return operationResult;
+            }
+            Logger.LogDebug($"Called {nameof(AddAmmo)} with ID: " + ammo.Id);
+
+            var descriptorAssignmentResult = SetAmmoDescriptorProperties(ammo, customAmmoDescriptor, assetFolderPath);
+            operationResult.CopyMessages(descriptorAssignmentResult);
+            if (!descriptorAssignmentResult.IsSuccess)
+            {
+                return operationResult;
+            }
+
+            AddItemToGame(ammo);
+            operationResult.ContentList.Add(ammo.Id);
             return operationResult;
         }
 
@@ -78,16 +100,20 @@ namespace QM_ImporterAPI.Services
             return operationResult;
         }
 
-        public static ImportOperationResult AddItemToDatadisk(DatadiskRecord datadisk, WeaponRecord weapon)
+        public static ImportOperationResult AddDatadiskItems(DatadiskRecord diskToAdd) 
         {
             var operationResult = new ImportOperationResult();
 
-            CompositeItemRecord itemRecord = (CompositeItemRecord)MGSC.Data.Items.GetRecord(datadisk.Id);
-            if (itemRecord != null)
+            var dataDiskCompositeRecord = (CompositeItemRecord)MGSC.Data.Items.GetRecord(diskToAdd.Id);
+            if (dataDiskCompositeRecord != null)
             {
-                DatadiskRecord dataChip = itemRecord.GetRecord<DatadiskRecord>();
-                var addOnlyThoseNotInChip = datadisk.UnlockIds.FindAll(id => !dataChip.UnlockIds.Contains(id));
-                dataChip.UnlockIds.AddRange(addOnlyThoseNotInChip);
+                var dataDiskItemRecord = dataDiskCompositeRecord.GetRecord<DatadiskRecord>();
+
+                // Add ONLY those not registered and IN-GAME!
+                var addOnlyThoseNotInChip = diskToAdd.UnlockIds
+                    .FindAll(id => !dataDiskItemRecord.UnlockIds.Contains(id) && QuasimorphHelper.IsGameId(id));
+
+                dataDiskItemRecord.UnlockIds.AddRange(addOnlyThoseNotInChip);
             }
             else
             {
@@ -126,30 +152,30 @@ namespace QM_ImporterAPI.Services
             return operationResult;
         }
 
-        private static void AddItemToGame(WeaponRecord weapon)
+        private static void AddItemToGame<TRecord>(TRecord record) where TRecord : BasePickupItemRecord
         {
-            if (QuasimorphHelper.DoesItemExistInList(weapon.Id, Data.Items))
+            if (QuasimorphHelper.DoesItemExistInList(record.Id, Data.Items))
             {
-                Data.Items.RemoveRecord(weapon.Id);
-                Logger.LogWarning("An item with ID: [" + weapon.Id + "] was OVERRIDEN!!!");
+                Data.Items.RemoveRecord(record.Id);
+                Logger.LogWarning("An item with ID: [" + record.Id + "] was OVERRIDEN!!!");
             }
 
-            string key = (weapon.IsMelee ? MELEE_WEAPON_DESCRIPTOR_KEY : RANGED_WEAPON_DESCRIPTOR_KEY);
-
-            Data.Descriptors[key].AddDescriptor(weapon.Id, weapon.ItemDesc);
-            Data.Items.AddRecord(weapon.Id, weapon);
-        }
-
-        private static void AddItemToGame<TRecord>(TRecord item, string key) where TRecord : ItemRecord
-        {
-            if (QuasimorphHelper.DoesItemExistInList(item.Id, Data.Items))
+            if (record is WeaponRecord weaponRecord)
             {
-                Data.Items.RemoveRecord(item.Id);
-                Logger.LogWarning("An item with ID: [" + item.Id + "] was OVERRIDEN!!!");
+                string key = (weaponRecord.IsMelee ? MELEE_WEAPON_DESCRIPTOR_KEY : RANGED_WEAPON_DESCRIPTOR_KEY);
+                Data.Descriptors[key].AddDescriptor(weaponRecord.Id, weaponRecord.ItemDesc);
+            }
+            else if (record is AmmoRecord ammoRecord)
+            {
+                Data.Descriptors["ammo"].AddDescriptor(ammoRecord.Id, ammoRecord.ItemDesc);
+            }
+            else
+            {
+                Logger.LogWarning($"Item with ID: [{record.Id}] is of type {record.GetType().Name} which is not currently supported for automatic descriptor assignment. No descriptor was assigned to this item.");
             }
 
-            Data.Descriptors[key].AddDescriptor(item.Id, item.ItemDesc);
-            Data.Items.AddRecord(item.Id, item);
+            Logger.LogDebug("Adding item with ID: " + record.Id + " to game.");
+            Data.Items.AddRecord(record.Id, record);
         }
 
         private static ImportOperationResult SetDescriptorProperties(WeaponRecord weapon, CustomWeaponDescriptor customWeaponDescriptor, string assetFolderPath)
@@ -165,7 +191,7 @@ namespace QM_ImporterAPI.Services
             }
             weaponDescriptor._prefab = prefabResult.Result;
 
-            var muzzleResult = LoadMuzzle(customWeaponDescriptor, prefabResult.Result, assetFolderPath);
+            var muzzleResult = LoadMuzzle(customWeaponDescriptor, prefabResult.Result);
             if (!muzzleResult.IsSuccess)
             {
                 operationResult.AddErrors(muzzleResult.ErrorMessages);
@@ -189,13 +215,64 @@ namespace QM_ImporterAPI.Services
             return operationResult;
         }
 
-        private static void LoadSprites(ref WeaponDescriptor weaponDescriptor, CustomWeaponDescriptor customWeaponDescriptor, string assetFolderPath)
+        private static ImportOperationResult SetAmmoDescriptorProperties(AmmoRecord ammoRecord, CustomAmmoDescriptor customAmmoDescriptor, string assetFolderPath)
+        {
+            var operationResult = new ImportOperationResult();
+            var ammoDescriptor = ScriptableObject.CreateInstance<AmmoDescriptor>();
+            var gibsDescriptor = ScriptableObject.CreateInstance<GibsDescriptor>();
+
+            if (QuasimorphHelper.IsGameId(customAmmoDescriptor.Gibs.BulletSpritesId))
+            {
+                var gibsFromItem = QuasimorphHelper.GetPropertyFromItem<AmmoDescriptor>(customAmmoDescriptor.Gibs.BulletSpritesId, "Gibs") as GibsDescriptor;
+                if (gibsFromItem != null)
+                {
+                    gibsDescriptor._normalSprites = gibsFromItem._normalSprites;
+                }
+                else
+                {
+                    operationResult.AddWarning($"Unable to load gibs sprites from existing game item with ID: {customAmmoDescriptor.Gibs.BulletSpritesId}");
+                }
+            }
+            else
+            {
+                operationResult.AddWarning($"Invalid BulletSpritesId for gibs. {customAmmoDescriptor.Gibs.BulletSpritesId} is not a valid game ID.");
+            }
+
+            if (QuasimorphHelper.IsGameId(customAmmoDescriptor.Gibs.BulletShadowsId))
+            {
+                var gibsFromItem = QuasimorphHelper.GetPropertyFromItem<AmmoDescriptor>(customAmmoDescriptor.Gibs.BulletShadowsId, "Gibs") as GibsDescriptor;
+                if (gibsFromItem != null)
+                {
+                    gibsDescriptor._shadowsSprites = gibsFromItem._shadowsSprites;
+                }
+                else
+                {
+                    operationResult.AddWarning($"Unable to load gibs sprites from existing game item with ID: {customAmmoDescriptor.Gibs.BulletSpritesId}");
+                }
+            }
+            else
+            {
+                operationResult.AddWarning($"Invalid BulletSpritesId for gibs. {customAmmoDescriptor.Gibs.BulletSpritesId} is not a valid game ID.");
+            }
+
+            gibsDescriptor._animFramerateRange = new Vector2(customAmmoDescriptor.Gibs.AnimationFramerate, customAmmoDescriptor.Gibs.AnimationFramerate);
+            gibsDescriptor._flyDurationRange = new Vector2(customAmmoDescriptor.Gibs.FlightDurationMsMin, customAmmoDescriptor.Gibs.FlightDurationMsMax);
+
+            LoadSprites(ref ammoDescriptor, customAmmoDescriptor, assetFolderPath);
+
+            ammoDescriptor._gibs = gibsDescriptor;
+            ammoRecord.ContentDescriptor = ammoDescriptor;
+            return operationResult;
+        }
+
+        private static void LoadSprites<TRecord>(ref TRecord record, CustomItemContentDescriptor customWeaponDescriptor, string assetFolderPath)
+            where TRecord : ItemContentDescriptor
         {
             var imageProps = customWeaponDescriptor.ImageProperties;
 
-            weaponDescriptor._icon = LoadSprite(assetFolderPath, imageProps.IconSpriteIdOrPath, "Icon", AssetImporter.LoadNewSprite);
-            weaponDescriptor._smallIcon = LoadSprite(assetFolderPath, imageProps.SmallIconSpriteIdOrPath, "SmallIcon", AssetImporter.LoadCenteredSprite);
-            weaponDescriptor._shadow = LoadSprite(assetFolderPath, imageProps.ShadowOnFloorSpriteIdOrPath, "Shadow", AssetImporter.LoadCenteredSprite);
+            record._icon = LoadSprite(assetFolderPath, imageProps.IconSpriteIdOrPath, "Icon", AssetImporter.LoadNewSprite);
+            record._smallIcon = LoadSprite(assetFolderPath, imageProps.SmallIconSpriteIdOrPath, "SmallIcon", AssetImporter.LoadCenteredSprite);
+            record._shadow = LoadSprite(assetFolderPath, imageProps.ShadowOnFloorSpriteIdOrPath, "Shadow", AssetImporter.LoadCenteredSprite);
         }
 
         private static Sprite LoadSprite(string assetFolderPath, string path, string propertyName, Func<string, Sprite> loadFunc)
@@ -257,7 +334,7 @@ namespace QM_ImporterAPI.Services
                 QuasimorphHelper.GetTextureFromExistingWeapon);
         }
 
-        private static ImportOperationResult<Muzzle> LoadMuzzle(CustomWeaponDescriptor customWeaponDescriptor, GameObject prefab, string assetFolderPath)
+        private static ImportOperationResult<Muzzle> LoadMuzzle(CustomWeaponDescriptor customWeaponDescriptor, GameObject prefab)
         {
             var modelProperties = customWeaponDescriptor.ModelProperties;
             var muzzleResult = new ImportOperationResult<Muzzle>();

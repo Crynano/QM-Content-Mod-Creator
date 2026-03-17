@@ -13,7 +13,7 @@ namespace QM_ImporterAPI.Services.Importing
         {
             TypeNameHandling = TypeNameHandling.None,
             Formatting = Formatting.Indented,
-            NullValueHandling = NullValueHandling.Ignore,
+            NullValueHandling = NullValueHandling.Include, // TODO Test if changing prints ItemClass
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
             Converters = new List<JsonConverter>()
             {
