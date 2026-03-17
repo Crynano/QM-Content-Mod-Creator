@@ -1,3 +1,4 @@
+using Newtonsoft.Json;
 using UnityEngine;
 
 namespace QM_ImporterAPI.Templates.Descriptors
@@ -5,6 +6,7 @@ namespace QM_ImporterAPI.Templates.Descriptors
     public class CustomItemContentDescriptor : CustomBaseDescriptor
     {
         public CustomItemContentDescriptor() : base() { }
+        [JsonProperty(Order = 10)]
         public ImageProperties ImageProperties { get; set; }
     }
 

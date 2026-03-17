@@ -54,6 +54,9 @@ namespace QM_ImporterAPI.Services
             var localizationFolder = Path.Combine(assetsFolder, "Localization");
             var factionRewardsFolder = Path.Combine(assetsFolder, "FactionRewards");
 
+            var soundFolder = Path.Combine(assetsFolder, "Sounds");
+            var bundlesFolder = Path.Combine(assetsFolder, "Bundles");
+
             Directory.CreateDirectory(assetsFolder);
 
             Directory.CreateDirectory(weaponsFolder);
@@ -64,6 +67,9 @@ namespace QM_ImporterAPI.Services
             Directory.CreateDirectory(descriptorsFolder);
             Directory.CreateDirectory(localizationFolder);
             Directory.CreateDirectory(factionRewardsFolder);
+
+            Directory.CreateDirectory(soundFolder);
+            Directory.CreateDirectory(bundlesFolder);
 
             ExportItems(meleeWeapon, weaponsFolder);
             ExportItems(rangedWeapon, weaponsFolder);
