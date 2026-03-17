@@ -1,8 +1,9 @@
 using Newtonsoft.Json;
-using UnityEngine;
+using System;
 
 namespace QM_ImporterAPI.Templates.Descriptors
 {
+    [Serializable]
     public class CustomItemContentDescriptor : CustomBaseDescriptor
     {
         public CustomItemContentDescriptor() : base() { }
@@ -10,7 +11,7 @@ namespace QM_ImporterAPI.Templates.Descriptors
         public ImageProperties ImageProperties { get; set; }
     }
 
-    [SerializeField]
+    [Serializable]
     public class ImageProperties
     {
         public string IconSpriteIdOrPath { get; set; }

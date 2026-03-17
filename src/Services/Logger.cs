@@ -17,32 +17,20 @@ namespace QM_ImporterAPI.Services
         }
 
         private static string LogFileName => $"Log.log"; //$"Log_{DateTime.Now.ToString(@"dd_MM_yyyy")}.log";
-        private static string LogSignature => "QM_WeaponImporter";
+        private static string LogSignature = "Content Mod Creator";
 
-        private static string LogStart => $"[{DateTime.Now.ToString()}][{LogSignature}][START] ----------------- Log Start -----------------\nGame Version Report: {Application.version}\nWeapon Importer Version Report: {Assembly.GetExecutingAssembly().GetName().Version}\n";
-        private static string LogEnd => $"[{DateTime.Now.ToString()}][{LogSignature}][#END#] |---------------- Log #End# ----------------|\n";
+        private static string LogStart => $"[{DateTime.Now}][{LogSignature}][START] ----------------- Log Start -----------------\nGame Version Report: {Application.version}\nWeapon Importer Version Report: {Assembly.GetExecutingAssembly().GetName().Version}\n";
+        private static string LogEnd => $"[{DateTime.Now}][{LogSignature}][#END#] |---------------- Log #End# ----------------|\n";
 
         private static string Context = "";
         private static string Log = "";
 
         private static string LogPath = Path.Combine(Plugin.ConfigDirectories.AllModsConfigFolder, LogFileName);
 
-        private static ImportOperationResult currentResultInfo;
-
         public static void SetConfig(string modName)
         {
-            //LogSignature = modName;
+            LogSignature = modName;
             LogPath = Path.Combine(Plugin.ConfigDirectories.AllModsConfigFolder, modName, LogFileName);
-        }
-
-        public static void LinkResult(ImportOperationResult resultInfo)
-        {
-            currentResultInfo = resultInfo;
-        }
-
-        public static void ClearResultInfo()
-        {
-            currentResultInfo = null;
         }
 
         public static void LogDebug(string message)
@@ -55,21 +43,17 @@ namespace QM_ImporterAPI.Services
 
         public static void LogInfo(string message)
         {
-            //if (!ConfigManager.CurrentModConfig.ShowInfo) return;
             WriteToLog(message, LogType.Info);
         }
 
         public static void LogWarning(string message)
         {
-            //if (!ConfigManager.CurrentModConfig.ShowWarnings) return;
             WriteToLog(message, LogType.Warning);
         }
 
         public static void LogError(string message)
         {
-            //if (!ConfigManager.CurrentModConfig.ShowErrors) return;
             WriteToLog(message, LogType.Error, true);
-            currentResultInfo?.ErrorMessages.Add(message);
         }
 
         public static void SetContext(string context)
