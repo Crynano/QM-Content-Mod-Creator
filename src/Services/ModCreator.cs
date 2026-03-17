@@ -25,6 +25,10 @@ namespace QM_ImporterAPI.Services
                 .Select(id => Data.Items.GetSimpleRecord<ArmorRecord>(id))
                 .First(x => x != null);
 
+            var ammoItem = Data.Items.Ids
+                .Select(id => Data.Items.GetSimpleRecord<AmmoRecord>(id))
+                .First(x => x != null);
+
             var rangedWeaponTransform = Data.ItemTransformation.Ids
                 .Select(id => Data.ItemTransformation.GetRecord(rangedWeapon.Id))
                 .First(x => x != null);
@@ -36,7 +40,8 @@ namespace QM_ImporterAPI.Services
                 .Select(id => Data.Items.GetSimpleRecord<DatadiskRecord>(id) ?? null)
                 .First(x => x != null);
 
-            var descriptorsItem = CustomWeaponDescriptor.GetExample(rangedWeapon.Id);
+            var customWeaponDescriptor = CustomWeaponDescriptor.GetExample(rangedWeapon.Id);
+            var customAmmoDescriptor = CustomAmmoDescriptor.GetExample(ammoItem.Id);
             var factionTemplate = FactionTemplate.GetExample(rangedWeapon.Id);
             var localizationItem = LocalizationTemplate.GetExample(rangedWeapon.Id);
 
@@ -46,6 +51,8 @@ namespace QM_ImporterAPI.Services
 
             var weaponsFolder = Path.Combine(assetsFolder, "Weapons");
             var armorFolder = Path.Combine(assetsFolder, "Armors");
+            var ammoFolder = Path.Combine(assetsFolder, "Ammo");
+
             var transformFolder = Path.Combine(assetsFolder, "Transforms");
             var craftingReceiptsFolder = Path.Combine(assetsFolder, "Crafting Recipes");
             var datadiskFolder = Path.Combine(assetsFolder, "Datadisks");
@@ -61,6 +68,8 @@ namespace QM_ImporterAPI.Services
 
             Directory.CreateDirectory(weaponsFolder);
             Directory.CreateDirectory(armorFolder);
+            Directory.CreateDirectory(ammoFolder);
+
             Directory.CreateDirectory(transformFolder);
             Directory.CreateDirectory(craftingReceiptsFolder);
             Directory.CreateDirectory(datadiskFolder);
@@ -73,10 +82,14 @@ namespace QM_ImporterAPI.Services
 
             ExportItems(meleeWeapon, weaponsFolder);
             ExportItems(rangedWeapon, weaponsFolder);
+            ExportItems(ammoItem, ammoFolder);
+
             ExportItems(armorItem, armorFolder);
             ExportItems(oneDatadisk, datadiskFolder);
 
-            ExportCustom(descriptorsItem, $"{rangedWeapon.Id}_descriptor", descriptorsFolder);
+            ExportCustom(customWeaponDescriptor, $"{rangedWeapon.Id}_descriptor", descriptorsFolder);
+            ExportCustom(customAmmoDescriptor, $"{ammoItem.Id}_descriptor", descriptorsFolder);
+
             ExportCustom(localizationItem, $"{rangedWeapon.Id}_localization", localizationFolder);
             ExportCustom(factionTemplate, $"{rangedWeapon.Id}_factionReward", factionRewardsFolder);
             ExportCustom(rangedWeaponTransform, $"{rangedWeapon.Id}_transform", transformFolder);

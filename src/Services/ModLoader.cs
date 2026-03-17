@@ -52,7 +52,7 @@ namespace QM_ImporterAPI.Services
             LoadImportableJsons(jsonFiles);
             ProcessImportableJsons(assetFolderPath);
             Logger.LogInfo("Finished mod loading process!");
-            
+
             stopWatch.Stop();
             Logger.LogInfo($"Mod Loading Process: {stopWatch.ElapsedMilliseconds}ms");
         }
@@ -93,6 +93,10 @@ namespace QM_ImporterAPI.Services
                 .OfType<CustomArmorDescriptor>()
                 .ToList();
 
+            var ammoDescriptors = descriptors
+                .OfType<CustomAmmoDescriptor>()
+                .ToList();
+
             Logger.LogDebug($"Found {weaponDescriptors.Count} weapon descriptors in the imported jsons.");
 
             // Game Records
@@ -130,21 +134,31 @@ namespace QM_ImporterAPI.Services
                 .Where(obj => obj.GetType().IsSubclassOf(typeof(ResistRecord)))
                 .ToList();
 
+            var ammoRecords = records
+                .OfType<AmmoRecord>()
+                .ToList();
+
             var cumulativeOperation = new ImportOperationResult();
 
-            var weaponsLoadResult = LoadWeapons(assetFolderPath, weaponRecords, weaponDescriptors, datadisks);
-            cumulativeOperation.AddErrors(weaponsLoadResult.ErrorMessages);
+            var weaponsLoadResult = LoadWeapons(assetFolderPath, weaponRecords, weaponDescriptors);
+            cumulativeOperation.CopyMessages(weaponsLoadResult);
 
-            var armorLoadResult = LoadArmors(assetFolderPath, armorRecords, armorDescriptors, datadisks);
-            cumulativeOperation.AddErrors(armorLoadResult.ErrorMessages);
+            var armorLoadResult = LoadArmors(assetFolderPath, armorRecords, armorDescriptors);
+            cumulativeOperation.CopyMessages(armorLoadResult);
+
+            var ammoResult = LoadAmmo(assetFolderPath, ammoRecords, ammoDescriptors);
+            cumulativeOperation.CopyMessages(ammoResult);
+
+            var dataDiskResult = LoadDatadisks(datadisks);
+            cumulativeOperation.CopyMessages(dataDiskResult);
 
             var craftsLoadResult = AddCrafts(transformationRecords, craftingRecords);
-            cumulativeOperation.AddErrors(craftsLoadResult.ErrorMessages);
+            cumulativeOperation.CopyMessages(craftsLoadResult);
 
             factionRecords.ForEach(faction =>
             {
                 var opResult = ItemCreator.AddFactionRewards(faction);
-                cumulativeOperation.AddErrors(opResult.ErrorMessages);
+                cumulativeOperation.CopyMessages(opResult);
             });
 
             localizationFiles.ForEach(loc => QuasimorphHelper.AddLocalization(loc));
@@ -172,10 +186,10 @@ namespace QM_ImporterAPI.Services
         }
 
 
-        private static ImportOperationResult LoadWeapons(string assetFolderPath, List<WeaponRecord> weaponRecords, List<CustomWeaponDescriptor> weaponDescriptors, List<DatadiskRecord> datadisks)
+        private static ImportOperationResult LoadWeapons(string assetFolderPath, List<WeaponRecord> weaponRecords, List<CustomWeaponDescriptor> weaponDescriptors)
         {
             var operationResult = new ImportOperationResult();
-            Logger.LogDebug($"Found {weaponRecords.Count} records and {weaponDescriptors.Count} descriptors.");
+            Logger.LogDebug($"LoadWeapons: Found {weaponRecords.Count} records and {weaponDescriptors.Count} descriptors.");
             foreach (var descriptor in weaponDescriptors)
             {
                 var weaponRecord = weaponRecords.First(x => x.Id.Equals(descriptor.ItemId));
@@ -183,26 +197,14 @@ namespace QM_ImporterAPI.Services
                 {
                     Logger.LogDebug($"Trying to add weapon '{weaponRecord.Id}' (with descriptor) to the game!");
                     var opResult = ItemCreator.CreateWeapon(weaponRecord, descriptor, assetFolderPath);
-
-                    if (!opResult.IsSuccess)
-                    {
-                        operationResult.AddErrors(opResult.ErrorMessages);
-                        continue;
-                    }
-
-                    datadisks
-                        .Where(dd => dd.UnlockIds.Contains(weaponRecord.Id))
-                        .ToList()
-                        .ForEach(dataDisk => ItemCreator.AddItemToDatadisk(dataDisk, weaponRecord));
-
-                    Logger.LogDebug($"Weapon '{weaponRecord.Id}' added to the game successfully!");
+                    operationResult.CopyMessages(opResult);
                 }
             }
 
             return operationResult;
         }
 
-        private static ImportOperationResult LoadArmors(string assetFolderPath, List<object> equipmentRecords, List<CustomArmorDescriptor> equipmentDescriptors, List<DatadiskRecord> datadisks)
+        private static ImportOperationResult LoadArmors(string assetFolderPath, List<object> equipmentRecords, List<CustomArmorDescriptor> equipmentDescriptors)
         {
             var operationResult = new ImportOperationResult();
 
@@ -232,6 +234,35 @@ namespace QM_ImporterAPI.Services
 
             // And some other shit
 
+            return operationResult;
+        }
+
+        private static ImportOperationResult LoadAmmo(string assetFolderPath, List<AmmoRecord> ammoRecords, List<CustomAmmoDescriptor> ammoDescriptors)
+        {
+            var operationResult = new ImportOperationResult();
+            Logger.LogDebug($"LoadAmmo: Found {ammoRecords.Count} records and {ammoDescriptors.Count} descriptors.");
+            foreach (var descriptor in ammoDescriptors)
+            {
+                var ammoRecord = ammoRecords.First(x => x.Id.Equals(descriptor.ItemId));
+                if (ammoRecord != null)
+                {
+                    Logger.LogDebug($"Trying to add ammo '{ammoRecord.Id}' (with descriptor) to the game!");
+                    var opResult = ItemCreator.AddAmmo(ammoRecord, descriptor, assetFolderPath);
+                    operationResult.CopyMessages(opResult);
+                }
+            }
+
+            return operationResult;
+        }
+
+        private static ImportOperationResult LoadDatadisks(List<DatadiskRecord> datadisks)
+        {
+            var operationResult = new ImportOperationResult();
+            datadisks.ForEach(datadisk =>
+            {
+                var opResult = ItemCreator.AddDatadiskItems(datadisk);
+                operationResult.AddErrors(opResult.ErrorMessages);
+            });
             return operationResult;
         }
     }

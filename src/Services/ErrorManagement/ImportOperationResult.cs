@@ -38,6 +38,13 @@ namespace QM_ImporterAPI.Services.ErrorManagement
             return this;
         }
 
+        public ImportOperationResult CopyMessages(ImportOperationResult other)
+        {
+            ErrorMessages.AddRange(other.ErrorMessages);
+            WarningMessages.AddRange(other.WarningMessages);
+            return this;
+        }
+
         public void SetExecutionTime(double executionTime)
         {
             ExecutionTime = executionTime;
