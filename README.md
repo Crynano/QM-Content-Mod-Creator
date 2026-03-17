@@ -47,17 +47,19 @@ create-mod "C:/Temp/Mod"
 6. Navigate to that folder and edit the generated files.
 
 ## Quick Guide
+### Mod
+- You can create as many JSONs as you need, separate localization, crafting recipes or faction rewards at your will.
+- There is no required nor fixed naming, organize folders as you wish.
+- All config (records and descriptors) file extensions must be .json to be taken into account.
+- Weapon ID and Descriptor ID must match for the weapon to be loaded. Same rule applies to all other configs except for crafting, which is OutputItem.
+### Records
 - TransformationRecords are what you could get when disassembling/dismantling the weapon.
 - ItemProduceReceipt or Crafting Recipes, define costs and time to craft and upgrade the item in the spaceship. 
 - FactionRewards define which faction and at what level the item will be given as reward.
-- You can create as many JSONs as you need, separate localization, crafting recipes or faction rewards at your will.
-- There is no required nor fixed naming, organize folders as you wish.
-- All file extensions must be .json to be taken into account.
-- Weapon ID and Descriptor ID must match for the weapon to be loaded. Same rule applies to all other configs except for crafting, which is OutputItem.
 
 ## Restrictions & WIP
 - You can't add custom recipes without adding a weapon first. It will be added in the future.
-- Custom models can't be added yet, unless bundled in a Unity Assetbundle file. (complex and requires Unity knowledge)
+- Custom models can't be added yet, unless bundled in a Unity Assetbundle file. You can find tutorials online explaining this process. Requires Unity Engine installed but no prior knowledge of it.
 
 ## Import a Mod
 1. Install Content Mod Creator
@@ -104,7 +106,7 @@ export-weapons "C:/Temp/WeaponDump"
 
 ## Troubleshooting
 - Weapon does not load even when command reports success:
-  Check `Player.log` for hidden exceptions and verify JSON field names.
+  Check `Player.log` for hidden exceptions and verify JSON field names. Every import-mod process leaves a message with errors and failed steps.
 - Missing images or audio:
   Verify file names, paths, and that files exist under your mod `Assets` folder.
 
@@ -116,11 +118,14 @@ If this project helps your workflow and you want to support updates:
 ## Special Thanks
 - Raigir (incredible designer)
 - Lychantiure (awesome artist)
-- NBK_RedSpy (incredible modder and template creator)
+- NBK_RedSpy (god-tier modder and template creator)
 
 Mod created by [Crynano](https://github.com/Crynano).
 Feel free to ask in the Quasimorph modding community if you have questions.
 
-## Other Mods
-- MCM
+## My Other Quasimorph Mods
+- Mod Configuration Menu
 - Expanded Faction Arsenal (EFA)
+- Display Movement Speed UI
+- Original Item and Weapon Importer
+- Cyberpunk 2077 Rebel
