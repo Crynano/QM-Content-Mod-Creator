@@ -32,13 +32,16 @@
 		</Reference>
 		<Reference Include="UnityEngine.AssetBundleModule">
 		  <HintPath>$(ManagedPath)UnityEngine.AssetBundleModule.dll</HintPath>
+			<Private>False</Private>
 		</Reference>
 		<Reference Include="UnityEngine.AudioModule">
 		  <HintPath>$(ManagedPath)UnityEngine.AudioModule.dll</HintPath>
+			<Private>False</Private>
 		  <Private>False</Private>
 		</Reference>
 		<Reference Include="UnityEngine.ImageConversionModule">
 		  <HintPath>$(ManagedPath)UnityEngine.ImageConversionModule.dll</HintPath>
+			<Private>False</Private>
 		</Reference>
 		<Reference Include="UnityEngine.UnityWebRequestModule">
 			<HintPath>$(ManagedPath)UnityEngine.UnityWebRequestModule.dll</HintPath>

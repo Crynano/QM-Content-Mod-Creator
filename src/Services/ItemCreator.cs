@@ -6,6 +6,7 @@ using QM_ImporterAPI.Templates;
 using QM_ImporterAPI.Templates.Descriptors;
 using System;
 using UnityEngine;
+using System.Linq;
 
 namespace QM_ImporterAPI.Services
 {
@@ -22,14 +23,14 @@ namespace QM_ImporterAPI.Services
             var weaponPropertiesResult = CheckWeaponPropertiesRestrictions(weapon);
             if (!weaponPropertiesResult.IsSuccess)
             {
-                operationResult.AddErrors("Wrong configuration for \"" + weapon.Id + ". Check the following errors:", weaponPropertiesResult.ErrorMessages);
+                operationResult.AddErrors(weaponPropertiesResult.ErrorMessages);
                 return operationResult;
             }
 
             var descriptorPropertiesResult = SetDescriptorProperties(weapon, weaponDescriptor, assetFolderPath);
             if (!descriptorPropertiesResult.IsSuccess)
             {
-                operationResult.AddErrors("Wrong descriptor configuration for \"" + weapon.Id + ". Check the following errors:", descriptorPropertiesResult.ErrorMessages);
+                operationResult.AddErrors(descriptorPropertiesResult.ErrorMessages);
                 return operationResult;
             }
 
@@ -60,7 +61,7 @@ namespace QM_ImporterAPI.Services
         public static ImportOperationResult AddItemCraftRecipe(ItemProduceReceipt craftingRecipe)
         {
             var operationResult = new ImportOperationResult();
-            
+
             if (craftingRecipe == null)
             {
                 operationResult.AddError("Crafting recipe record is null.");
@@ -107,14 +108,18 @@ namespace QM_ImporterAPI.Services
             {
                 foreach (ContentDropRecord contentRecord in factionReward.contentRecords)
                 {
-                    string text = string.Concat(contentRecord.ContentIds);
-                    if (contentRecord.ContentIds.Count > 0 && Data.Items._records.ContainsKey(contentRecord.ContentIds[0]))
+                    contentRecord.ContentIds
+                        .Where(contentId => !QuasimorphHelper.IsGameId(contentId))
+                        .ToList()
+                        .ForEach(x => operationResult.AddWarning($"Not adding {x} to faction table. Weapon does not exist."));
+
+                    contentRecord.ContentIds = contentRecord.ContentIds
+                        .Where(contentId => QuasimorphHelper.IsGameId(contentId))
+                        .ToList();
+
+                    if (contentRecord.ContentIds.Count > 0)
                     {
                         Data.FactionDrop.AddRecord(factionReward.GetTableName(), contentRecord);
-                    }
-                    else
-                    {
-                        operationResult.AddError($"Failed to add content with IDs: [{text}] to faction [{factionReward.FactionName}] because the item does not exist in-game.");
                     }
                 }
             }
@@ -171,7 +176,7 @@ namespace QM_ImporterAPI.Services
             LoadSprites(ref weaponDescriptor, customWeaponDescriptor, assetFolderPath);
 
             var textureResult = LoadTexture(customWeaponDescriptor, assetFolderPath);
-            operationResult.AddErrors(textureResult.ErrorMessages);
+            operationResult.AddWarnings(textureResult.ErrorMessages);
             weaponDescriptor._texture = textureResult.Result;
 
             var soundOpResult = ConfigureSounds(weaponDescriptor, customWeaponDescriptor, assetFolderPath);

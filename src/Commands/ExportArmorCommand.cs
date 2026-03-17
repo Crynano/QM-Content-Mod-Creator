@@ -44,18 +44,35 @@ namespace QM_ImporterAPI.Commands
 
                 var items = Data.Items;
 
-                var exportedCount = Data.Items.Ids
+                var armorCount = Data.Items.Ids
                     .Select(id => items.GetSimpleRecord<ArmorRecord>(id))
-                    .Where(weapon => weapon != null)
-                    .Select(weapon => { ExportItems(weapon, providedPath); return weapon; })
-                    .Count();
+                    .Where(armor => armor != null)
+                    .Select(armor => { ExportItems(armor, providedPath); return armor; });
 
-                return $"<color=green>Exported {exportedCount} armors to JSON files.</color>";
+                var bootsCount = Data.Items.Ids
+                    .Select(id => items.GetSimpleRecord<BootsRecord>(id))
+                    .Where(boot => boot != null)
+                    .Select(boot => { ExportItems(boot, providedPath); return boot; });
+
+                var leggingsCount = Data.Items.Ids
+                    .Select(id => items.GetSimpleRecord<LeggingsRecord>(id))
+                    .Where(leggings => leggings != null)
+                    .Select(leggings => { ExportItems(leggings, providedPath); return leggings; });
+
+                var helmetCount = Data.Items.Ids
+                    .Select(id => items.GetSimpleRecord<HelmetRecord>(id))
+                    .Where(helmet => helmet != null)
+                    .Select(helmet => { ExportItems(helmet, providedPath); return helmet; });
+
+                var sum = armorCount.Count() + bootsCount.Count() + leggingsCount.Count() + helmetCount.Count();
+
+                return $"<color=green>Exported {sum} armor pieces to JSON files.</color>";
             }
             catch (Exception ex)
             {
                 string msg = $"<color=red>ERROR: </color>" + ex.Message;
-                Debug.LogError(ex.InnerException);
+                Debug.LogError(ex.Message);
+                Debug.LogError(ex.StackTrace);
                 return msg;
             }
         }

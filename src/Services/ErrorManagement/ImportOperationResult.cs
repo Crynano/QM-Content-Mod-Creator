@@ -9,9 +9,9 @@ namespace QM_ImporterAPI.Services.ErrorManagement
     public class ImportOperationResult
     {
         public bool IsSuccess => ErrorMessages.Count == 0;
-        public string ResultMessage { get; private set; } = string.Empty;
         public double ExecutionTime { get; private set; } = 0f;
         public List<string> ErrorMessages { get; private set; } = new List<string>();
+        public List<string> WarningMessages { get; private set; } = new List<string>();
         public List<string> ContentList { get; private set; } = new List<string>();
 
         public ImportOperationResult AddError(string message)
@@ -26,23 +26,15 @@ namespace QM_ImporterAPI.Services.ErrorManagement
             return this;
         }
 
-        public ImportOperationResult AddErrors(string error, IEnumerable<string> messages)
+        public ImportOperationResult AddWarning(string message)
         {
-            StringBuilder combinedMessage = new StringBuilder(error);
-            combinedMessage.AppendLine();
-            foreach (var subError in messages)
-            {
-                combinedMessage.Append($"\t- {subError}");
-                combinedMessage.AppendLine();
-            }
-            ErrorMessages.Add(combinedMessage.ToString());
+            WarningMessages.Add(message);
             return this;
         }
 
-
-        public ImportOperationResult SetResult(string resultMessage)
+        public ImportOperationResult AddWarnings(IEnumerable<string> messages)
         {
-            ResultMessage = resultMessage;
+            WarningMessages.AddRange(messages);
             return this;
         }
 
@@ -59,19 +51,34 @@ namespace QM_ImporterAPI.Services.ErrorManagement
         {
             string msg = "";
 
-            msg += $"\tExecution Time: {this.ExecutionTime}\n";
-            msg += $"\tResult: {this.IsSuccess}\n";
-            msg += $"\tResult Message: {this.ResultMessage}\n";
-            msg += $"\tError Messages:\n";
-            foreach (var errorMessage in this.ErrorMessages)
+            msg += $"Result: {this.IsSuccess}\n";
+            msg += $"Execution Time: {this.ExecutionTime}\n";
+
+            if (ErrorMessages.Count > 0)
             {
-                msg += $"\t\t- {errorMessage}\n";
+                msg += $"Error Messages:\n";
+                foreach (var errorMessage in this.ErrorMessages)
+                {
+                    msg += $"\t- {errorMessage}\n";
+                }
             }
-            
-            msg += $"\tContent List:\n";
-            foreach (var content in this.ContentList)
+
+            if (WarningMessages.Count > 0)
             {
-                msg += $"\t\t- {content}\n";
+                msg += $"Warning Messages:\n";
+                foreach (var errorMessage in this.WarningMessages)
+                {
+                    msg += $"\t- {errorMessage}\n";
+                }
+            }
+
+            if (ContentList.Count > 0)
+            {
+                msg += $"Content List:\n";
+                foreach (var content in this.ContentList)
+                {
+                    msg += $"\t- {content}\n";
+                }
             }
             
             return msg;
