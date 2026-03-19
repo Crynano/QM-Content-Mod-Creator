@@ -100,7 +100,7 @@ namespace QM_ImporterAPI.Services
             return operationResult;
         }
 
-        public static ImportOperationResult AddDatadiskItems(DatadiskRecord diskToAdd) 
+        public static ImportOperationResult AddDatadiskItems(DatadiskRecord diskToAdd)
         {
             var operationResult = new ImportOperationResult();
 
@@ -501,6 +501,68 @@ namespace QM_ImporterAPI.Services
 
             result.SetResult(muzzle);
             return result;
+        }
+
+        public static ImportOperationResult AddFireMode(FireModeRecord firemodeRecord, CustomFireModeDescriptor fireModeDescriptor, string assetFolderPath)
+        {
+            var operationResult = new ImportOperationResult();
+            Logger.LogDebug($"Attempting to add firemode");
+
+            if (firemodeRecord is null)
+            {
+                operationResult.AddError("Firemode record is null.");
+                return operationResult;
+            }
+            else if (firemodeRecord.Id is null || firemodeRecord.Id.Trim() is "")
+            {
+                operationResult.AddError("Firemode ID is null or empty.");
+                return operationResult;
+            }
+            else if (fireModeDescriptor is null)
+            {
+                operationResult.AddError("Firemode content descriptor is null.");
+                return operationResult;
+            }
+
+            Logger.LogDebug($"Valid call to {nameof(AddFireMode)} with ID: " + firemodeRecord.Id);
+            var descriptorAssignmentResult = SetFireModeDescriptorProperties(firemodeRecord, fireModeDescriptor, assetFolderPath);
+            operationResult.CopyMessages(descriptorAssignmentResult);
+            if (!descriptorAssignmentResult.IsSuccess)
+            {
+                Logger.LogError($"Failed to set firemode descriptor properties for firemode with ID: {firemodeRecord.Id}. Firemode won't be added to the game. Errors: {string.Join(", ", descriptorAssignmentResult.ErrorMessages)}");
+                return operationResult;
+            }
+
+            if (QuasimorphHelper.DoesItemExistInList(firemodeRecord.Id, Data.Firemodes))
+            {
+                Data.Firemodes.RemoveRecord(firemodeRecord.Id);
+                operationResult.AddWarning($"Firemode with ID: [{firemodeRecord.Id}] was overriden");
+            }
+
+            Logger.LogDebug($"Adding firemode with ID: {firemodeRecord.Id} to the game.");
+            Data.Descriptors["firemodes"].AddDescriptor(firemodeRecord.Id, firemodeRecord.ContentDescriptor);
+            Data.Firemodes.AddRecord(firemodeRecord.Id, firemodeRecord);
+            operationResult.ContentList.Add(firemodeRecord.Id);
+
+            return operationResult;
+        }
+
+        private static ImportOperationResult SetFireModeDescriptorProperties(FireModeRecord ammoRecord, CustomFireModeDescriptor customAmmoDescriptor, string assetFolderPath)
+        {
+            var operationResult = new ImportOperationResult();
+            var descriptor = ScriptableObject.CreateInstance<FireModeDescriptor>();
+            Logger.LogDebug($"Setting firemode descriptor properties for firemode with ID: {ammoRecord.Id}");
+
+            descriptor.Icon = LoadSprite(assetFolderPath, customAmmoDescriptor.SpriteIdOrPath, "Icon", AssetImporter.LoadNewSprite);
+            if(descriptor.Icon is null)
+            {
+                Logger.LogError($"Failed to add icon to {ammoRecord.Id}.");
+                operationResult.AddError($"Failed to load firemode icon sprite from path: {customAmmoDescriptor.SpriteIdOrPath}");
+                return operationResult;
+            }
+            Logger.LogDebug($"Successfully loaded firemode icon for firemode with ID: {ammoRecord.Id}");
+            ammoRecord.ContentDescriptor = descriptor;
+            return operationResult;
         }
     }
 }

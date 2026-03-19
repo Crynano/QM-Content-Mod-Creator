@@ -5,6 +5,7 @@ using QM_ImporterAPI.Services.Helpers;
 using QM_ImporterAPI.Services.Importing;
 using QM_ImporterAPI.Templates;
 using QM_ImporterAPI.Templates.Descriptors;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -81,10 +82,9 @@ namespace QM_ImporterAPI.Services
                 .ToList();
 
             var descriptors = deserializedImportableJsons
-                .Where(obj => obj.GetType().IsSubclassOf(typeof(CustomItemContentDescriptor)))
+                .Where(obj => obj.GetType().IsSubclassOf(typeof(CustomBaseDescriptor)))
                 .ToList();
 
-            Logger.LogDebug($"Found {descriptors.Count} descriptors in the imported jsons.");
             var weaponDescriptors = descriptors
                 .OfType<CustomWeaponDescriptor>()
                 .ToList();
@@ -97,14 +97,14 @@ namespace QM_ImporterAPI.Services
                 .OfType<CustomAmmoDescriptor>()
                 .ToList();
 
-            Logger.LogDebug($"Found {weaponDescriptors.Count} weapon descriptors in the imported jsons.");
+            var firemodeDescriptors = descriptors
+                .OfType<CustomFireModeDescriptor>()
+                .ToList();
 
             // Game Records
             var records = deserializedImportableJsons
                .Where(obj => obj.GetType().IsSubclassOf(typeof(ConfigTableRecord)))
                .ToList();
-
-            Logger.LogDebug($"Filtering records by type from {records.Count} records");
 
             var datadisks = records
                 .OfType<DatadiskRecord>()
@@ -138,22 +138,29 @@ namespace QM_ImporterAPI.Services
                 .OfType<AmmoRecord>()
                 .ToList();
 
+            var firemodeRecords = records
+                .OfType<FireModeRecord>()
+                .ToList();
+
             var cumulativeOperation = new ImportOperationResult();
 
+            var firemodeLoadResult = LoadFiremodes(assetFolderPath, firemodeRecords, firemodeDescriptors);
+            cumulativeOperation.Absorb(firemodeLoadResult);
+
             var weaponsLoadResult = LoadWeapons(assetFolderPath, weaponRecords, weaponDescriptors);
-            cumulativeOperation.CopyMessages(weaponsLoadResult);
+            cumulativeOperation.Absorb(weaponsLoadResult);
 
             var armorLoadResult = LoadArmors(assetFolderPath, armorRecords, armorDescriptors);
-            cumulativeOperation.CopyMessages(armorLoadResult);
+            cumulativeOperation.Absorb(armorLoadResult);
 
             var ammoResult = LoadAmmo(assetFolderPath, ammoRecords, ammoDescriptors);
-            cumulativeOperation.CopyMessages(ammoResult);
+            cumulativeOperation.Absorb(ammoResult);
 
             var dataDiskResult = LoadDatadisks(datadisks);
-            cumulativeOperation.CopyMessages(dataDiskResult);
+            cumulativeOperation.Absorb(dataDiskResult);
 
             var craftsLoadResult = AddCrafts(transformationRecords, craftingRecords);
-            cumulativeOperation.CopyMessages(craftsLoadResult);
+            cumulativeOperation.Absorb(craftsLoadResult);
 
             factionRecords.ForEach(faction =>
             {
@@ -164,6 +171,25 @@ namespace QM_ImporterAPI.Services
             localizationFiles.ForEach(loc => QuasimorphHelper.AddLocalization(loc));
 
             Logger.LogWarning(cumulativeOperation.Print());
+        }
+
+        private static ImportOperationResult LoadFiremodes(string assetFolderPath, List<FireModeRecord> firemodeRecords, List<CustomFireModeDescriptor> fireModeDescriptors)
+        {
+            var operationResult = new ImportOperationResult();
+            Logger.LogDebug($"LoadFiremodes: Found {firemodeRecords.Count} records and {fireModeDescriptors.Count} descriptors.");
+
+            foreach (var descriptor in fireModeDescriptors)
+            {
+                var firemodeRecord = firemodeRecords.First(x => x.Id.Equals(descriptor.ItemId));
+                if (firemodeRecord != null)
+                {
+                    Logger.LogDebug($"Trying to add firemode '{firemodeRecord.Id}' (with descriptor) to the game!");
+                    var opResult = ItemCreator.AddFireMode(firemodeRecord, descriptor, assetFolderPath);
+                    operationResult.Absorb(opResult);
+                }
+            }
+
+            return operationResult;
         }
 
         private static ImportOperationResult AddCrafts(List<ItemTransformationRecord> transformationRecords, List<ItemProduceReceipt> craftingRecords)

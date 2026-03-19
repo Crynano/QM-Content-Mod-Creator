@@ -14,12 +14,8 @@ namespace QM_ImporterAPI
         [Hook(ModHookType.AfterConfigsLoaded)]
         public static void AfterConfig(IModContext context)
         {
-
             Directory.CreateDirectory(ConfigDirectories.ModPersistenceFolder);
-
             Config = ModConfig.LoadConfig(ConfigDirectories.ConfigPath);
-
-            new Harmony("Crynano_" + ConfigDirectories.ModAssemblyName).PatchAll();
         }
     }
 }

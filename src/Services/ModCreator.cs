@@ -29,6 +29,10 @@ namespace QM_ImporterAPI.Services
                 .Select(id => Data.Items.GetSimpleRecord<AmmoRecord>(id))
                 .First(x => x != null);
 
+            var fireModeRecord = Data.Firemodes.Ids
+                .Select(id => Data.Firemodes.GetRecord(id))
+                .First(x => x != null);
+
             var rangedWeaponTransform = Data.ItemTransformation.Ids
                 .Select(id => Data.ItemTransformation.GetRecord(rangedWeapon.Id))
                 .First(x => x != null);
@@ -42,6 +46,7 @@ namespace QM_ImporterAPI.Services
 
             var customWeaponDescriptor = CustomWeaponDescriptor.GetExample(rangedWeapon.Id);
             var customAmmoDescriptor = CustomAmmoDescriptor.GetExample(ammoItem.Id);
+            var fireModeDescriptor = CustomFireModeDescriptor.GetExample(fireModeRecord.Id);
             var factionTemplate = FactionTemplate.GetExample(rangedWeapon.Id);
             var localizationItem = LocalizationTemplate.GetExample(rangedWeapon.Id);
 
@@ -52,6 +57,7 @@ namespace QM_ImporterAPI.Services
             var weaponsFolder = Path.Combine(assetsFolder, "Weapons");
             var armorFolder = Path.Combine(assetsFolder, "Armors");
             var ammoFolder = Path.Combine(assetsFolder, "Ammo");
+            var firemodesFolder = Path.Combine(assetsFolder, "Firemodes");
 
             var transformFolder = Path.Combine(assetsFolder, "Transforms");
             var craftingReceiptsFolder = Path.Combine(assetsFolder, "Crafting Recipes");
@@ -69,6 +75,7 @@ namespace QM_ImporterAPI.Services
             Directory.CreateDirectory(weaponsFolder);
             Directory.CreateDirectory(armorFolder);
             Directory.CreateDirectory(ammoFolder);
+            Directory.CreateDirectory(firemodesFolder);
 
             Directory.CreateDirectory(transformFolder);
             Directory.CreateDirectory(craftingReceiptsFolder);
@@ -83,12 +90,14 @@ namespace QM_ImporterAPI.Services
             ExportItems(meleeWeapon, weaponsFolder);
             ExportItems(rangedWeapon, weaponsFolder);
             ExportItems(ammoItem, ammoFolder);
+            ExportItems(fireModeRecord, firemodesFolder);
 
             ExportItems(armorItem, armorFolder);
             ExportItems(oneDatadisk, datadiskFolder);
 
-            ExportCustom(customWeaponDescriptor, $"{rangedWeapon.Id}_descriptor", descriptorsFolder);
-            ExportCustom(customAmmoDescriptor, $"{ammoItem.Id}_descriptor", descriptorsFolder);
+            ExportCustomDescriptor(customWeaponDescriptor, descriptorsFolder);
+            ExportCustomDescriptor(customAmmoDescriptor, descriptorsFolder);
+            ExportCustomDescriptor(fireModeDescriptor, descriptorsFolder);
 
             ExportCustom(localizationItem, $"{rangedWeapon.Id}_localization", localizationFolder);
             ExportCustom(factionTemplate, $"{rangedWeapon.Id}_factionReward", factionRewardsFolder);
@@ -106,6 +115,19 @@ namespace QM_ImporterAPI.Services
                 Data = item
             };
             var pathCombined = Path.Combine(basePath, $"{item.Id}.json");
+            File.WriteAllText(pathCombined, JsonConvert.SerializeObject(result, JsonExporterSettings.SerializerSettings));
+        }
+
+        private static void ExportCustomDescriptor<TDesc>(TDesc descriptor, string basePath) where TDesc : CustomBaseDescriptor
+        {
+            if (descriptor == null) { Debug.LogWarning($"Item null for \"{basePath}\", skipping export."); return; }
+            var classType = descriptor.GetType();
+            var result = new ImportableJson()
+            {
+                RecordType = classType.FullName,
+                Data = descriptor
+            };
+            var pathCombined = Path.Combine(basePath, $"{descriptor.ItemId}_descriptor.json");
             File.WriteAllText(pathCombined, JsonConvert.SerializeObject(result, JsonExporterSettings.SerializerSettings));
         }
 
