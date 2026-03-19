@@ -13,13 +13,13 @@ namespace QM_ImporterAPI.Services.Importing
         {
             TypeNameHandling = TypeNameHandling.None,
             Formatting = Formatting.Indented,
-            NullValueHandling = NullValueHandling.Include, // TODO Test if changing prints ItemClass
+            NullValueHandling = NullValueHandling.Include,
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
             Converters = new List<JsonConverter>()
             {
                 new Newtonsoft.Json.Converters.StringEnumConverter()
             },
-            ContractResolver = new WeaponContractResolver()
+            ContractResolver = new RecordContractResolver()
         };
 
         private static readonly JsonSerializerSettings JsonDeserializerSettings = new JsonSerializerSettings()
@@ -37,14 +37,14 @@ namespace QM_ImporterAPI.Services.Importing
         public static JsonSerializerSettings DeserializerSettings => JsonDeserializerSettings;
     }
 
-    public class WeaponContractResolver : DefaultContractResolver
+    public class RecordContractResolver : DefaultContractResolver
     {
-        private static readonly List<string> PropertiesNotToInclude = new List<string>()
+        private readonly List<string> PropertiesNotToInclude = new List<string>()
         {
-            "ItemClass", "ItemDesc", "ContentDesc", "ContentDescriptor"
+            "ItemDesc", "ContentDesc", "ContentDescriptor", "FireModeView"
         };
 
-        public WeaponContractResolver()
+        public RecordContractResolver()
         {
             
         }
@@ -52,10 +52,7 @@ namespace QM_ImporterAPI.Services.Importing
         protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization)
         {
             IList<JsonProperty> properties = base.CreateProperties(type, memberSerialization);
-
-            // only serializer properties that start with the specified character
             properties = properties.Where(p => !IsInList(p.PropertyName)).ToList();
-
             return properties;
         }
 
