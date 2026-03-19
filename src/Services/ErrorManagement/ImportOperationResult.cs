@@ -87,7 +87,7 @@ namespace QM_ImporterAPI.Services.ErrorManagement
             string msg = "";
 
             msg += $"Result: {this.IsSuccess}\n";
-            msg += $"Execution Time: {this.ExecutionTime}\n";
+            msg += $"Execution Time: {this.ExecutionTime}ms\n";
 
             if (ErrorMessages.Count > 0)
             {

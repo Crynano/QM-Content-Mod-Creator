@@ -33,6 +33,10 @@ namespace QM_ImporterAPI.Services
                 .Select(id => Data.Firemodes.GetRecord(id))
                 .First(x => x != null);
 
+            var explosionRecord = Data.Explosions.Ids
+                .Select(id => Data.Explosions.GetRecord(id))
+                .First(x => x != null);
+
             var rangedWeaponTransform = Data.ItemTransformation.Ids
                 .Select(id => Data.ItemTransformation.GetRecord(rangedWeapon.Id))
                 .First(x => x != null);
@@ -47,6 +51,8 @@ namespace QM_ImporterAPI.Services
             var customWeaponDescriptor = CustomWeaponDescriptor.GetExample(rangedWeapon.Id);
             var customAmmoDescriptor = CustomAmmoDescriptor.GetExample(ammoItem.Id);
             var fireModeDescriptor = CustomFireModeDescriptor.GetExample(fireModeRecord.Id);
+            var explosionDescriptor = CustomExplosionDescriptor.GetExample(explosionRecord.Id);
+
             var factionTemplate = FactionTemplate.GetExample(rangedWeapon.Id);
             var localizationItem = LocalizationTemplate.GetExample(rangedWeapon.Id);
 
@@ -58,6 +64,7 @@ namespace QM_ImporterAPI.Services
             var armorFolder = Path.Combine(assetsFolder, "Armors");
             var ammoFolder = Path.Combine(assetsFolder, "Ammo");
             var firemodesFolder = Path.Combine(assetsFolder, "Firemodes");
+            var explosionsFolder = Path.Combine(assetsFolder, "Explosions");
 
             var transformFolder = Path.Combine(assetsFolder, "Transforms");
             var craftingReceiptsFolder = Path.Combine(assetsFolder, "Crafting Recipes");
@@ -76,6 +83,7 @@ namespace QM_ImporterAPI.Services
             Directory.CreateDirectory(armorFolder);
             Directory.CreateDirectory(ammoFolder);
             Directory.CreateDirectory(firemodesFolder);
+            Directory.CreateDirectory(explosionsFolder);
 
             Directory.CreateDirectory(transformFolder);
             Directory.CreateDirectory(craftingReceiptsFolder);
@@ -91,6 +99,7 @@ namespace QM_ImporterAPI.Services
             ExportItems(rangedWeapon, weaponsFolder);
             ExportItems(ammoItem, ammoFolder);
             ExportItems(fireModeRecord, firemodesFolder);
+            ExportItems(explosionRecord, explosionsFolder);
 
             ExportItems(armorItem, armorFolder);
             ExportItems(oneDatadisk, datadiskFolder);
@@ -98,6 +107,7 @@ namespace QM_ImporterAPI.Services
             ExportCustomDescriptor(customWeaponDescriptor, descriptorsFolder);
             ExportCustomDescriptor(customAmmoDescriptor, descriptorsFolder);
             ExportCustomDescriptor(fireModeDescriptor, descriptorsFolder);
+            ExportCustomDescriptor(explosionDescriptor, descriptorsFolder);
 
             ExportCustom(localizationItem, $"{rangedWeapon.Id}_localization", localizationFolder);
             ExportCustom(factionTemplate, $"{rangedWeapon.Id}_factionReward", factionRewardsFolder);

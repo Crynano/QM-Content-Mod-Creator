@@ -5,6 +5,7 @@ using QM_ImporterAPI.Services.Importing;
 using QM_ImporterAPI.Templates;
 using QM_ImporterAPI.Templates.Descriptors;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -450,6 +451,41 @@ namespace QM_ImporterAPI.Services
             return operationResult;
         }
 
+        private static ImportOperationResult ResolveSoundBank<TRecord, TDescriptor>(ref SoundBank soundBank, string soundPath, string assetFolderPath, ConfigRecordCollection<TRecord> list)
+            where TRecord : ConfigTableRecord where TDescriptor : ScriptableObject
+        {
+            var operationResult = new ImportOperationResult();
+            if (soundBank == null)
+            {
+                soundBank = ScriptableObject.CreateInstance(typeof(SoundBank)) as SoundBank;
+                soundBank._clips = new AudioClip[1];
+            }
+
+            if (QuasimorphHelper.IsGameId(soundPath, list))
+            {
+                var existingProperty = QuasimorphHelper.GetPropertyFromList<TRecord, TDescriptor>(soundPath, "explosionSoundBank", list);
+                if (existingProperty is SoundBank existingSoundBank)
+                {
+                    soundBank = existingSoundBank;
+                }
+                else
+                {
+                    operationResult.AddError($"Unable to load sound from existing game item with ID: {soundPath}");
+                }
+            }
+            else
+            {
+                var soundFullPath = Helper.ResolvePath(assetFolderPath, soundPath);
+                var importAudioResult = AssetImporter.ImportAudio(soundFullPath);
+                operationResult.Absorb(importAudioResult);
+                if (importAudioResult.IsSuccess)
+                {
+                    soundBank._clips[0] = importAudioResult.Result;
+                }
+            }
+            return operationResult;
+        }
+
         private static void SetSounds(ref SoundBank[] soundBank, string soundPath, int category, string assetFolderPath, bool fallbackToDefault = false)
         {
             if (soundBank == null)
@@ -476,7 +512,6 @@ namespace QM_ImporterAPI.Services
                     soundBank[0]._clips[0] = importAudioResult.Result;
                 }
             }
-
         }
 
         private static ImportOperationResult<Muzzle> LoadDefaultMuzzle(GameObject parentGO)
@@ -554,7 +589,7 @@ namespace QM_ImporterAPI.Services
             Logger.LogDebug($"Setting firemode descriptor properties for firemode with ID: {ammoRecord.Id}");
 
             descriptor.Icon = LoadSprite(assetFolderPath, customAmmoDescriptor.SpriteIdOrPath, "Icon", AssetImporter.LoadNewSprite);
-            if(descriptor.Icon is null)
+            if (descriptor.Icon is null)
             {
                 Logger.LogError($"Failed to add icon to {ammoRecord.Id}.");
                 operationResult.AddError($"Failed to load firemode icon sprite from path: {customAmmoDescriptor.SpriteIdOrPath}");
@@ -562,6 +597,64 @@ namespace QM_ImporterAPI.Services
             }
             Logger.LogDebug($"Successfully loaded firemode icon for firemode with ID: {ammoRecord.Id}");
             ammoRecord.ContentDescriptor = descriptor;
+            return operationResult;
+        }
+
+        public static ImportOperationResult AddExplosion(ExplosionRecord explosionRecord, CustomExplosionDescriptor descriptor, string assetFolderPath)
+        {
+            var operationResult = new ImportOperationResult();
+
+            var descriptorOperation = SetExplosionDescriptorProperties(explosionRecord, descriptor, assetFolderPath);
+            operationResult.Absorb(descriptorOperation);
+            if (!descriptorOperation.IsSuccess)
+            {
+                Logger.LogError($"Failed to set explosion descriptor properties for explosion with ID: {explosionRecord.Id}. Explosion won't be added to the game.");
+                return operationResult;
+            }
+
+            if (QuasimorphHelper.DoesItemExistInList(explosionRecord.Id, Data.Explosions))
+            {
+                Data.Explosions.RemoveRecord(explosionRecord.Id);
+                operationResult.AddWarning($"Explosion with ID: [{explosionRecord.Id}] was overriden");
+            }
+
+            Logger.LogDebug($"Adding explosion with ID: {explosionRecord.Id} to the game.");
+            Data.Descriptors["explosions"].AddDescriptor(explosionRecord.Id, explosionRecord.ContentDescriptor);
+            Data.Explosions.AddRecord(explosionRecord.Id, explosionRecord);
+
+            return operationResult;
+        }
+
+        private static ImportOperationResult SetExplosionDescriptorProperties(ExplosionRecord explosionRecord, CustomExplosionDescriptor customExplosionDescriptor, string assetFolderPath)
+        {
+            var operationResult = new ImportOperationResult();
+            var descriptor = ScriptableObject.CreateInstance<ExplosionDescriptor>();
+
+            Logger.LogDebug($"Setting explosion descriptor properties for explosion with ID: {explosionRecord.Id}");
+            var explosionValue = QuasimorphHelper.GetPropertyFromList<ExplosionRecord, ExplosionDescriptor>(customExplosionDescriptor.ExplosionVisualId, "explosion", Data.Explosions);
+            if (explosionValue is null)
+            {
+                operationResult.AddError($"Failed to load explosion icon sprite from path: {customExplosionDescriptor.ExplosionVisualId}");
+                return operationResult;
+            }
+            descriptor.explosion = explosionValue as GameObject;
+
+            var opResult = ResolveSoundBank<ExplosionRecord, ExplosionDescriptor>(ref descriptor.explosionSoundBank, customExplosionDescriptor.ExplosionSoundIdOrPath, assetFolderPath, Data.Explosions);
+            operationResult.Absorb(opResult);
+            if(!opResult.IsSuccess)
+            {
+                Logger.LogError($"Failed to set explosion sound for explosion with ID: {customExplosionDescriptor.ExplosionSoundIdOrPath}.");
+                return operationResult;
+            }
+
+            descriptor.visualExplosionOffset = new Vector3(customExplosionDescriptor.VisualExplosionOffsetX, customExplosionDescriptor.VisualExplosionOffsetY, customExplosionDescriptor.VisualExplosionOffsetZ);
+            descriptor.visualExplosionDelay = customExplosionDescriptor.VisualExplosionDelay;
+            descriptor.visualReachCellDuration = customExplosionDescriptor.VisualReachCellDuration;
+            descriptor.shakeCameraOnExplosion = customExplosionDescriptor.ShakeCameraOnExplosion;
+            descriptor.clearGibsRadiusInPixels = customExplosionDescriptor.ClearGibsRadiusInPixels;
+
+            Logger.LogDebug($"Successfully loaded explosion icon for explosion with ID: {explosionRecord.Id}");
+            explosionRecord.ContentDescriptor = descriptor;
             return operationResult;
         }
     }
