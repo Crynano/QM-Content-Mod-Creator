@@ -76,6 +76,8 @@ namespace QM_ImporterAPI.Services
         private void ProcessImportableJsons(string assetFolderPath)
         {
             Logger.LogDebug("Processing importable jsons...");
+            var stopWatch = Stopwatch.StartNew();
+
             var deserializedImportableJsons = ImportableJsons
                 .Select(json => json.Deserialize())
                 .Where(json => json != null)
@@ -99,6 +101,10 @@ namespace QM_ImporterAPI.Services
 
             var firemodeDescriptors = descriptors
                 .OfType<CustomFireModeDescriptor>()
+                .ToList();
+
+            var explosionDescriptors = descriptors
+                .OfType<CustomExplosionDescriptor>()
                 .ToList();
 
             // Game Records
@@ -142,10 +148,17 @@ namespace QM_ImporterAPI.Services
                 .OfType<FireModeRecord>()
                 .ToList();
 
+            var explosionRecords = records
+                .OfType<ExplosionRecord>()
+                .ToList();
+
             var cumulativeOperation = new ImportOperationResult();
 
             var firemodeLoadResult = LoadFiremodes(assetFolderPath, firemodeRecords, firemodeDescriptors);
             cumulativeOperation.Absorb(firemodeLoadResult);
+
+            var explosionLoadResult = LoadExplosions(assetFolderPath, explosionRecords, explosionDescriptors);
+            cumulativeOperation.Absorb(explosionLoadResult);
 
             var weaponsLoadResult = LoadWeapons(assetFolderPath, weaponRecords, weaponDescriptors);
             cumulativeOperation.Absorb(weaponsLoadResult);
@@ -170,7 +183,28 @@ namespace QM_ImporterAPI.Services
 
             localizationFiles.ForEach(loc => QuasimorphHelper.AddLocalization(loc));
 
+            stopWatch.Stop();
+            cumulativeOperation.SetExecutionTime(stopWatch.ElapsedMilliseconds);
             Logger.LogWarning(cumulativeOperation.Print());
+        }
+
+        private static ImportOperationResult LoadExplosions(string assetFolderPath, List<ExplosionRecord> explosionRecords, List<CustomExplosionDescriptor> explosionDescriptors)
+        {
+            var operationResult = new ImportOperationResult();
+            Logger.LogDebug($"{nameof(LoadExplosions)}: Found {explosionRecords.Count} records and {explosionDescriptors.Count} descriptors.");
+
+            foreach (var descriptor in explosionDescriptors)
+            {
+                var explosionRecord = explosionRecords.First(x => x.Id.Equals(descriptor.ItemId));
+                if (explosionRecord != null)
+                {
+                    Logger.LogDebug($"Trying to add {nameof(ExplosionRecord)} '{explosionRecord.Id}' (with descriptor) to the game!");
+                    var opResult = ItemCreator.AddExplosion(explosionRecord, descriptor, assetFolderPath);
+                    operationResult.Absorb(opResult);
+                }
+            }
+
+            return operationResult;
         }
 
         private static ImportOperationResult LoadFiremodes(string assetFolderPath, List<FireModeRecord> firemodeRecords, List<CustomFireModeDescriptor> fireModeDescriptors)

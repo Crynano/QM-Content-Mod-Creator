@@ -17,6 +17,11 @@ namespace QM_ImporterAPI.Services.Helpers
             return !string.IsNullOrEmpty(id) && Data.Items._records.ContainsKey(id);
         }
 
+        public static bool IsGameId<TRecord>(string id, ConfigRecordCollection<TRecord> list) where TRecord : ConfigTableRecord
+        {
+            return !string.IsNullOrEmpty(id) && list._records.ContainsKey(id);
+        }
+
         public static bool DoesItemExistInList<T>(string id, ConfigRecordCollection<T> list)
             where T : ConfigTableRecord
         {
@@ -116,36 +121,15 @@ namespace QM_ImporterAPI.Services.Helpers
             return (T)(object)((val is T) ? val : null);
         }
 
-        public static object GetPropertyFromItem<TRecord>(string id, string propertyName) where TRecord : ScriptableObject
+        public static object GetPropertyFromItem<TDescriptor>(string id, string propertyName) where TDescriptor : ScriptableObject
         {
-            TRecord descriptor = GetExistingItem<TRecord>(id);
-            if (descriptor == null)
-            {
-                Logger.LogWarning($"Couldn't get {propertyName} from {id}. Item does not exist in-game.");
-                return null;
-            }
-
-            Logger.LogDebug($"Getting the \"{propertyName}\" from \"{id}\" from \"{descriptor.GetType()}\"");
-            Type type = descriptor.GetType();
-            BindingFlags bindingAttr = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic |
-                                       BindingFlags.FlattenHierarchy;
-            var a = type.GetProperties(bindingAttr);
-            if (a.ToList().Find(x => x.Name.Equals(propertyName)) == null)
-            {
-                Logger.LogError($"Property \"{propertyName}\" is not found!");
-                return null;
-            }
-
-            var b = a.First(x => x.Name.Equals(propertyName));
-            var retVal = b.GetValue(descriptor, null);
-            Logger.LogDebug($"Successfully obtained the \"{propertyName}\" from \"{id}\"");
-            return retVal;
+            return GetPropertyFromList<BasePickupItemRecord, TDescriptor>(id, propertyName, Data.Items);
         }
 
-        public static object GetPropertyFromList<T, T2>(string id, string propertyName, ConfigRecordCollection<T> list)
-            where T : ConfigTableRecord where T2 : ScriptableObject
+        public static object GetPropertyFromList<TRecord, TDescriptor>(string id, string propertyName, ConfigRecordCollection<TRecord> list)
+            where TRecord : ConfigTableRecord where TDescriptor : ScriptableObject
         {
-            T2 descriptor = GetExistingItem<T, T2>(id, list);
+            TDescriptor descriptor = GetExistingItem<TRecord, TDescriptor>(id, list);
             if (descriptor == null)
             {
                 Logger.LogError($"Couldn't get property from {id}. Item does not exist in-game.");
@@ -153,50 +137,52 @@ namespace QM_ImporterAPI.Services.Helpers
             }
 
             Logger.LogDebug($"Getting the \"{propertyName}\" from \"{id}\" from \"{descriptor.GetType()}\"");
-            Type type = descriptor.GetType();
-            BindingFlags bindingAttr = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic |
+
+            var type = descriptor.GetType();
+            var bindingAttr = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic |
                                        BindingFlags.FlattenHierarchy | BindingFlags.IgnoreCase;
-            var a = type.GetProperties(bindingAttr);
-            foreach (var item in a)
+
+            var properties = type.GetProperties(bindingAttr);
+
+            foreach (var item in properties)
             {
                 Logger.LogDebug($"Listing property {item} for {id}");
             }
 
-            if (a.ToList().Find(x => x.Name.Equals(propertyName)) == null)
+            object returnValue;
+            if (properties.ToList().Find(x => x.Name.Equals(propertyName)) == null)
             {
-                Logger.LogError($"Property \"{propertyName}\" is not found!");
-                return null;
+                var fields = type.GetFields(bindingAttr);
+                fields.ToList().ForEach(x => Logger.LogDebug($"Listing field {x} for {id}"));
+                if (fields.ToList().Find(x => x.Name.Equals(propertyName)) == null)
+                {
+                    Logger.LogError($"Field or Property \"{propertyName}\" has not been found.");
+                    return null;
+                }
+                else
+                {
+                    returnValue = fields.First(x => x.Name.Equals(propertyName)).GetValue(descriptor);
+                }
             }
-
-            var b = a.First(x => x.Name.Equals(propertyName));
-            var retVal = b.GetValue(descriptor, null);
+            else
+            {
+                returnValue = properties.First(x => x.Name.Equals(propertyName)).GetValue(descriptor, null);
+            }
+        
             Logger.LogDebug($"Successfully obtained the \"{propertyName}\" from \"{id}\"");
-            return retVal;
+            return returnValue;
         }
 
-        public static TDescriptor GetExistingItem<TDescriptor>(string id) where TDescriptor : ScriptableObject
-        {
-            var list = Data.Items;
-            if (!string.IsNullOrEmpty(id) && list._records.ContainsKey(id))
-            {
-                var returnVal = list.GetSimpleRecord<BasePickupItemRecord>(id).ContentDescriptor as TDescriptor;
-                return returnVal;
-            }
-            return null;
-        }
-
-        public static T2 GetExistingItem<T, T2>(string id, ConfigRecordCollection<T> list)
-            where T : ConfigTableRecord where T2 : ScriptableObject
+        public static TScriptable GetExistingItem<TRecord, TScriptable>(string id, ConfigRecordCollection<TRecord> list)
+            where TRecord : ConfigTableRecord where TScriptable : ScriptableObject
         {
             if (!string.IsNullOrEmpty(id) && list._records.ContainsKey(id))
             {
                 Logger.LogDebug($"GetExistingItem({id}) result? {list._records.ContainsKey(id)}");
-                var returnVal = ((T)list.GetRecord(id)).ContentDescriptor as T2;
+                var returnVal = ((TRecord)list.GetRecord(id)).ContentDescriptor as TScriptable;
                 if (returnVal != null)
                     Logger.LogDebug($"Type of ReturnVal {returnVal.GetType()}");
                 return returnVal;
-                //T2 returnResult = record.ContentDescriptor as T2;
-                //return returnResult;
             }
 
             return null;
