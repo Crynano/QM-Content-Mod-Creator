@@ -24,15 +24,19 @@ It handles folder creation, settings, image, audio and configuration so you can 
 ## Features
 - Creates mod folder structure and settings for you.
 - Imports JSON, images, and audio assets.
+- Supports weapons, armor, ammo, firemodes, explosions, and consumables.
 - Reduces repetitive setup so you can iterate faster.
 - Works through simple in-game console commands.
 
 ## Quick Commands
 | Command | What it does |
 | --- | --- |
-| `create-mod "PathToAFolder"` | Creates a new mod template folder |
+| `create-mod "PathToAFolder"` | Creates a full mod template folder (all content types) |
+| `create-weapon-mod "PathToAFolder"` | Creates a weapon-focused mod template folder |
+| `create-consumable-mod "PathToAFolder"` | Creates a consumable-focused mod template folder |
 | `import-mod "PathToAFolder"` | Imports your mod into the game |
 | `export-weapons "PathToAFolder"` | Exports 250+ in-game weapons for reference |
+| `export-armor "PathToAFolder"` | Exports in-game armor records for reference |
 
 ## Create a Mod from Scratch
 1. Install Content Mod Creator
@@ -57,8 +61,8 @@ create-mod "C:/Temp/Mod"
 import-mod "C:/Temp/Mod"
 ```
 
-6. If you see `Imported Mod Successfully!`, your mod loaded correctly.
-7. If import fails, check `Player.log` and look for exceptions:
+6. After import, the console shows a result summary with execution time, a list of loaded content, any warnings, and errors.
+7. If import fails, errors appear in red directly in the developer console. For the full trace, check `Player.log`:
 
 ```text
 C:\Users\<yourUser>\AppData\LocalLow\Magnum Scriptum Ltd\Quasimorph\Player.log
@@ -138,8 +142,9 @@ export-weapons "C:/Temp/WeaponDump"
 - Consider splitting content into separate mods per faction or theme. There is no built-in way to toggle individual elements within a single mod, so smaller focused mods give users more control over what they load.
 
 ## Troubleshooting
-- Weapon does not load even when command reports success:
-  Check `Player.log` for hidden exceptions and verify JSON field names. Every import-mod process leaves a message with errors and failed steps.
+- Item does not load even when command reports success:
+  Check the developer console and `Player.log` for hidden exceptions and verify JSON field names. Every import-mod process prints a result summary with errors and failed steps.
+- Errors during import appear in red directly in the developer console, not just in `Player.log`. If you see a red message after running `import-mod`, that is your first signal something went wrong.
 - Missing images or audio:
   Verify file names, paths, and that files exist under your mod `Assets` folder.
   ## Support
