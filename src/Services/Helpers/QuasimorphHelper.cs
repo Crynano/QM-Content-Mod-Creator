@@ -1,4 +1,6 @@
 ﻿using MGSC;
+using QM_ImporterAPI.Services.ErrorManagement;
+using QM_ImporterAPI.Services.Importing;
 using QM_ImporterAPI.Templates;
 using System;
 using System.Collections.Generic;
@@ -14,31 +16,27 @@ namespace QM_ImporterAPI.Services.Helpers
         #region QUASI
         public static bool IsGameId(string id)
         {
-            return !string.IsNullOrEmpty(id) && Data.Items._records.ContainsKey(id);
+            if (string.IsNullOrEmpty(id))
+            {
+                Logger.LogError("ID is not game ID because its empty or null.");
+                return false;
+            }
+            return Data.Items.Ids.Contains(id);
         }
 
         public static bool IsGameId<TRecord>(string id, ConfigRecordCollection<TRecord> list) where TRecord : ConfigTableRecord
         {
-            return !string.IsNullOrEmpty(id) && list._records.ContainsKey(id);
-        }
-
-        public static bool DoesItemExistInList<T>(string id, ConfigRecordCollection<T> list)
-            where T : ConfigTableRecord
-        {
-            try
+            if (string.IsNullOrEmpty(id))
             {
-                return !string.IsNullOrEmpty(id) && list.Ids.Contains(id);
-            }
-            catch (Exception ex)
-            {
-                Debug.LogWarning(ex);
+                Logger.LogError("ID is not game ID because its empty or null.");
                 return false;
             }
+            return list.Ids.Contains(id);
         }
 
-        public static SoundBank[] GetAudiosFromExistingWeapons(string id, int category, bool fallbackToDefault)
+        public static SoundBank[] GetAudiosFromExistingWeapons(string id, int category)
         {
-            WeaponDescriptor existingWeaponDescriptor = GetExistingWeaponDescriptor(id, fallbackToDefault);
+            WeaponDescriptor existingWeaponDescriptor = GetExistingWeaponDescriptor(id);
             if (existingWeaponDescriptor == null)
             {
                 return new SoundBank[0];
@@ -56,24 +54,17 @@ namespace QM_ImporterAPI.Services.Helpers
 
         public static GameObject GetPrefabFromExistingWeapon(string id)
         {
-            object propertyFromItem = GetPropertyFromItem<WeaponDescriptor>(id, "Prefab");
-            return (GameObject)((propertyFromItem is GameObject) ? propertyFromItem : null);
+            return GetExistingWeaponDescriptor(id)?.Prefab;
         }
 
         public static Texture GetTextureFromExistingWeapon(string id)
         {
-            object propertyFromItem = GetPropertyFromItem<WeaponDescriptor>(id, "Texture");
-            return (Texture)((propertyFromItem is Texture) ? propertyFromItem : null);
+            return GetExistingWeaponDescriptor(id)?.Texture;
         }
 
         public static Muzzle GetMuzzleFromExistingWeapon(string id)
         {
-            WeaponDescriptor existingWeaponDescriptor = GetExistingWeaponDescriptor(id);
-            if (existingWeaponDescriptor == null || existingWeaponDescriptor._muzzles.Length == 0)
-            {
-                return null;
-            }
-            return existingWeaponDescriptor._muzzles[0];
+            return GetExistingWeaponDescriptor(id)?._muzzles.FirstOrDefault();
         }
 
         public static bool IsItemInFactionTable(string tableName, string rewardId)
@@ -109,6 +100,143 @@ namespace QM_ImporterAPI.Services.Helpers
         }
         #endregion
 
+        #region Sprites
+
+        public static Sprite LoadSpriteFromWeapon(string assetFolderPath, string path, string propertyName, Func<string, Sprite> loadFunc)
+        {
+            if (IsGameId(path))
+            {
+                var propertyFromItem = GetPropertyFromItem<WeaponDescriptor>(path, propertyName);
+                if (propertyFromItem is Sprite spriteProperty)
+                {
+                    return CloneSprite(spriteProperty);
+                }
+                Logger.LogWarning("Failed to load sprite for property [" + propertyName + "] from existing game item with ID: " + path + ". The property is either missing or not a Sprite.");
+            }
+            var fullPath = Helper.ResolvePath(assetFolderPath, path);
+            return loadFunc(fullPath);
+        }
+
+        #endregion
+
+        #region Audio
+
+        public static ImportOperationResult<AudioClip> GetAudioFromConsumableOrPath(string id, string assetFolderPath)
+        {
+            var operationResult = new ImportOperationResult<AudioClip>();
+
+            if (IsGameId(id))
+            {
+                Logger.LogDebug($"ID {id} is a valid consumable game ID. Attempting to load audio from existing consumable.");
+                ConsumableDescriptor descriptor = GetPropertyFromItem<ConsumableDescriptor>(id, "UseSound") as ConsumableDescriptor;
+                if (descriptor != null)
+                {
+                    operationResult.SetResult(descriptor._useSound);
+                }
+            }
+            else
+            {
+                Logger.LogDebug($"ID {id} is not a game ID. Attempting to load audio from path.");
+                var audioResult = LoadAudioClipFromExternalFile(id, assetFolderPath);
+                operationResult.Absorb(audioResult);
+                if (audioResult.IsSuccess)
+                {
+                    operationResult.SetResult(audioResult.Result);
+                }
+            }
+
+            return operationResult;
+        }
+
+        internal static ImportOperationResult<AudioClip> LoadAudioClipFromExternalFile(string soundPath, string assetFolderPath)
+        {
+            var operationResult = new ImportOperationResult<AudioClip>();
+
+            if (!QuasimorphHelper.IsGameId(soundPath))
+            {
+                var soundFullPath = Helper.ResolvePath(assetFolderPath, soundPath);
+                var importAudioResult = AssetImporter.ImportAudio(soundFullPath);
+                if (importAudioResult.IsSuccess)
+                {
+                    operationResult.SetResult(importAudioResult.Result);
+                }
+            }
+            else
+            {
+                operationResult.AddWarning($"The provided sound path '{soundPath}' is a game ID. Use the appropriate method to load audio from existing weapons.");
+            }
+
+            return operationResult;
+        }
+
+        internal static ImportOperationResult<IEnumerable<AudioClip>> LoadAudioClipsFromExternalFiles(IEnumerable<string> externalFiles, string assetFolderPath)
+        {
+            var operationResult = new ImportOperationResult<IEnumerable<AudioClip>>();
+
+            var audioClips = new List<AudioClip>();
+            foreach (var file in externalFiles)
+            {
+                var audioClipResult = LoadAudioClipFromExternalFile(file, assetFolderPath);
+                if (audioClipResult.IsSuccess)
+                {
+                    audioClips.Add(audioClipResult.Result);
+                }
+                else
+                {
+                    operationResult.Absorb(audioClipResult);
+                }
+            }
+
+            if (audioClips.Count > 0)
+            {
+                operationResult.SetResult(audioClips);
+            }
+            else
+            {
+                operationResult.AddError("No valid audio clips were loaded from the provided external files.");
+            }
+
+            return operationResult;
+        }
+
+        public static ImportOperationResult ResolveSoundBank<TRecord, TDescriptor>(ref SoundBank soundBank, string soundPath, string assetFolderPath, ConfigRecordCollection<TRecord> list)
+    where TRecord : ConfigTableRecord where TDescriptor : ScriptableObject
+        {
+            var operationResult = new ImportOperationResult();
+            if (soundBank == null)
+            {
+                soundBank = ScriptableObject.CreateInstance(typeof(SoundBank)) as SoundBank;
+                soundBank._clips = new AudioClip[1];
+            }
+
+            if (QuasimorphHelper.IsGameId(soundPath, list))
+            {
+                var existingProperty = QuasimorphHelper.GetPropertyFromList<TRecord, TDescriptor>(soundPath, "explosionSoundBank", list);
+                if (existingProperty is SoundBank existingSoundBank)
+                {
+                    soundBank = existingSoundBank;
+                }
+                else
+                {
+                    operationResult.AddError($"Unable to load sound from existing game item with ID: {soundPath}");
+                }
+            }
+            else
+            {
+                var soundFullPath = Helper.ResolvePath(assetFolderPath, soundPath);
+                var importAudioResult = AssetImporter.ImportAudio(soundFullPath);
+                operationResult.Absorb(importAudioResult);
+                if (importAudioResult.IsSuccess)
+                {
+                    soundBank._clips[0] = importAudioResult.Result;
+                }
+            }
+            return operationResult;
+        }
+
+        #endregion
+
+        #region Components
         public static T CopyComponent<T>(T original, GameObject destination) where T : Component
         {
             Type type = ((object)original).GetType();
@@ -123,12 +251,14 @@ namespace QM_ImporterAPI.Services.Helpers
 
         public static object GetPropertyFromItem<TDescriptor>(string id, string propertyName) where TDescriptor : ScriptableObject
         {
+            Logger.LogDebug($"{nameof(GetPropertyFromItem)}: with {id} and {propertyName}");
             return GetPropertyFromList<BasePickupItemRecord, TDescriptor>(id, propertyName, Data.Items);
         }
 
         public static object GetPropertyFromList<TRecord, TDescriptor>(string id, string propertyName, ConfigRecordCollection<TRecord> list)
             where TRecord : ConfigTableRecord where TDescriptor : ScriptableObject
         {
+            Logger.LogDebug($"{nameof(GetPropertyFromList)}: with {id}, {propertyName} and list of type {list.GetType()}");
             TDescriptor descriptor = GetExistingItem<TRecord, TDescriptor>(id, list);
             if (descriptor == null)
             {
@@ -176,37 +306,70 @@ namespace QM_ImporterAPI.Services.Helpers
         public static TScriptable GetExistingItem<TRecord, TScriptable>(string id, ConfigRecordCollection<TRecord> list)
             where TRecord : ConfigTableRecord where TScriptable : ScriptableObject
         {
-            if (!string.IsNullOrEmpty(id) && list._records.ContainsKey(id))
+            if(string.IsNullOrEmpty(id))
             {
-                Logger.LogDebug($"GetExistingItem({id}) result? {list._records.ContainsKey(id)}");
-                var returnVal = ((TRecord)list.GetRecord(id)).ContentDescriptor as TScriptable;
-                if (returnVal != null)
-                    Logger.LogDebug($"Type of ReturnVal {returnVal.GetType()}");
-                return returnVal;
+                Logger.LogError("ID is empty or null. Cannot get existing item.");
+            }
+            else if (list.Ids.Contains(id))
+            {
+                Logger.LogDebug($"GetExistingItem({id}) good.");
+                var record = list.GetRecord(id, false);
+                if (record is CompositeItemRecord compositeRecord)
+                { 
+                    Logger.LogDebug($"Record is a CompositeItemRecord");
+                    var primaryRecord = compositeRecord.PrimaryRecord;
+                    if (primaryRecord == null)
+                    {
+                        Logger.LogDebug($"Primary record for {id} NOT found.");
+                        return null;
+                    }
+
+                    Logger.LogDebug($"Record for {id} found. Type of record: {primaryRecord.GetType()}");
+                    var contentDesc = primaryRecord.ContentDescriptor;
+                    if (contentDesc != null)
+                    {
+                        Logger.LogDebug($"ContentDescriptor for {id} found. Type of ContentDescriptor: {contentDesc.GetType()}");
+                        return contentDesc as TScriptable;
+                    }
+                    else
+                    {
+                        Logger.LogDebug($"ContentDescriptor is null.");
+                    }
+                }
+                else if (record is ConfigTableRecord itemRecord)
+                {
+                    Logger.LogDebug($"Record is a ConfigTableRecord");
+                    var contentDesc = itemRecord.ContentDescriptor;
+                    if (contentDesc != null)
+                    {
+                        Logger.LogDebug($"ContentDescriptor for {id} found. Type of ContentDescriptor: {contentDesc.GetType()}");
+                        return contentDesc as TScriptable;
+                    }
+                    else
+                    {
+                        Logger.LogDebug($"ContentDescriptor is null.");
+                    }
+                }
+                else
+                {
+                    Logger.LogError($"Record for {id} not found in list.");
+                }
             }
 
             return null;
         }
+        #endregion
 
-        public static WeaponDescriptor GetExistingWeaponDescriptor(string id, bool getDefault = true)
+        public static WeaponDescriptor GetExistingWeaponDescriptor(string id)
         {
             WeaponDescriptor result = null;
-            if (!string.IsNullOrEmpty(id) && Data.Items._records.ContainsKey(id))
+            if (string.IsNullOrEmpty(id))
+            {
+                Logger.LogDebug("ID is empty or null. Cannot get existing weapon descriptor.");
+            }
+            else if (Data.Items.Ids.Contains(id))
             {
                 result = Data.Items.GetSimpleRecord<WeaponRecord>(id).ContentDescriptor as WeaponDescriptor;
-            }
-            else if (getDefault)
-            {
-                Data.Descriptors.TryGetValue("rangeweapons", out var value);
-                if (string.IsNullOrEmpty(id))
-                {
-                    Logger.LogWarning("ID is empty or null. Using <" + value._ids[0] + "> as default.");
-                }
-                else
-                {
-                    Logger.LogWarning("Item with ID: <" + id + "> not found in-game. Using <" + value._ids[0] + "> as default.");
-                }
-                return value._descriptors[0] as WeaponDescriptor;
             }
             return result;
         }
