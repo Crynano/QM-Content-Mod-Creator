@@ -5,7 +5,6 @@ using QM_ImporterAPI.Services.Helpers;
 using QM_ImporterAPI.Services.Importing;
 using QM_ImporterAPI.Templates;
 using QM_ImporterAPI.Templates.Descriptors;
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -27,19 +26,13 @@ namespace QM_ImporterAPI.Services
         public void LoadModFromDirectory(string givenPath)
         {
             var stopWatch = Stopwatch.StartNew();
-            // Search for the ASSET folder in the given path
-            // Search for all the json assets in the subfolders.
-            // Maybe add a specific name for the Folders?
-            // Load the json assets and add them to the game
-            // Report all added and unadded items to the game.
-            Logger.LogInfo("Starting mod loading process...");
+            Logger.LogDebug("Starting mod loading process...");
             if (!Directory.Exists(givenPath))
             {
                 Logger.LogError($"The given path '{givenPath}' does not exist. Please provide a valid path to the mod folder.");
                 return;
             }
 
-            // Because it exists, we can search for the ASSET folder
             var assetFolderPath = Path.Combine(givenPath, ASSETS_FOLDER_NAME);
             if (!Directory.Exists(assetFolderPath))
             {
@@ -48,14 +41,13 @@ namespace QM_ImporterAPI.Services
             }
 
             var jsonFiles = Directory.GetFiles(assetFolderPath, "*.json", SearchOption.AllDirectories);
-            Logger.LogInfo($"Found {jsonFiles.Length} json files in the ASSET folder. Starting to load them...");
+            Logger.LogDebug($"Found {jsonFiles.Length} json files in the ASSET folder. Starting to load them...");
 
             LoadImportableJsons(jsonFiles);
             ProcessImportableJsons(assetFolderPath);
-            Logger.LogInfo("Finished mod loading process!");
 
             stopWatch.Stop();
-            Logger.LogInfo($"Mod Loading Process: {stopWatch.ElapsedMilliseconds}ms");
+            Logger.LogDebug($"Finished mod loading process in: {stopWatch.ElapsedMilliseconds}ms");
         }
 
         private void LoadImportableJsons(string[] jsonFilesPath)
@@ -107,6 +99,14 @@ namespace QM_ImporterAPI.Services
                 .OfType<CustomExplosionDescriptor>()
                 .ToList();
 
+            var datadiskDescriptors = descriptors
+                .OfType<CustomDatadiskDescriptor>()
+                .ToList();
+
+            var consumableDescriptors = descriptors
+                .OfType<CustomConsumableDescriptor>()
+                .ToList();
+
             // Game Records
             var records = deserializedImportableJsons
                .Where(obj => obj.GetType().IsSubclassOf(typeof(ConfigTableRecord)))
@@ -144,6 +144,10 @@ namespace QM_ImporterAPI.Services
                 .OfType<AmmoRecord>()
                 .ToList();
 
+            var consumableRecords = records
+                .OfType<ConsumableRecord>()
+                .ToList();
+
             var firemodeRecords = records
                 .OfType<FireModeRecord>()
                 .ToList();
@@ -169,7 +173,10 @@ namespace QM_ImporterAPI.Services
             var ammoResult = LoadAmmo(assetFolderPath, ammoRecords, ammoDescriptors);
             cumulativeOperation.Absorb(ammoResult);
 
-            var dataDiskResult = LoadDatadisks(datadisks);
+            var consumablesLoadResult = LoadConsumables(assetFolderPath, consumableRecords, consumableDescriptors);
+            cumulativeOperation.Absorb(consumablesLoadResult);
+
+            var dataDiskResult = LoadDatadisks(assetFolderPath, datadisks, datadiskDescriptors);
             cumulativeOperation.Absorb(dataDiskResult);
 
             var craftsLoadResult = AddCrafts(transformationRecords, craftingRecords);
@@ -185,7 +192,7 @@ namespace QM_ImporterAPI.Services
 
             stopWatch.Stop();
             cumulativeOperation.SetExecutionTime(stopWatch.ElapsedMilliseconds);
-            Logger.LogWarning(cumulativeOperation.Print());
+            Logger.LogWarning("Import Operation Result: \n" + cumulativeOperation.Print());
         }
 
         private static ImportOperationResult LoadExplosions(string assetFolderPath, List<ExplosionRecord> explosionRecords, List<CustomExplosionDescriptor> explosionDescriptors)
@@ -233,18 +240,17 @@ namespace QM_ImporterAPI.Services
             transformationRecords.ForEach(transformationRecord =>
             {
                 var result = ItemCreator.AddItemTransformation(transformationRecord);
-                operationResult.AddErrors(result.ErrorMessages);
+                operationResult.Absorb(result);
             });
 
             craftingRecords.ForEach(craftingRecord =>
             {
                 var result = ItemCreator.AddItemCraftRecipe(craftingRecord);
-                operationResult.AddErrors(result.ErrorMessages);
+                operationResult.Absorb(result);
             });
 
             return operationResult;
         }
-
 
         private static ImportOperationResult LoadWeapons(string assetFolderPath, List<WeaponRecord> weaponRecords, List<CustomWeaponDescriptor> weaponDescriptors)
         {
@@ -257,10 +263,9 @@ namespace QM_ImporterAPI.Services
                 {
                     Logger.LogDebug($"Trying to add weapon '{weaponRecord.Id}' (with descriptor) to the game!");
                     var opResult = ItemCreator.CreateWeapon(weaponRecord, descriptor, assetFolderPath);
-                    operationResult.CopyMessages(opResult);
+                    operationResult.Absorb(opResult);
                 }
             }
-
             return operationResult;
         }
 
@@ -308,20 +313,35 @@ namespace QM_ImporterAPI.Services
                 {
                     Logger.LogDebug($"Trying to add ammo '{ammoRecord.Id}' (with descriptor) to the game!");
                     var opResult = ItemCreator.AddAmmo(ammoRecord, descriptor, assetFolderPath);
-                    operationResult.CopyMessages(opResult);
+                    operationResult.Absorb(opResult);
                 }
             }
 
             return operationResult;
         }
 
-        private static ImportOperationResult LoadDatadisks(List<DatadiskRecord> datadisks)
+        private static ImportOperationResult LoadDatadisks(string assetFolderPath, List<DatadiskRecord> datadisks, List<CustomDatadiskDescriptor> customDatadiskDescriptor)
         {
             var operationResult = new ImportOperationResult();
+            Logger.LogDebug($"{nameof(LoadDatadisks)}: Found {datadisks.Count} records and {customDatadiskDescriptor.Count} descriptors.");
             datadisks.ForEach(datadisk =>
             {
-                var opResult = ItemCreator.AddDatadiskItems(datadisk);
-                operationResult.AddErrors(opResult.ErrorMessages);
+                var descriptor = customDatadiskDescriptor.FirstOrDefault(x => x.ItemId.Equals(datadisk.Id));
+                var opResult = ItemCreator.AddDatadiskItems(datadisk, descriptor, assetFolderPath);
+                operationResult.Absorb(opResult);
+            });
+            return operationResult;
+        }
+
+        private static ImportOperationResult LoadConsumables(string assetFolderPath, List<ConsumableRecord> consumableRecords, List<CustomConsumableDescriptor> customConsumableDescriptors)
+        {
+            var operationResult = new ImportOperationResult();
+            Logger.LogDebug($"{nameof(LoadConsumables)}: Found {consumableRecords.Count} records and {customConsumableDescriptors.Count} descriptors.");
+            consumableRecords.ForEach(consumable =>
+            {
+                var descriptor = customConsumableDescriptors.FirstOrDefault(x => x.ItemId.Equals(consumable.Id));
+                var opResult = ItemCreator.AddConsumable(consumable, descriptor, assetFolderPath);
+                operationResult.Absorb(opResult);
             });
             return operationResult;
         }

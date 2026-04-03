@@ -1,11 +1,12 @@
 ﻿using MGSC;
 using QM_ImporterAPI.Services.ErrorManagement;
+using QM_ImporterAPI.Services.Extensions.Descriptors;
+using QM_ImporterAPI.Services.Extensions.Records;
 using QM_ImporterAPI.Services.Helpers;
 using QM_ImporterAPI.Services.Importing;
 using QM_ImporterAPI.Templates;
 using QM_ImporterAPI.Templates.Descriptors;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -21,21 +22,23 @@ namespace QM_ImporterAPI.Services
             Logger.LogDebug($"Called {nameof(CreateWeapon)} with ID: " + weapon.Id);
             var operationResult = new ImportOperationResult();
 
-            var weaponPropertiesResult = CheckWeaponPropertiesRestrictions(weapon);
+            var weaponPropertiesResult = weapon.CheckWeaponPropertiesRestrictions();
             operationResult.CopyMessages(weaponPropertiesResult);
             if (!weaponPropertiesResult.IsSuccess)
             {
                 return operationResult;
             }
 
-            var descriptorPropertiesResult = SetDescriptorProperties(weapon, weaponDescriptor, assetFolderPath);
+            var descriptorPropertiesResult = weapon.SetDescriptorProperties(weaponDescriptor, assetFolderPath);
             operationResult.CopyMessages(descriptorPropertiesResult);
             if (!descriptorPropertiesResult.IsSuccess)
             {
                 return operationResult;
             }
 
-            AddItemToGame(weapon);
+            var addItemResult = AddItemToGame(weapon);
+            operationResult.Absorb(addItemResult);
+
             operationResult.ContentList.Add(weapon.Id);
             return operationResult;
         }
@@ -58,7 +61,9 @@ namespace QM_ImporterAPI.Services
                 return operationResult;
             }
 
-            AddItemToGame(ammo);
+            var addItemResult = AddItemToGame(ammo);
+            operationResult.Absorb(addItemResult);
+
             operationResult.ContentList.Add(ammo.Id);
             return operationResult;
         }
@@ -72,10 +77,10 @@ namespace QM_ImporterAPI.Services
                 return operationResult;
             }
 
-            if (QuasimorphHelper.DoesItemExistInList(transRecord.Id, Data.ItemTransformation))
+            if (QuasimorphHelper.IsGameId(transRecord.Id, Data.ItemTransformation))
             {
                 Data.ItemTransformation.RemoveRecord(transRecord.Id);
-                operationResult.AddError($"Warning: An ItemTransformation with ID: [{transRecord.Id}] was overriden");
+                operationResult.AddWarning($"Warning: An ItemTransformation with ID: [{transRecord.Id}] was overriden");
             }
             Data.ItemTransformation.AddRecord(transRecord.Id, transRecord);
             return operationResult;
@@ -95,34 +100,41 @@ namespace QM_ImporterAPI.Services
             if (foundRecipe != null)
             {
                 Data.ProduceReceipts.Remove(foundRecipe);
-                operationResult.AddError($"Warning: A crafting recipe with ID: [{craftingRecipe.OutputItem}] was overriden");
+                operationResult.AddWarning($"Warning: A crafting recipe with ID: [{craftingRecipe.OutputItem}] was overriden");
             }
             Data.ProduceReceipts.Add(craftingRecipe);
             return operationResult;
         }
 
-        public static ImportOperationResult AddDatadiskItems(DatadiskRecord diskToAdd)
+        public static ImportOperationResult AddDatadiskItems(DatadiskRecord diskRecord, CustomDatadiskDescriptor customDatadiskDescriptor, string assetFolderPath)
         {
             var operationResult = new ImportOperationResult();
 
-            var dataDiskCompositeRecord = (CompositeItemRecord)MGSC.Data.Items.GetRecord(diskToAdd.Id);
+            var dataDiskCompositeRecord = (CompositeItemRecord)MGSC.Data.Items.GetRecord(diskRecord.Id);
             if (dataDiskCompositeRecord != null)
             {
                 var dataDiskItemRecord = dataDiskCompositeRecord.GetRecord<DatadiskRecord>();
 
-                // Add ONLY those not registered and IN-GAME!
-                var addOnlyThoseNotInChip = diskToAdd.UnlockIds
+                // Add ONLY those not registered and ingame!
+                var addOnlyThoseNotInChip = diskRecord.UnlockIds
                     .FindAll(id => !dataDiskItemRecord.UnlockIds.Contains(id) && QuasimorphHelper.IsGameId(id));
 
                 dataDiskItemRecord.UnlockIds.AddRange(addOnlyThoseNotInChip);
             }
             else
             {
-                operationResult.AddError("Adding new datadisks with custom content is not currently supported. Only updating existing datadisks is supported.");
-                //ItemContentDescriptor descriptor = GetDescriptor<CustomItemContentDescriptor>(datadisk.Id).GetOriginal<ItemContentDescriptor>();
-                //DatadiskRecord diskRecord = datadiskRecord.GetOriginal();
-                //diskRecord.ContentDescriptor = descriptor;
-                //AddItemToGame(diskRecord, "datadisks");
+                if (customDatadiskDescriptor is null)
+                {
+                    operationResult.AddError("Custom datadisk descriptor is null. Can't add new datadisk item without a descriptor.");
+                    return operationResult;
+                }
+                var datadiskDescriptor = ScriptableObject.CreateInstance<DatadiskDescriptor>();
+                datadiskDescriptor.LoadSprites(customDatadiskDescriptor, assetFolderPath);
+
+                diskRecord.ContentDescriptor = datadiskDescriptor;
+
+                var addItemOperation = AddItemToGame(diskRecord);
+                operationResult.Absorb(addItemOperation);
             }
 
             return operationResult;
@@ -153,12 +165,13 @@ namespace QM_ImporterAPI.Services
             return operationResult;
         }
 
-        private static void AddItemToGame<TRecord>(TRecord record) where TRecord : BasePickupItemRecord
+        private static ImportOperationResult AddItemToGame<TRecord>(TRecord record) where TRecord : BasePickupItemRecord
         {
-            if (QuasimorphHelper.DoesItemExistInList(record.Id, Data.Items))
+            var operationResult = new ImportOperationResult();
+            if (QuasimorphHelper.IsGameId(record.Id, Data.Items))
             {
                 Data.Items.RemoveRecord(record.Id);
-                Logger.LogWarning("An item with ID: [" + record.Id + "] was OVERRIDEN!!!");
+                operationResult.AddWarning("An item with ID: [" + record.Id + "] was OVERRIDEN!!!");
             }
 
             if (record is WeaponRecord weaponRecord)
@@ -170,49 +183,21 @@ namespace QM_ImporterAPI.Services
             {
                 Data.Descriptors["ammo"].AddDescriptor(ammoRecord.Id, ammoRecord.ItemDesc);
             }
+            else if (record is DatadiskRecord)
+            {
+                Data.Descriptors["datadisks"].AddDescriptor(record.Id, record.ItemDesc);
+            }
+            else if (record is ConsumableRecord)
+            {
+                Data.Descriptors["consumables"].AddDescriptor(record.Id, record.ItemDesc);
+            }
             else
             {
-                Logger.LogWarning($"Item with ID: [{record.Id}] is of type {record.GetType().Name} which is not currently supported for automatic descriptor assignment. No descriptor was assigned to this item.");
+                operationResult.AddWarning($"Item [{record.Id}] of type {record.GetType().Name} has NOT been added to Data.Descriptors");
             }
 
-            Logger.LogDebug("Adding item with ID: " + record.Id + " to game.");
+            Logger.LogDebug($"Adding item with ID: \"{record.Id}\" of type \"{record.GetType().Name}\" to game.");
             Data.Items.AddRecord(record.Id, record);
-        }
-
-        private static ImportOperationResult SetDescriptorProperties(WeaponRecord weapon, CustomWeaponDescriptor customWeaponDescriptor, string assetFolderPath)
-        {
-            var operationResult = new ImportOperationResult();
-            var weaponDescriptor = ScriptableObject.CreateInstance<WeaponDescriptor>();
-
-            var prefabResult = LoadPrefab(customWeaponDescriptor, assetFolderPath);
-            if (!prefabResult.IsSuccess)
-            {
-                operationResult.AddErrors(prefabResult.ErrorMessages);
-                return operationResult;
-            }
-            weaponDescriptor._prefab = prefabResult.Result;
-
-            var muzzleResult = LoadMuzzle(customWeaponDescriptor, prefabResult.Result);
-            if (!muzzleResult.IsSuccess)
-            {
-                operationResult.AddErrors(muzzleResult.ErrorMessages);
-                return operationResult;
-            }
-            weaponDescriptor._muzzles = new Muzzle[1] { muzzleResult.Result };
-
-            LoadSprites(ref weaponDescriptor, customWeaponDescriptor, assetFolderPath);
-
-            var textureResult = LoadTexture(customWeaponDescriptor, assetFolderPath);
-            operationResult.AddWarnings(textureResult.ErrorMessages);
-            weaponDescriptor._texture = textureResult.Result;
-
-            var soundOpResult = ConfigureSounds(weaponDescriptor, customWeaponDescriptor, assetFolderPath);
-            operationResult.AddErrors(soundOpResult.ErrorMessages);
-
-            weaponDescriptor._grip = customWeaponDescriptor.Grip;
-            weaponDescriptor._hasHFGOverlay = customWeaponDescriptor.HasHFGOverlay;
-
-            weapon.ContentDescriptor = weaponDescriptor;
             return operationResult;
         }
 
@@ -259,283 +244,11 @@ namespace QM_ImporterAPI.Services
             gibsDescriptor._animFramerateRange = new Vector2(customAmmoDescriptor.Gibs.AnimationFramerate, customAmmoDescriptor.Gibs.AnimationFramerate);
             gibsDescriptor._flyDurationRange = new Vector2(customAmmoDescriptor.Gibs.FlightDurationMsMin, customAmmoDescriptor.Gibs.FlightDurationMsMax);
 
-            LoadSprites(ref ammoDescriptor, customAmmoDescriptor, assetFolderPath);
+            ammoDescriptor.LoadSprites(customAmmoDescriptor, assetFolderPath);
 
             ammoDescriptor._gibs = gibsDescriptor;
             ammoRecord.ContentDescriptor = ammoDescriptor;
             return operationResult;
-        }
-
-        private static void LoadSprites<TRecord>(ref TRecord record, CustomItemContentDescriptor customWeaponDescriptor, string assetFolderPath)
-            where TRecord : ItemContentDescriptor
-        {
-            var imageProps = customWeaponDescriptor.ImageProperties;
-
-            record._icon = LoadSprite(assetFolderPath, imageProps.IconSpriteIdOrPath, "Icon", AssetImporter.LoadNewSprite);
-            record._smallIcon = LoadSprite(assetFolderPath, imageProps.SmallIconSpriteIdOrPath, "SmallIcon", AssetImporter.LoadCenteredSprite);
-            record._shadow = LoadSprite(assetFolderPath, imageProps.ShadowOnFloorSpriteIdOrPath, "Shadow", AssetImporter.LoadCenteredSprite);
-        }
-
-        private static Sprite LoadSprite(string assetFolderPath, string path, string propertyName, Func<string, Sprite> loadFunc)
-        {
-            if (QuasimorphHelper.IsGameId(path))
-            {
-                var propertyFromItem = QuasimorphHelper.GetPropertyFromItem<WeaponDescriptor>(path, propertyName);
-                if (propertyFromItem is Sprite spriteProperty)
-                {
-                    return QuasimorphHelper.CloneSprite(spriteProperty);
-                }
-                Logger.LogWarning("Failed to load sprite for property [" + propertyName + "] from existing game item with ID: " + path + ". The property is either missing or not a Sprite.");
-            }
-            var fullPath = Helper.ResolvePath(assetFolderPath, path);
-            return loadFunc(fullPath);
-        }
-
-        private static ImportOperationResult<GameObject> LoadPrefab(CustomWeaponDescriptor customWeaponDescriptor, string assetFolderPath)
-        {
-            var result = new ImportOperationResult<GameObject>();
-
-            if (QuasimorphHelper.IsGameId(customWeaponDescriptor.ModelProperties.PrefabId))
-            {
-                var prefabFromWeapon = QuasimorphHelper.GetPrefabFromExistingWeapon(customWeaponDescriptor.ModelProperties.PrefabId);
-                result.SetResult(prefabFromWeapon);
-                return result;
-            }
-
-            var bundlePath = Helper.ResolvePath(assetFolderPath, customWeaponDescriptor.ModelProperties.AssetBundlePath);
-            var prefabOperationResult = AssetImporter.LoadFileFromBundle<GameObject>(bundlePath, customWeaponDescriptor.ModelProperties.PrefabId);
-            if (!prefabOperationResult.IsSuccess)
-            {
-                result.AddErrors(prefabOperationResult.ErrorMessages);
-                return result;
-            }
-
-            var prefab = prefabOperationResult.Result;
-            ApplyScaleToPrefab(prefab, customWeaponDescriptor.ModelProperties.PrefabScale);
-            result.SetResult(prefab);
-            return result;
-        }
-
-        private static void ApplyScaleToPrefab(GameObject prefab, float scaleValue)
-        {
-            ItemBone itemBone = prefab?.GetComponent<ItemBone>();
-            if (itemBone != null)
-            {
-                itemBone.Scale = new Vector3(scaleValue, scaleValue, scaleValue);
-            }
-        }
-
-        private static ImportOperationResult<Texture> LoadTexture(CustomWeaponDescriptor customWeaponDescriptor, string assetFolderPath)
-        {
-            var assetBundlePath = Helper.ResolvePath(assetFolderPath, customWeaponDescriptor.ModelProperties.AssetBundlePath);
-
-            return LoadAssetFromBundleOrGame<Texture>(
-                customWeaponDescriptor.ModelProperties.TextureIdOrPath,
-                assetBundlePath,
-                QuasimorphHelper.GetTextureFromExistingWeapon);
-        }
-
-        private static ImportOperationResult<Muzzle> LoadMuzzle(CustomWeaponDescriptor customWeaponDescriptor, GameObject prefab)
-        {
-            var modelProperties = customWeaponDescriptor.ModelProperties;
-            var muzzleResult = new ImportOperationResult<Muzzle>();
-
-            if (QuasimorphHelper.IsGameId(modelProperties.MuzzleId))
-            {
-                var muzzle = QuasimorphHelper.GetMuzzleFromExistingWeapon(modelProperties.MuzzleId);
-                muzzleResult.SetResult(muzzle);
-            }
-            else
-            {
-                var defaultMuzzleResult = LoadDefaultMuzzle(prefab);
-                if (!defaultMuzzleResult.IsSuccess)
-                {
-                    muzzleResult.AddErrors(defaultMuzzleResult.ErrorMessages);
-                }
-                else
-                {
-                    muzzleResult.SetResult(defaultMuzzleResult.Result);
-                }
-            }
-
-            return muzzleResult;
-        }
-
-        private static ImportOperationResult<T> LoadAssetFromBundleOrGame<T>(string assetName, string bundlePath, Func<string, T> getFromGameFunc) where T : UnityEngine.Object
-        {
-            var result = new ImportOperationResult<T>();
-
-            if (QuasimorphHelper.IsGameId(assetName))
-            {
-                var asset = getFromGameFunc(assetName);
-                result.SetResult(asset);
-                return result;
-            }
-
-            var loadResult = AssetImporter.LoadFileFromBundle<T>(bundlePath, assetName);
-            if (!loadResult.IsSuccess)
-            {
-                result.AddErrors(loadResult.ErrorMessages);
-            }
-            else
-            {
-                result.SetResult(loadResult.Result);
-            }
-
-            return result;
-        }
-
-        private static ImportOperationResult ConfigureSounds(WeaponDescriptor weaponDescriptor, CustomWeaponDescriptor customWeaponDescriptor, string assetFolderPath)
-        {
-            var operationResult = new ImportOperationResult();
-            try
-            {
-                SetSounds(ref weaponDescriptor._attackSoundBanks, customWeaponDescriptor.AudioProperties.ShootSoundIdOrPath, 0, assetFolderPath);
-                SetSounds(ref weaponDescriptor._dryShotSoundBanks, customWeaponDescriptor.AudioProperties.DryShotSoundIdOrPath, 1, assetFolderPath);
-                SetSounds(ref weaponDescriptor._failedAttackSoundBanks, customWeaponDescriptor.AudioProperties.FailedAttackSoundIdOrPath, 2, assetFolderPath);
-                SetSounds(ref weaponDescriptor._reloadSoundBanks, customWeaponDescriptor.AudioProperties.ReloadSoundIdOrPath, 3, assetFolderPath);
-            }
-            catch (Exception ex)
-            {
-                operationResult.AddError("An error occurred while setting up sounds." + ex.Message);
-            }
-            return operationResult;
-        }
-
-        private static ImportOperationResult CheckWeaponPropertiesRestrictions(WeaponRecord weaponRecord)
-        {
-            var operationResult = new ImportOperationResult();
-
-            if (string.IsNullOrEmpty(weaponRecord.Id))
-            {
-                operationResult.AddError("Weapon won't load, ID is empty.");
-            }
-
-            if (!Data.Items._records.ContainsKey(weaponRecord.DefaultAmmoId))
-            {
-                operationResult.AddError("Weapon won't load, ammunition \"" + weaponRecord.DefaultAmmoId + "\" does not exist.");
-            }
-
-            if (weaponRecord.Firemodes.Count == 0)
-            {
-                operationResult.AddError("Weapon won't load, it needs atleast a firemode.");
-            }
-            else if (weaponRecord.Firemodes.Count > 2)
-            {
-                operationResult.AddError("Weapon won't load, game limits firemodes to 2.");
-            }
-            else
-            {
-                if (string.IsNullOrEmpty(weaponRecord.Firemodes[0]))
-                {
-                    operationResult.AddError("Weapon won't load, firemode 1 is invalid");
-                }
-                else if (!Data.Firemodes._records.ContainsKey(weaponRecord.Firemodes[0]))
-                {
-                    operationResult.AddError("Weapon won't load, fireMode \"" + weaponRecord.Firemodes[0] + "\" does not exist in-game.");
-                }
-
-                if (weaponRecord.Firemodes.Count == 2)
-                {
-                    if (string.IsNullOrEmpty(weaponRecord.Firemodes[1]))
-                    {
-                        operationResult.AddError("Weapon won't load, firemode 2 is invalid");
-                    }
-                    else if (!Data.Firemodes._records.ContainsKey(weaponRecord.Firemodes[1]))
-                    {
-                        operationResult.AddError("Weapon won't load, fireMode \"" + weaponRecord.Firemodes[1] + "\" does not exist in-game.");
-                    }
-                }
-            }
-
-            return operationResult;
-        }
-
-        private static ImportOperationResult ResolveSoundBank<TRecord, TDescriptor>(ref SoundBank soundBank, string soundPath, string assetFolderPath, ConfigRecordCollection<TRecord> list)
-            where TRecord : ConfigTableRecord where TDescriptor : ScriptableObject
-        {
-            var operationResult = new ImportOperationResult();
-            if (soundBank == null)
-            {
-                soundBank = ScriptableObject.CreateInstance(typeof(SoundBank)) as SoundBank;
-                soundBank._clips = new AudioClip[1];
-            }
-
-            if (QuasimorphHelper.IsGameId(soundPath, list))
-            {
-                var existingProperty = QuasimorphHelper.GetPropertyFromList<TRecord, TDescriptor>(soundPath, "explosionSoundBank", list);
-                if (existingProperty is SoundBank existingSoundBank)
-                {
-                    soundBank = existingSoundBank;
-                }
-                else
-                {
-                    operationResult.AddError($"Unable to load sound from existing game item with ID: {soundPath}");
-                }
-            }
-            else
-            {
-                var soundFullPath = Helper.ResolvePath(assetFolderPath, soundPath);
-                var importAudioResult = AssetImporter.ImportAudio(soundFullPath);
-                operationResult.Absorb(importAudioResult);
-                if (importAudioResult.IsSuccess)
-                {
-                    soundBank._clips[0] = importAudioResult.Result;
-                }
-            }
-            return operationResult;
-        }
-
-        private static void SetSounds(ref SoundBank[] soundBank, string soundPath, int category, string assetFolderPath, bool fallbackToDefault = false)
-        {
-            if (soundBank == null)
-            {
-                soundBank = new SoundBank[1];
-                soundBank[0] = ScriptableObject.CreateInstance(typeof(SoundBank)) as SoundBank;
-                soundBank[0]._clips = new AudioClip[1];
-            }
-
-            if (QuasimorphHelper.IsGameId(soundPath))
-            {
-                SoundBank[] audiosFromExistingWeapons = QuasimorphHelper.GetAudiosFromExistingWeapons(soundPath, category, false);
-                if (audiosFromExistingWeapons != null)
-                {
-                    soundBank = audiosFromExistingWeapons;
-                }
-            }
-            else
-            {
-                var soundFullPath = Helper.ResolvePath(assetFolderPath, soundPath);
-                var importAudioResult = AssetImporter.ImportAudio(soundFullPath);
-                if (importAudioResult.IsSuccess)
-                {
-                    soundBank[0]._clips[0] = importAudioResult.Result;
-                }
-            }
-        }
-
-        private static ImportOperationResult<Muzzle> LoadDefaultMuzzle(GameObject parentGO)
-        {
-            var result = new ImportOperationResult<Muzzle>();
-            if (parentGO == null) return null;
-
-            var muzzleTransform = parentGO.transform.Find("Muzzle");
-            var muzzle = muzzleTransform.gameObject.GetComponent<Muzzle>() ?? muzzleTransform.gameObject.AddComponent<Muzzle>();
-            muzzle._additLightIntencityMult = 0.5f;
-
-            AnimationCurve val2 = new AnimationCurve()
-            {
-                keys = new Keyframe[3]
-                {
-                    new Keyframe(0f, 0f),
-                    new Keyframe(0.05f, 0.5f),
-                    new Keyframe(0.1f, 0f)
-                }
-            };
-            muzzle._muzzleIntensityCurve = val2;
-
-            result.SetResult(muzzle);
-            return result;
         }
 
         public static ImportOperationResult AddFireMode(FireModeRecord firemodeRecord, CustomFireModeDescriptor fireModeDescriptor, string assetFolderPath)
@@ -560,15 +273,16 @@ namespace QM_ImporterAPI.Services
             }
 
             Logger.LogDebug($"Valid call to {nameof(AddFireMode)} with ID: " + firemodeRecord.Id);
-            var descriptorAssignmentResult = SetFireModeDescriptorProperties(firemodeRecord, fireModeDescriptor, assetFolderPath);
-            operationResult.CopyMessages(descriptorAssignmentResult);
+            var descriptorAssignmentResult = firemodeRecord.SetFireModeDescriptorProperties(fireModeDescriptor, assetFolderPath);
+            operationResult.Absorb(descriptorAssignmentResult);
+
             if (!descriptorAssignmentResult.IsSuccess)
             {
                 Logger.LogError($"Failed to set firemode descriptor properties for firemode with ID: {firemodeRecord.Id}. Firemode won't be added to the game. Errors: {string.Join(", ", descriptorAssignmentResult.ErrorMessages)}");
                 return operationResult;
             }
 
-            if (QuasimorphHelper.DoesItemExistInList(firemodeRecord.Id, Data.Firemodes))
+            if (QuasimorphHelper.IsGameId(firemodeRecord.Id, Data.Firemodes))
             {
                 Data.Firemodes.RemoveRecord(firemodeRecord.Id);
                 operationResult.AddWarning($"Firemode with ID: [{firemodeRecord.Id}] was overriden");
@@ -582,21 +296,37 @@ namespace QM_ImporterAPI.Services
             return operationResult;
         }
 
-        private static ImportOperationResult SetFireModeDescriptorProperties(FireModeRecord ammoRecord, CustomFireModeDescriptor customAmmoDescriptor, string assetFolderPath)
+        internal static ImportOperationResult AddConsumable(ConsumableRecord consumable, CustomConsumableDescriptor descriptor, string assetFolderPath)
         {
+            // Consumable has UseSound, which is a sound that has to be imported or extracted.
+            // Otherwise it has images, and a few simple properties.
+            // The process is similar to others above, and it is also considered an Item.
             var operationResult = new ImportOperationResult();
-            var descriptor = ScriptableObject.CreateInstance<FireModeDescriptor>();
-            Logger.LogDebug($"Setting firemode descriptor properties for firemode with ID: {ammoRecord.Id}");
 
-            descriptor.Icon = LoadSprite(assetFolderPath, customAmmoDescriptor.SpriteIdOrPath, "Icon", AssetImporter.LoadNewSprite);
-            if (descriptor.Icon is null)
+            Logger.LogDebug($"Attempting to add consumable");
+
+            if (consumable is null)
             {
-                Logger.LogError($"Failed to add icon to {ammoRecord.Id}.");
-                operationResult.AddError($"Failed to load firemode icon sprite from path: {customAmmoDescriptor.SpriteIdOrPath}");
+                operationResult.AddError("Firemode record is null.");
                 return operationResult;
             }
-            Logger.LogDebug($"Successfully loaded firemode icon for firemode with ID: {ammoRecord.Id}");
-            ammoRecord.ContentDescriptor = descriptor;
+            else if (consumable.Id is null || consumable.Id.Trim() is "")
+            {
+                operationResult.AddError("Consumable ID is null or empty.");
+                return operationResult;
+            }
+            else if (descriptor is null)
+            {
+                operationResult.AddError($"Consumable content descriptor for {consumable.Id} is null.");
+                return operationResult;
+            }
+
+            var opResult = consumable.SetDescriptorProperties(descriptor, assetFolderPath);
+            operationResult.Absorb(opResult);
+
+            var addItemResult = AddItemToGame(consumable);
+            operationResult.Absorb(addItemResult);
+
             return operationResult;
         }
 
@@ -612,7 +342,7 @@ namespace QM_ImporterAPI.Services
                 return operationResult;
             }
 
-            if (QuasimorphHelper.DoesItemExistInList(explosionRecord.Id, Data.Explosions))
+            if (QuasimorphHelper.IsGameId(explosionRecord.Id, Data.Explosions))
             {
                 Data.Explosions.RemoveRecord(explosionRecord.Id);
                 operationResult.AddWarning($"Explosion with ID: [{explosionRecord.Id}] was overriden");
@@ -639,9 +369,9 @@ namespace QM_ImporterAPI.Services
             }
             descriptor.explosion = explosionValue as GameObject;
 
-            var opResult = ResolveSoundBank<ExplosionRecord, ExplosionDescriptor>(ref descriptor.explosionSoundBank, customExplosionDescriptor.ExplosionSoundIdOrPath, assetFolderPath, Data.Explosions);
+            var opResult = QuasimorphHelper.ResolveSoundBank<ExplosionRecord, ExplosionDescriptor>(ref descriptor.explosionSoundBank, customExplosionDescriptor.ExplosionSoundIdOrPath, assetFolderPath, Data.Explosions);
             operationResult.Absorb(opResult);
-            if(!opResult.IsSuccess)
+            if (!opResult.IsSuccess)
             {
                 Logger.LogError($"Failed to set explosion sound for explosion with ID: {customExplosionDescriptor.ExplosionSoundIdOrPath}.");
                 return operationResult;
