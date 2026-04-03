@@ -1,5 +1,6 @@
 ﻿using MGSC;
 using QM_ImporterAPI.Services.ErrorManagement;
+using QM_ImporterAPI.Services.Helpers;
 using QM_ImporterAPI.Services.Importing;
 using QM_ImporterAPI.Templates.Descriptors;
 using UnityEngine;
@@ -14,7 +15,7 @@ namespace QM_ImporterAPI.Services.Extensions.Descriptors
             var descriptor = ScriptableObject.CreateInstance<FireModeDescriptor>();
             Logger.LogDebug($"Setting firemode descriptor properties for firemode with ID: {ammoRecord.Id}");
 
-            descriptor.Icon.LoadSprite(assetFolderPath, customAmmoDescriptor.SpriteIdOrPath, "Icon", AssetImporter.LoadNewSprite);
+            descriptor.Icon = QuasimorphHelper.LoadSpriteFromWeapon(assetFolderPath, customAmmoDescriptor.SpriteIdOrPath, "Icon", AssetImporter.LoadNewSprite);
             if (descriptor.Icon is null)
             {
                 Logger.LogError($"Failed to add icon to {ammoRecord.Id}.");
