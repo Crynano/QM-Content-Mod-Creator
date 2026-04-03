@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Reflection;
+using MGSC;
 using QM_ImporterAPI.Services.ErrorManagement;
 using UnityEngine;
 
@@ -54,6 +55,7 @@ namespace QM_ImporterAPI.Services
         public static void LogError(string message)
         {
             WriteToLog(message, LogType.Error, true);
+            WriteToGameConsole(message, LogType.Error);
         }
 
         public static void SetContext(string context)
@@ -68,14 +70,38 @@ namespace QM_ImporterAPI.Services
 
         private static void WriteToLog(string message, LogType logType, bool writeToUnity = true)
         {
-            string beautifiedMessage =
-                $"[{DateTime.Now.ToString()}][{LogSignature}][{logType.ToString().ToUpper()}]" +
-                (string.IsNullOrEmpty(Context) ? "" : $"[{Context}]") +
-                $": {message}";
+            string beautifiedMessage = GetBeautifiedMessage(message, logType);
 
-            // We can duplicate logs for Bepinex or custom console users.
             if (writeToUnity) Debug.Log(beautifiedMessage);
             Log += $"{beautifiedMessage}\n";
+        }
+
+        private static string GetBeautifiedMessage(string message, LogType logType)
+        {
+            return $"[{DateTime.Now.ToString()}][{LogSignature}][{logType.ToString().ToUpper()}]" +
+                (string.IsNullOrEmpty(Context) ? "" : $"[{Context}]") +
+                $": {message}";
+        }
+        private static string GetConsoleMessage(string message, LogType logType)
+        {
+            if (logType == LogType.Error)
+            {
+                return $"<color=red>{message}</color>";
+            }
+            else if (logType == LogType.Warning)
+            {
+                return $"<color=yellow>{message}</color>";
+            }
+            else
+            {
+                return message;
+            }
+        }
+
+        private static void WriteToGameConsole(string message, LogType logType)
+        {
+            var beautifiedMessage = GetConsoleMessage(message, logType);
+            UI.Get<DevConsole>()?.PrintText(beautifiedMessage);
         }
 
         public static void Flush()
