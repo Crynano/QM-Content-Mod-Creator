@@ -192,7 +192,7 @@ namespace QM_ImporterAPI.Services
 
             stopWatch.Stop();
             cumulativeOperation.SetExecutionTime(stopWatch.ElapsedMilliseconds);
-            Logger.LogWarning("Import Operation Result: \n" + cumulativeOperation.Print());
+            Logger.LogInfo("Import Operation Result: \n" + cumulativeOperation.Print());
         }
 
         private static ImportOperationResult LoadExplosions(string assetFolderPath, List<ExplosionRecord> explosionRecords, List<CustomExplosionDescriptor> explosionDescriptors)
