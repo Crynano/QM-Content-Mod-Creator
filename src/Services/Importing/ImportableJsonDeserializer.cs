@@ -26,6 +26,7 @@ namespace QM_ImporterAPI.Services.Importing
             }
 
             var mgscRecordType = item.RecordType.Split('.')[0];
+            var recordTypeName = item.RecordType.Split('.')[1];
             Type recordType;
 
             if (mgscRecordType.Equals(MGSC_NAMESPACE))
@@ -39,8 +40,16 @@ namespace QM_ImporterAPI.Services.Importing
 
             if (recordType == null)
             {
-                Logger.LogWarning($"Could not find type {item.RecordType}.");
-                return null;
+                // If somehow the record is null, replace the start with my own namespace and try again, to account for people using the wrong namespace
+                var correctedRecordTypeName = $"{OWN_ASSEMBLY.GetName().Name}.{recordTypeName}";
+                recordType = OWN_ASSEMBLY.GetType(correctedRecordTypeName);
+                Logger.LogWarning($"Could not find type {item.RecordType}. Attempting to use corrected type {correctedRecordTypeName}.");
+
+                if (recordType == null)
+                {
+                    Logger.LogError($"Could not find type {correctedRecordTypeName}.");
+                    return null;
+                }
             }
 
             try

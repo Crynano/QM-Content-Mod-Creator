@@ -27,10 +27,6 @@ namespace QM_ImporterAPI.Services
                 .Select(id => Data.Firemodes.GetRecord(id))
                 .First(x => x != null);
 
-            var rangedWeaponTransform = Data.ItemTransformation.Ids
-               .Select(id => Data.ItemTransformation.GetRecord(rangedWeapon.Id))
-               .First(x => x != null);
-
             var rangedWeaponReceipt = Data.ProduceReceipts
                 .Find(x => x.OutputItem == rangedWeapon.Id) ?? Data.ProduceReceipts[0];
 
@@ -94,19 +90,21 @@ namespace QM_ImporterAPI.Services
 
             ExportCustom(localizationItem, $"{rangedWeapon.Id}_localization", localizationFolder);
             ExportCustom(factionTemplate, $"{rangedWeapon.Id}_factionReward", factionRewardsFolder);
-            ExportCustom(rangedWeaponTransform, $"{rangedWeapon.Id}_transform", transformFolder);
             ExportCustom(rangedWeaponReceipt, $"{rangedWeapon.Id}_craftingReceipt", craftingReceiptsFolder);
         }
 
         public static void CreateExampleMod(string rootPath)
         {
-            var meleeWeapon = Data.Items.Ids
+            var weapons = Data.Items.Ids
                 .Select(id => Data.Items.GetSimpleRecord<WeaponRecord>(id))
-                .First(x => x.IsMelee);
+                .Where(x => x != null)
+                .ToList();
 
-            var rangedWeapon = Data.Items.Ids
-                .Select(id => Data.Items.GetSimpleRecord<WeaponRecord>(id))
-                .First(x => !x.IsMelee);
+            var meleeWeapon = weapons
+                .First(x => x != null && x.IsMelee);
+
+            var rangedWeapon = weapons
+                .First(x => x != null && !x.IsMelee);
 
             var armorItem = Data.Items.Ids
                 .Select(id => Data.Items.GetSimpleRecord<ArmorRecord>(id))
@@ -122,10 +120,6 @@ namespace QM_ImporterAPI.Services
 
             var explosionRecord = Data.Explosions.Ids
                 .Select(id => Data.Explosions.GetRecord(id))
-                .First(x => x != null);
-
-            var rangedWeaponTransform = Data.ItemTransformation.Ids
-                .Select(id => Data.ItemTransformation.GetRecord(rangedWeapon.Id))
                 .First(x => x != null);
 
             var rangedWeaponReceipt = Data.ProduceReceipts
@@ -207,7 +201,6 @@ namespace QM_ImporterAPI.Services
 
             ExportCustom(localizationItem, $"{rangedWeapon.Id}_localization", localizationFolder);
             ExportCustom(factionTemplate, $"{rangedWeapon.Id}_factionReward", factionRewardsFolder);
-            ExportCustom(rangedWeaponTransform, $"{rangedWeapon.Id}_transform", transformFolder);
             ExportCustom(rangedWeaponReceipt, $"{rangedWeapon.Id}_craftingReceipt", craftingReceiptsFolder);
         }
 
@@ -227,11 +220,6 @@ namespace QM_ImporterAPI.Services
                 .First(x => x != null);
 
             oneDatadisk.UnlockIds = new List<string> { consumable.Id };
-
-            var consumableTransform = Data.ItemTransformation.GetRecord(consumable.Id)
-                ?? Data.ItemTransformation.GetRecord(Data.ItemTransformation.Ids.First());
-
-            consumableTransform.Id = consumable.Id;
 
             var consumableReceipt = Data.ProduceReceipts
                 .Find(x => x.OutputItem == consumable.Id) ?? Data.ProduceReceipts[0];
@@ -275,7 +263,6 @@ namespace QM_ImporterAPI.Services
 
             ExportCustom(localizationItem, $"{consumable.Id}_localization", localizationFolder);
             ExportCustom(factionTemplate, $"{consumable.Id}_factionReward", factionRewardsFolder);
-            ExportCustom(consumableTransform, $"{consumable.Id}_transform", transformFolder);
             ExportCustom(consumableReceipt, $"{consumable.Id}_craftingReceipt", craftingReceiptsFolder);
         }
 
