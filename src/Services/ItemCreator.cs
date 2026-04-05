@@ -3,10 +3,8 @@ using QM_ImporterAPI.Services.ErrorManagement;
 using QM_ImporterAPI.Services.Extensions.Descriptors;
 using QM_ImporterAPI.Services.Extensions.Records;
 using QM_ImporterAPI.Services.Helpers;
-using QM_ImporterAPI.Services.Importing;
 using QM_ImporterAPI.Templates;
 using QM_ImporterAPI.Templates.Descriptors;
-using System;
 using System.Linq;
 using UnityEngine;
 
@@ -68,24 +66,6 @@ namespace QM_ImporterAPI.Services
             return operationResult;
         }
 
-        public static ImportOperationResult AddItemTransformation(ItemTransformationRecord transRecord)
-        {
-            var operationResult = new ImportOperationResult();
-            if (transRecord == null)
-            {
-                operationResult.AddError("ItemTransformation record is null.");
-                return operationResult;
-            }
-
-            if (QuasimorphHelper.IsGameId(transRecord.Id, Data.ItemTransformation))
-            {
-                Data.ItemTransformation.RemoveRecord(transRecord.Id);
-                operationResult.AddWarning($"Warning: An ItemTransformation with ID: [{transRecord.Id}] was overriden");
-            }
-            Data.ItemTransformation.AddRecord(transRecord.Id, transRecord);
-            return operationResult;
-        }
-
         public static ImportOperationResult AddItemCraftRecipe(ItemProduceReceipt craftingRecipe)
         {
             var operationResult = new ImportOperationResult();
@@ -110,6 +90,12 @@ namespace QM_ImporterAPI.Services
         {
             var operationResult = new ImportOperationResult();
 
+            if (diskRecord == null)
+            {
+                operationResult.AddError("Datadisk record is null.");
+                return operationResult;
+            }
+
             var dataDiskCompositeRecord = (CompositeItemRecord)MGSC.Data.Items.GetRecord(diskRecord.Id);
             if (dataDiskCompositeRecord != null)
             {
@@ -125,7 +111,7 @@ namespace QM_ImporterAPI.Services
             {
                 if (customDatadiskDescriptor is null)
                 {
-                    operationResult.AddError("Custom datadisk descriptor is null. Can't add new datadisk item without a descriptor.");
+                    operationResult.AddError($"Custom datadisk descriptor for \"{diskRecord.Id}\" is required.");
                     return operationResult;
                 }
                 var datadiskDescriptor = ScriptableObject.CreateInstance<DatadiskDescriptor>();
@@ -150,7 +136,7 @@ namespace QM_ImporterAPI.Services
                     contentRecord.ContentIds
                         .Where(contentId => !QuasimorphHelper.IsGameId(contentId))
                         .ToList()
-                        .ForEach(x => operationResult.AddWarning($"Not adding {x} to faction table. Weapon does not exist."));
+                        .ForEach(x => operationResult.AddWarning($"Not adding item \"{x}\" to faction table. Item does not exist in Data.Items"));
 
                     contentRecord.ContentIds = contentRecord.ContentIds
                         .Where(contentId => QuasimorphHelper.IsGameId(contentId))
@@ -198,6 +184,21 @@ namespace QM_ImporterAPI.Services
 
             Logger.LogDebug($"Adding item with ID: \"{record.Id}\" of type \"{record.GetType().Name}\" to game.");
             Data.Items.AddRecord(record.Id, record);
+            return operationResult;
+        }
+
+        private static ImportOperationResult AddTrait()
+        {
+            var operationResult = new ImportOperationResult();
+
+            //MGSC.Data.ItemTraits.AddRecord("trait_test", new ItemTraitRecord()
+            //{
+            //    Id = "trait_test",
+            //    Name = "Test Trait",
+            //    Description = "This is a test trait.",
+            //    Icon = null
+            //});
+
             return operationResult;
         }
 

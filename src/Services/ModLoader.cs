@@ -116,10 +116,6 @@ namespace QM_ImporterAPI.Services
                 .OfType<DatadiskRecord>()
                 .ToList();
 
-            var transformationRecords = records
-                .OfType<ItemTransformationRecord>()
-                .ToList();
-
             var craftingRecords = records
                 .OfType<ItemProduceReceipt>()
                 .ToList();
@@ -179,7 +175,7 @@ namespace QM_ImporterAPI.Services
             var dataDiskResult = LoadDatadisks(assetFolderPath, datadisks, datadiskDescriptors);
             cumulativeOperation.Absorb(dataDiskResult);
 
-            var craftsLoadResult = AddCrafts(transformationRecords, craftingRecords);
+            var craftsLoadResult = LoadCraftingRecipt(craftingRecords);
             cumulativeOperation.Absorb(craftsLoadResult);
 
             factionRecords.ForEach(faction =>
@@ -233,24 +229,7 @@ namespace QM_ImporterAPI.Services
             return operationResult;
         }
 
-        private static ImportOperationResult AddCrafts(List<ItemTransformationRecord> transformationRecords, List<ItemProduceReceipt> craftingRecords)
-        {
-            var operationResult = new ImportOperationResult();
 
-            transformationRecords.ForEach(transformationRecord =>
-            {
-                var result = ItemCreator.AddItemTransformation(transformationRecord);
-                operationResult.Absorb(result);
-            });
-
-            craftingRecords.ForEach(craftingRecord =>
-            {
-                var result = ItemCreator.AddItemCraftRecipe(craftingRecord);
-                operationResult.Absorb(result);
-            });
-
-            return operationResult;
-        }
 
         private static ImportOperationResult LoadWeapons(string assetFolderPath, List<WeaponRecord> weaponRecords, List<CustomWeaponDescriptor> weaponDescriptors)
         {
@@ -297,7 +276,7 @@ namespace QM_ImporterAPI.Services
                 .OfType<LeggingsRecord>()
                 .ToList();
 
-            // And some other shit
+            // TODO
 
             return operationResult;
         }
@@ -343,6 +322,16 @@ namespace QM_ImporterAPI.Services
                 var opResult = ItemCreator.AddConsumable(consumable, descriptor, assetFolderPath);
                 operationResult.Absorb(opResult);
             });
+
+        private static ImportOperationResult LoadCraftingRecipt(IEnumerable<ItemProduceReceipt> craftingRecords)
+        {
+            var operationResult = new ImportOperationResult();
+            Logger.LogDebug($"{nameof(LoadCraftingRecipt)}: Found {craftingRecords.Count()} records.");
+            foreach (var craftingRecord in craftingRecords)
+            {
+                var result = ItemCreator.AddItemCraftRecipe(craftingRecord);
+                operationResult.Absorb(result);
+            }
             return operationResult;
         }
     }
