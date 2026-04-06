@@ -210,6 +210,8 @@ namespace QM_ImporterAPI.Services
             ExportCustom(factionTemplate, $"{rangedWeapon.Id}_factionReward", factionRewardsFolder);
             ExportCustom(rangedWeaponTransform, $"{rangedWeapon.Id}_transform", transformFolder);
             ExportCustom(rangedWeaponReceipt, $"{rangedWeapon.Id}_craftingReceipt", craftingReceiptsFolder);
+
+            CreateTraitMod(rootPath);
         }
 
         public static void CreateMercMod(string providedPath)

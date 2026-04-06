@@ -234,7 +234,7 @@ namespace QM_ImporterAPI.Services
                     {
                         gibsDescriptor._shadowsSprites = gibsFromItem._shadowsSprites;
                     }
-                    else
+                    else 
                     {
                         operationResult.AddWarning($"Unable to load gibs sprites from existing game item with ID: {customAmmoDescriptor.Gibs.BulletSpritesId}");
                     }
@@ -331,6 +331,22 @@ namespace QM_ImporterAPI.Services
             var addItemResult = AddItemToGame(consumable);
             operationResult.Absorb(addItemResult);
 
+            return operationResult;
+        }
+
+        internal static ImportOperationResult AddTrait(ItemTraitRecord itemTrait)
+        {
+            var operationResult = new ImportOperationResult(); 
+            Logger.LogDebug($"Attempting to add trait");
+            if (QuasimorphHelper.IsGameId(itemTrait.Id, Data.ItemTraits))
+            {
+                Data.ItemTraits.RemoveRecord(itemTrait.Id);
+                operationResult.AddWarning($"Trait with ID: [{itemTrait.Id}] was overriden.");
+            }
+
+            MGSC.Data.ItemTraits.AddRecord(itemTrait.Id, itemTrait);
+            operationResult.ContentList.Add(itemTrait.Id);
+            Logger.LogDebug($"Added trait with ID: {itemTrait.Id}.");
             return operationResult;
         }
 
