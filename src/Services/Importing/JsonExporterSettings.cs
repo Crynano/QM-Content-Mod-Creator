@@ -44,16 +44,76 @@ namespace QM_ImporterAPI.Services.Importing
             "ItemDesc", "ContentDesc", "ContentDescriptor", "FireModeView"
         };
 
+        private readonly List<string> PropertyOrder = new List<string>()
+        {
+            "RecordType",
+            "Data",
+            "Id",
+            "ItemId",
+            "OutputItem",
+            "ItemClass",
+            "TechLevel",
+            "Price",
+            "Weight",
+            "InventorySortOrder",
+            "InventoryWidthSize",
+            "Grip",
+            "WeaponClass",
+            "WeaponSubClass",
+            "IsMelee",
+            "Categories",
+            "Damage",
+            "Firemodes",
+            "RequiredAmmo",
+            "DefaultAmmoId",
+            "OverrideAmmo",
+            "OverrideProjectileId",
+            "Range",
+            "BonusAccuracy",
+            "BonusScatterAngle",
+            "Falloff",
+            "ReloadDuration",
+            "MagazineCapacity",
+            "MinRandomAmmoCount",
+            "MaxDurability",
+            "MinDurabilityAfterRepair",
+            "Unbreakable",
+            "RepairItemIds",
+            "Traits",
+            "DefaultGrenadeId",
+            "AllowedGrenadeIds",
+            "CanDisassembly",
+            "Disassembly",
+            "DurabilityLossOnThrow",
+            "ThrowRange",
+            "MeleeCanAmputate",
+            "GetMeleeDamageFromCreature",
+            "DotWoundsDmgBonus",
+            "FractureWoundDmgBonus",
+            "CanPutInVest",
+            "IsImplicit"
+        };
+
         public RecordContractResolver()
         {
-            
+
         }
 
         protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization)
         {
             IList<JsonProperty> properties = base.CreateProperties(type, memberSerialization);
             properties = properties.Where(p => !IsInList(p.PropertyName)).ToList();
-            return properties;
+
+            var orderedProperties = properties
+                .OrderBy(p =>
+                {
+                    var index = PropertyOrder.IndexOf(p.PropertyName);
+                    return index == -1 ? int.MaxValue : index;
+                })
+                .ThenBy(p => p.PropertyName)
+                .ToList();
+
+            return orderedProperties;
         }
 
         private bool IsInList(string word)

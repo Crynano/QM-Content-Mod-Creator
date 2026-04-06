@@ -219,44 +219,44 @@ namespace QM_ImporterAPI.Services.Extensions.Records
 
             if (string.IsNullOrEmpty(weaponRecord.Id))
             {
-                operationResult.AddError("Weapon won't load, ID is empty.");
+                operationResult.AddError($"Invalid weapon, ID is empty.");
             }
 
             if (!Data.Items.Ids.Contains(weaponRecord.DefaultAmmoId))
             {
-                operationResult.AddError($"Weapon won't load, ammunition \"{weaponRecord.DefaultAmmoId}\" does not exist.");
+                operationResult.AddError($"Invalid weapon \"{weaponRecord.Id}\", ammunition \"{weaponRecord.DefaultAmmoId}\" does not exist.");
             }
 
             if (weaponRecord.Firemodes.Count == 0)
             {
-                operationResult.AddError("Weapon won't load, it needs atleast a firemode.");
+                operationResult.AddError($"Invalid weapon \"{weaponRecord.Id}\", it needs atleast a firemode.");
             }
             else if (weaponRecord.Firemodes.Count > 2)
             {
-                operationResult.AddError("Weapon won't load, game limits firemodes to 2.");
+                operationResult.AddError($"Invalid weapon \"{weaponRecord.Id}\", game limits firemodes to 2.");
             }
             else
             {
-                CheckFiremode(weaponRecord.Firemodes[0], ref operationResult);
+                CheckFiremode(weaponRecord.Id, weaponRecord.Firemodes[0], ref operationResult);
 
                 if (weaponRecord.Firemodes.Count == 2)
                 {
-                    CheckFiremode(weaponRecord.Firemodes[1], ref operationResult);
+                    CheckFiremode(weaponRecord.Id, weaponRecord.Firemodes[1], ref operationResult);
                 }
             }
 
             return operationResult;
         }
 
-        private static void CheckFiremode(string fireMode, ref ImportOperationResult opResult)
+        private static void CheckFiremode(string weaponId, string fireMode, ref ImportOperationResult opResult)
         {
             if (string.IsNullOrEmpty(fireMode))
             {
-                opResult.AddError($"Weapon won't load, firemode 1 is invalid");
+                opResult.AddError($"Invalid weapon \"{weaponId}\", a firemode is empty or null.");
             }
             else if (!Data.Firemodes.Ids.Contains(fireMode))
             {
-                opResult.AddError($"Weapon won't load, fireMode \"{fireMode}\" does not exist in-game.");
+                opResult.AddError($"Invalid weapon \"{weaponId}\", fireMode \"{fireMode}\" does not exist in-game.");
             }
         }
     }

@@ -3,16 +3,17 @@ using QM_ImporterAPI.Services;
 using QM_ImporterAPI.Services.Helpers;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 
 namespace QM_ImporterAPI.Commands
 {
-    [ConsoleCommand(new string[] { "create-mod", "api-create-mod" })]
-    public class CreateModScaffoldingCommand
+    [ConsoleCommand(new string[] { "create-trait-mod", "api-create-trait-mod" })]
+    public class CreateTraitModCommand
     {
         public static string Help(string command, bool verbose)
         {
-            return "Creates folders and example files to start creating a content mod using the Importer API. Syntax: create-mod <folder-path>";
+            return "Creates folders and example files to start creating a trait mod using the Importer API. Syntax: create-trait-mod <folder-path>";
         }
 
         public string Execute(string[] tokens)
@@ -31,7 +32,7 @@ namespace QM_ImporterAPI.Commands
                     return errorMessage;
                 }
 
-                ModCreator.CreateExampleMod(providedPath);
+                ModCreator.CreateTraitMod(providedPath);
 
                 return $"<color=green>Created Assets folder and example files at \"{providedPath}\".</color>";
             }

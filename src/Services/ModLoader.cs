@@ -25,8 +25,7 @@ namespace QM_ImporterAPI.Services
 
         public void LoadModFromDirectory(string givenPath)
         {
-            var stopWatch = Stopwatch.StartNew();
-            Logger.LogDebug("Starting mod loading process...");
+            Logger.LogDebug($"{nameof(LoadModFromDirectory)}: Starting mod loading process");
             if (!Directory.Exists(givenPath))
             {
                 Logger.LogError($"The given path '{givenPath}' does not exist. Please provide a valid path to the mod folder.");
@@ -46,14 +45,56 @@ namespace QM_ImporterAPI.Services
             LoadImportableJsons(jsonFiles);
             ProcessImportableJsons(assetFolderPath);
 
-            stopWatch.Stop();
-            Logger.LogDebug($"Finished mod loading process in: {stopWatch.ElapsedMilliseconds}ms");
+            Logger.LogDebug($"Finished loading mod from directory '{givenPath}'");
+        }
+
+        internal static void UpdateMod(string givenPath)
+        {
+            // Idea is to read the whole mod and then reprint them again with same values
+            // So any new properties added to the templates will be added to the files without changing existing values
+            // And also the new ordering structure will be applied to the files
+            Logger.LogInfo($"{nameof(UpdateMod)}: Starting mod reprint process");
+            var stopwatch = Stopwatch.StartNew();
+            if (!Directory.Exists(givenPath))
+            {
+                Logger.LogError($"The given path '{givenPath}' does not exist. Please provide a valid path to the mod folder.");
+                return;
+            }
+
+            var assetFolderPath = Path.Combine(givenPath, ASSETS_FOLDER_NAME);
+            if (!Directory.Exists(assetFolderPath))
+            {
+                Logger.LogError($"Missing 'Assets' folder in {givenPath}");
+                return;
+            }
+
+            var jsonFiles = Directory.GetFiles(assetFolderPath, "*.json", SearchOption.AllDirectories);
+            var importedFilesDictionary = new Dictionary<string, object>();
+            foreach (var jsonFile in jsonFiles)
+            {
+                var json = File.ReadAllText(jsonFile);
+                var importableJson = JsonConvert.DeserializeObject<ImportableJson>(json, JsonExporterSettings.DeserializerSettings);
+                if (importableJson != null && !string.IsNullOrEmpty(importableJson.RecordType))
+                {
+                    importedFilesDictionary.Add(jsonFile, importableJson.Deserialize());
+                }
+            }
+
+            Logger.LogInfo($"Loaded {importedFilesDictionary.Count}/{jsonFiles.Length} json files. ");
+            foreach (var pathFileDictionary in importedFilesDictionary)
+            {
+                ExportHelper.ExportCustom(pathFileDictionary.Key, pathFileDictionary.Value);
+            }
+
+            stopwatch.Stop();
+            Logger.LogInfo($"Finished reprinting json files in: {givenPath}. Duration {stopwatch.ElapsedMilliseconds}ms");
         }
 
         private void LoadImportableJsons(string[] jsonFilesPath)
         {
-            // We know the file exists because we found it in the previous step, so we can try to load it
-            // Parse json into ImportableJson. Store it into a list of ImportableJsons. Then we can process the list and add the items to the game.
+            Logger.LogDebug($"{nameof(LoadImportableJsons)}: Loading importable JSONs");
+            var importJsonStopwatch = Stopwatch.StartNew();
+
             foreach (var jsonFile in jsonFilesPath)
             {
                 var json = File.ReadAllText(jsonFile);
@@ -63,13 +104,14 @@ namespace QM_ImporterAPI.Services
                     ImportableJsons.Add(importableJson);
                 }
             }
+            importJsonStopwatch.Stop();
+            Logger.LogDebug($"Finished loading json files in: {importJsonStopwatch.ElapsedMilliseconds}ms. Starting to process them...");
         }
 
         private void ProcessImportableJsons(string assetFolderPath)
         {
-            Logger.LogDebug("Processing importable jsons...");
+            Logger.LogDebug($"{nameof(ProcessImportableJsons)}: Processing mod JSONs");
             var stopWatch = Stopwatch.StartNew();
-
             var deserializedImportableJsons = ImportableJsons
                 .Select(json => json.Deserialize())
                 .Where(json => json != null)
@@ -164,14 +206,14 @@ namespace QM_ImporterAPI.Services
             var explosionLoadResult = LoadExplosions(assetFolderPath, explosionRecords, explosionDescriptors);
             cumulativeOperation.Absorb(explosionLoadResult);
 
+            var ammoResult = LoadAmmo(assetFolderPath, ammoRecords, ammoDescriptors);
+            cumulativeOperation.Absorb(ammoResult);
+
             var weaponsLoadResult = LoadWeapons(assetFolderPath, weaponRecords, weaponDescriptors);
             cumulativeOperation.Absorb(weaponsLoadResult);
 
             var armorLoadResult = LoadArmors(assetFolderPath, armorRecords, armorDescriptors);
             cumulativeOperation.Absorb(armorLoadResult);
-
-            var ammoResult = LoadAmmo(assetFolderPath, ammoRecords, ammoDescriptors);
-            cumulativeOperation.Absorb(ammoResult);
 
             var consumablesLoadResult = LoadConsumables(assetFolderPath, consumableRecords, consumableDescriptors);
             cumulativeOperation.Absorb(consumablesLoadResult);
@@ -195,19 +237,23 @@ namespace QM_ImporterAPI.Services
             Logger.LogInfo("Import Operation Result: \n" + cumulativeOperation.Print());
         }
 
-        private static ImportOperationResult LoadExplosions(string assetFolderPath, List<ExplosionRecord> explosionRecords, List<CustomExplosionDescriptor> explosionDescriptors)
+        private static ImportOperationResult LoadExplosions(string assetFolderPath, IEnumerable<ExplosionRecord> explosionRecords, IEnumerable<CustomExplosionDescriptor> explosionDescriptors)
         {
             var operationResult = new ImportOperationResult();
-            Logger.LogDebug($"{nameof(LoadExplosions)}: Found {explosionRecords.Count} records and {explosionDescriptors.Count} descriptors.");
+            Logger.LogDebug($"{nameof(LoadExplosions)}: Found {explosionRecords.Count()} records and {explosionDescriptors.Count()} descriptors.");
 
             foreach (var descriptor in explosionDescriptors)
             {
-                var explosionRecord = explosionRecords.First(x => x.Id.Equals(descriptor.ItemId));
+                var explosionRecord = explosionRecords.FirstOrDefault(x => x.Id.Equals(descriptor.ItemId));
                 if (explosionRecord != null)
                 {
                     Logger.LogDebug($"Trying to add {nameof(ExplosionRecord)} '{explosionRecord.Id}' (with descriptor) to the game!");
                     var opResult = ItemCreator.AddExplosion(explosionRecord, descriptor, assetFolderPath);
                     operationResult.Absorb(opResult);
+                }
+                else
+                {
+                    operationResult.AddWarning($"Could not find an explosion record with id '{descriptor.ItemId}' for the explosion descriptor. Skipping this explosion.");
                 }
             }
 
@@ -217,16 +263,20 @@ namespace QM_ImporterAPI.Services
         private static ImportOperationResult LoadFiremodes(string assetFolderPath, List<FireModeRecord> firemodeRecords, List<CustomFireModeDescriptor> fireModeDescriptors)
         {
             var operationResult = new ImportOperationResult();
-            Logger.LogDebug($"LoadFiremodes: Found {firemodeRecords.Count} records and {fireModeDescriptors.Count} descriptors.");
+            Logger.LogDebug($"{nameof(LoadFiremodes)}: Found {firemodeRecords.Count} records and {fireModeDescriptors.Count} descriptors.");
 
             foreach (var descriptor in fireModeDescriptors)
             {
-                var firemodeRecord = firemodeRecords.First(x => x.Id.Equals(descriptor.ItemId));
+                var firemodeRecord = firemodeRecords.FirstOrDefault(x => x.Id.Equals(descriptor.ItemId));
                 if (firemodeRecord != null)
                 {
                     Logger.LogDebug($"Trying to add firemode '{firemodeRecord.Id}' (with descriptor) to the game!");
                     var opResult = ItemCreator.AddFireMode(firemodeRecord, descriptor, assetFolderPath);
                     operationResult.Absorb(opResult);
+                }
+                else
+                {
+                    operationResult.AddWarning($"Could not find a firemode record with id '{descriptor.ItemId}' for the firemode descriptor. Skipping this firemode.");
                 }
             }
 
@@ -255,15 +305,19 @@ namespace QM_ImporterAPI.Services
         private static ImportOperationResult LoadWeapons(string assetFolderPath, List<WeaponRecord> weaponRecords, List<CustomWeaponDescriptor> weaponDescriptors)
         {
             var operationResult = new ImportOperationResult();
-            Logger.LogDebug($"LoadWeapons: Found {weaponRecords.Count} records and {weaponDescriptors.Count} descriptors.");
+            Logger.LogDebug($"{nameof(LoadWeapons)}: Found {weaponRecords.Count} records and {weaponDescriptors.Count} descriptors.");
             foreach (var descriptor in weaponDescriptors)
             {
-                var weaponRecord = weaponRecords.First(x => x.Id.Equals(descriptor.ItemId));
+                var weaponRecord = weaponRecords.FirstOrDefault(x => x.Id.Equals(descriptor.ItemId));
                 if (weaponRecord != null)
                 {
                     Logger.LogDebug($"Trying to add weapon '{weaponRecord.Id}' (with descriptor) to the game!");
                     var opResult = ItemCreator.CreateWeapon(weaponRecord, descriptor, assetFolderPath);
                     operationResult.Absorb(opResult);
+                }
+                else
+                {
+                    operationResult.AddWarning($"Could not find a weapon record with id '{descriptor.ItemId}' for the weapon descriptor. Skipping this weapon.");
                 }
             }
             return operationResult;
@@ -305,44 +359,59 @@ namespace QM_ImporterAPI.Services
         private static ImportOperationResult LoadAmmo(string assetFolderPath, List<AmmoRecord> ammoRecords, List<CustomAmmoDescriptor> ammoDescriptors)
         {
             var operationResult = new ImportOperationResult();
-            Logger.LogDebug($"LoadAmmo: Found {ammoRecords.Count} records and {ammoDescriptors.Count} descriptors.");
+            Logger.LogDebug($"{nameof(LoadAmmo)}: Found {ammoRecords.Count} records and {ammoDescriptors.Count} descriptors.");
             foreach (var descriptor in ammoDescriptors)
             {
-                var ammoRecord = ammoRecords.First(x => x.Id.Equals(descriptor.ItemId));
+                var ammoRecord = ammoRecords.FirstOrDefault(x => x.Id.Equals(descriptor.ItemId));
                 if (ammoRecord != null)
                 {
                     Logger.LogDebug($"Trying to add ammo '{ammoRecord.Id}' (with descriptor) to the game!");
                     var opResult = ItemCreator.AddAmmo(ammoRecord, descriptor, assetFolderPath);
                     operationResult.Absorb(opResult);
                 }
+                else
+                {
+                    operationResult.AddWarning($"Could not find an ammo record with id '{descriptor.ItemId}' for the ammo descriptor. Skipping this ammo.");
+                }
             }
-
             return operationResult;
         }
 
-        private static ImportOperationResult LoadDatadisks(string assetFolderPath, List<DatadiskRecord> datadisks, List<CustomDatadiskDescriptor> customDatadiskDescriptor)
+        private static ImportOperationResult LoadDatadisks(string assetFolderPath, IEnumerable<DatadiskRecord> datadisks, IEnumerable<CustomDatadiskDescriptor> customDatadiskDescriptor)
         {
             var operationResult = new ImportOperationResult();
-            Logger.LogDebug($"{nameof(LoadDatadisks)}: Found {datadisks.Count} records and {customDatadiskDescriptor.Count} descriptors.");
-            datadisks.ForEach(datadisk =>
+            Logger.LogDebug($"{nameof(LoadDatadisks)}: Found {datadisks.Count()} records and {customDatadiskDescriptor.Count()} descriptors.");
+            foreach (var singleDataDisk in datadisks)
             {
-                var descriptor = customDatadiskDescriptor.FirstOrDefault(x => x.ItemId.Equals(datadisk.Id));
-                var opResult = ItemCreator.AddDatadiskItems(datadisk, descriptor, assetFolderPath);
+                var descriptor = customDatadiskDescriptor.FirstOrDefault(x => x.ItemId.Equals(singleDataDisk.Id));
+                var opResult = ItemCreator.AddDatadiskItems(singleDataDisk, descriptor, assetFolderPath);
                 operationResult.Absorb(opResult);
-            });
+            }
             return operationResult;
         }
 
-        private static ImportOperationResult LoadConsumables(string assetFolderPath, List<ConsumableRecord> consumableRecords, List<CustomConsumableDescriptor> customConsumableDescriptors)
+        private static ImportOperationResult LoadConsumables(string assetFolderPath, IEnumerable<ConsumableRecord> consumableRecords, IEnumerable<CustomConsumableDescriptor> customConsumableDescriptors)
         {
             var operationResult = new ImportOperationResult();
-            Logger.LogDebug($"{nameof(LoadConsumables)}: Found {consumableRecords.Count} records and {customConsumableDescriptors.Count} descriptors.");
-            consumableRecords.ForEach(consumable =>
+            Logger.LogDebug($"{nameof(LoadConsumables)}: Found {consumableRecords.Count()} records and {customConsumableDescriptors.Count()} descriptors.");
+            foreach (var consumable in consumableRecords)
             {
                 var descriptor = customConsumableDescriptors.FirstOrDefault(x => x.ItemId.Equals(consumable.Id));
                 var opResult = ItemCreator.AddConsumable(consumable, descriptor, assetFolderPath);
                 operationResult.Absorb(opResult);
-            });
+            }
+            return operationResult;
+        }
+
+        private static ImportOperationResult LoadCraftingRecipt(IEnumerable<ItemProduceReceipt> craftingRecords)
+        {
+            var operationResult = new ImportOperationResult();
+            Logger.LogDebug($"{nameof(LoadCraftingRecipt)}: Found {craftingRecords.Count()} records.");
+            foreach (var craftingRecord in craftingRecords)
+            {
+                var result = ItemCreator.AddItemCraftRecipe(craftingRecord);
+                operationResult.Absorb(result);
+            }
             return operationResult;
         }
     }
