@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using UnityEngine;
 
 namespace QM_ImporterAPI.Services
 {
@@ -112,93 +113,79 @@ namespace QM_ImporterAPI.Services
         {
             Logger.LogDebug($"{nameof(ProcessImportableJsons)}: Processing mod JSONs");
             var stopWatch = Stopwatch.StartNew();
+
             var deserializedImportableJsons = ImportableJsons
                 .Select(json => json.Deserialize())
-                .Where(json => json != null)
-                .ToList();
+                .Where(json => json != null);
 
             var descriptors = deserializedImportableJsons
-                .Where(obj => obj.GetType().IsSubclassOf(typeof(CustomBaseDescriptor)))
-                .ToList();
+                .Where(obj => obj.GetType().IsSubclassOf(typeof(CustomBaseDescriptor)));
 
             var weaponDescriptors = descriptors
-                .OfType<CustomWeaponDescriptor>()
-                .ToList();
+                .OfType<CustomWeaponDescriptor>();
 
             var armorDescriptors = descriptors
-                .OfType<CustomArmorDescriptor>()
-                .ToList();
+                .OfType<CustomArmorDescriptor>();
 
             var ammoDescriptors = descriptors
-                .OfType<CustomAmmoDescriptor>()
-                .ToList();
+                .OfType<CustomAmmoDescriptor>();
 
             var firemodeDescriptors = descriptors
-                .OfType<CustomFireModeDescriptor>()
-                .ToList();
+                .OfType<CustomFireModeDescriptor>();
 
             var explosionDescriptors = descriptors
-                .OfType<CustomExplosionDescriptor>()
-                .ToList();
+                .OfType<CustomExplosionDescriptor>();
 
             var datadiskDescriptors = descriptors
-                .OfType<CustomDatadiskDescriptor>()
-                .ToList();
+                .OfType<CustomDatadiskDescriptor>();
 
             var consumableDescriptors = descriptors
-                .OfType<CustomConsumableDescriptor>()
-                .ToList();
+                .OfType<CustomConsumableDescriptor>();
 
             // Game Records
             var records = deserializedImportableJsons
-               .Where(obj => obj.GetType().IsSubclassOf(typeof(ConfigTableRecord)))
-               .ToList();
+               .Where(obj => obj.GetType().IsSubclassOf(typeof(ConfigTableRecord)));
 
             var datadisks = records
-                .OfType<DatadiskRecord>()
-                .ToList();
+                .OfType<DatadiskRecord>();
 
             var transformationRecords = records
-                .OfType<ItemTransformationRecord>()
-                .ToList();
+                .OfType<ItemTransformationRecord>();
 
             var craftingRecords = records
-                .OfType<ItemProduceReceipt>()
-                .ToList();
+                .OfType<ItemProduceReceipt>();
 
             var factionRecords = deserializedImportableJsons
-                .OfType<FactionTemplate>()
-                .ToList();
+                .OfType<FactionTemplate>();
 
             var localizationFiles = deserializedImportableJsons
-                .OfType<LocalizationTemplate>()
-                .ToList();
+                .OfType<LocalizationTemplate>();
 
             var weaponRecords = records
-                .OfType<WeaponRecord>()
-                .ToList();
+                .OfType<WeaponRecord>();
 
             var armorRecords = records
-                .Where(obj => obj.GetType().IsSubclassOf(typeof(ResistRecord)))
-                .ToList();
+                .Where(obj => obj.GetType().IsSubclassOf(typeof(ResistRecord)));
 
             var ammoRecords = records
-                .OfType<AmmoRecord>()
-                .ToList();
+                .OfType<AmmoRecord>();
 
             var consumableRecords = records
-                .OfType<ConsumableRecord>()
-                .ToList();
+                .OfType<ConsumableRecord>();
 
             var firemodeRecords = records
-                .OfType<FireModeRecord>()
-                .ToList();
+                .OfType<FireModeRecord>();
 
             var explosionRecords = records
-                .OfType<ExplosionRecord>()
-                .ToList();
+                .OfType<ExplosionRecord>();
+
+            var traits = records
+                .OfType<ItemTraitRecord>();
 
             var cumulativeOperation = new ImportOperationResult();
+
+            var traitLoadResult = LoadTraits(traits);
+            cumulativeOperation.Absorb(traitLoadResult);
 
             var firemodeLoadResult = LoadFiremodes(assetFolderPath, firemodeRecords, firemodeDescriptors);
             cumulativeOperation.Absorb(firemodeLoadResult);
@@ -224,13 +211,13 @@ namespace QM_ImporterAPI.Services
             var craftsLoadResult = AddCrafts(transformationRecords, craftingRecords);
             cumulativeOperation.Absorb(craftsLoadResult);
 
-            factionRecords.ForEach(faction =>
-            {
-                var opResult = ItemCreator.AddFactionRewards(faction);
-                cumulativeOperation.CopyMessages(opResult);
-            });
+            var factionRewardsLoadResult = LoadFactionRewards(factionRecords);
+            cumulativeOperation.Absorb(factionRewardsLoadResult);
 
-            localizationFiles.ForEach(loc => QuasimorphHelper.AddLocalization(loc));
+            foreach (var locFile in localizationFiles)
+            {
+                QuasimorphHelper.AddLocalization(locFile);
+            }
 
             stopWatch.Stop();
             cumulativeOperation.SetExecutionTime(stopWatch.ElapsedMilliseconds);
@@ -260,10 +247,10 @@ namespace QM_ImporterAPI.Services
             return operationResult;
         }
 
-        private static ImportOperationResult LoadFiremodes(string assetFolderPath, List<FireModeRecord> firemodeRecords, List<CustomFireModeDescriptor> fireModeDescriptors)
+        private static ImportOperationResult LoadFiremodes(string assetFolderPath, IEnumerable<FireModeRecord> firemodeRecords, IEnumerable<CustomFireModeDescriptor> fireModeDescriptors)
         {
             var operationResult = new ImportOperationResult();
-            Logger.LogDebug($"{nameof(LoadFiremodes)}: Found {firemodeRecords.Count} records and {fireModeDescriptors.Count} descriptors.");
+            Logger.LogDebug($"{nameof(LoadFiremodes)}: Found {firemodeRecords.Count()} records and {fireModeDescriptors.Count()} descriptors.");
 
             foreach (var descriptor in fireModeDescriptors)
             {
@@ -283,29 +270,29 @@ namespace QM_ImporterAPI.Services
             return operationResult;
         }
 
-        private static ImportOperationResult AddCrafts(List<ItemTransformationRecord> transformationRecords, List<ItemProduceReceipt> craftingRecords)
+        private static ImportOperationResult AddCrafts(IEnumerable<ItemTransformationRecord> transformationRecords, IEnumerable<ItemProduceReceipt> craftingRecords)
         {
             var operationResult = new ImportOperationResult();
 
-            transformationRecords.ForEach(transformationRecord =>
+            foreach (var transformationRecord in transformationRecords)
             {
                 var result = ItemCreator.AddItemTransformation(transformationRecord);
                 operationResult.Absorb(result);
-            });
+            }
 
-            craftingRecords.ForEach(craftingRecord =>
+            foreach (   var craftingRecord in craftingRecords)
             {
                 var result = ItemCreator.AddItemCraftRecipe(craftingRecord);
                 operationResult.Absorb(result);
-            });
+            }
 
             return operationResult;
         }
 
-        private static ImportOperationResult LoadWeapons(string assetFolderPath, List<WeaponRecord> weaponRecords, List<CustomWeaponDescriptor> weaponDescriptors)
+        private static ImportOperationResult LoadWeapons(string assetFolderPath, IEnumerable<WeaponRecord> weaponRecords, IEnumerable<CustomWeaponDescriptor> weaponDescriptors)
         {
             var operationResult = new ImportOperationResult();
-            Logger.LogDebug($"{nameof(LoadWeapons)}: Found {weaponRecords.Count} records and {weaponDescriptors.Count} descriptors.");
+            Logger.LogDebug($"{nameof(LoadWeapons)}: Found {weaponRecords.Count()} records and {weaponDescriptors.Count()} descriptors.");
             foreach (var descriptor in weaponDescriptors)
             {
                 var weaponRecord = weaponRecords.FirstOrDefault(x => x.Id.Equals(descriptor.ItemId));
@@ -323,43 +310,39 @@ namespace QM_ImporterAPI.Services
             return operationResult;
         }
 
-        private static ImportOperationResult LoadArmors(string assetFolderPath, List<object> equipmentRecords, List<CustomArmorDescriptor> equipmentDescriptors)
+        private static ImportOperationResult LoadArmors(string assetFolderPath, IEnumerable<object> equipmentRecords, IEnumerable<CustomArmorDescriptor> equipmentDescriptors)
         {
             var operationResult = new ImportOperationResult();
 
-            if (equipmentRecords.Count == 0)
+            if (!equipmentRecords.Any())
             {
                 Logger.LogDebug("No armor records found to load.");
                 return operationResult;
             }
-            Logger.LogDebug($"Found {equipmentRecords.Count} equipment records and {equipmentDescriptors.Count} descriptors.");
+            Logger.LogDebug($"Found {equipmentRecords.Count()} equipment records and {equipmentDescriptors.Count()} descriptors.");
 
             // Filter all armor records.
             var armorRecords = equipmentRecords
-                .OfType<ArmorRecord>()
-                .ToList();
+                .OfType<ArmorRecord>();
 
             var bootsRecords = equipmentRecords
-                .OfType<BootsRecord>()
-                .ToList();
+                .OfType<BootsRecord>();
 
             var helmetRecords = equipmentRecords
-                .OfType<HelmetRecord>()
-                .ToList();
+                .OfType<HelmetRecord>();
 
             var leggingRecords = equipmentRecords
-                .OfType<LeggingsRecord>()
-                .ToList();
+                .OfType<LeggingsRecord>();
 
             // And some other shit
 
             return operationResult;
         }
 
-        private static ImportOperationResult LoadAmmo(string assetFolderPath, List<AmmoRecord> ammoRecords, List<CustomAmmoDescriptor> ammoDescriptors)
+        private static ImportOperationResult LoadAmmo(string assetFolderPath, IEnumerable<AmmoRecord> ammoRecords, IEnumerable<CustomAmmoDescriptor> ammoDescriptors)
         {
             var operationResult = new ImportOperationResult();
-            Logger.LogDebug($"{nameof(LoadAmmo)}: Found {ammoRecords.Count} records and {ammoDescriptors.Count} descriptors.");
+            Logger.LogDebug($"{nameof(LoadAmmo)}: Found {ammoRecords.Count()} records and {ammoDescriptors.Count()} descriptors.");
             foreach (var descriptor in ammoDescriptors)
             {
                 var ammoRecord = ammoRecords.FirstOrDefault(x => x.Id.Equals(descriptor.ItemId));
@@ -410,6 +393,30 @@ namespace QM_ImporterAPI.Services
             foreach (var craftingRecord in craftingRecords)
             {
                 var result = ItemCreator.AddItemCraftRecipe(craftingRecord);
+                operationResult.Absorb(result);
+            }
+            return operationResult;
+        }
+
+        private static ImportOperationResult LoadFactionRewards(IEnumerable<FactionTemplate> factions)
+        {
+            var operationResult = new ImportOperationResult();
+            Logger.LogDebug($"{nameof(LoadFactionRewards)}: Found {factions.Count()} records.");
+            foreach (var faction in factions)
+            {
+                var result = ItemCreator.AddFactionRewards(faction);
+                operationResult.Absorb(result);
+            }
+            return operationResult;
+        }
+
+        private static ImportOperationResult LoadTraits(IEnumerable<ItemTraitRecord> traitRecords)
+        {
+            var operationResult = new ImportOperationResult();
+            Logger.LogDebug($"{nameof(LoadTraits)}: Found {traitRecords.Count()} records.");
+            foreach (var traitRecord in traitRecords)
+            {
+                var result = ItemCreator.AddTrait(traitRecord);
                 operationResult.Absorb(result);
             }
             return operationResult;
