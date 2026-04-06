@@ -205,48 +205,52 @@ namespace QM_ImporterAPI.Services
         {
             var operationResult = new ImportOperationResult();
             var ammoDescriptor = ScriptableObject.CreateInstance<AmmoDescriptor>();
-            var gibsDescriptor = ScriptableObject.CreateInstance<GibsDescriptor>();
+            bool skipGibs = string.IsNullOrEmpty(customAmmoDescriptor.Gibs.BulletSpritesId) && string.IsNullOrEmpty(customAmmoDescriptor.Gibs.BulletShadowsId);
 
-            if (QuasimorphHelper.IsGameId(customAmmoDescriptor.Gibs.BulletSpritesId))
+            if (!skipGibs)
             {
-                var gibsFromItem = QuasimorphHelper.GetPropertyFromItem<AmmoDescriptor>(customAmmoDescriptor.Gibs.BulletSpritesId, "Gibs") as GibsDescriptor;
-                if (gibsFromItem != null)
+                var gibsDescriptor = ScriptableObject.CreateInstance<GibsDescriptor>();
+                if (QuasimorphHelper.IsGameId(customAmmoDescriptor.Gibs.BulletSpritesId))
                 {
-                    gibsDescriptor._normalSprites = gibsFromItem._normalSprites;
+                    var gibsFromItem = QuasimorphHelper.GetPropertyFromItem<AmmoDescriptor>(customAmmoDescriptor.Gibs.BulletSpritesId, nameof(AmmoDescriptor.Gibs)) as GibsDescriptor;
+                    if (gibsFromItem != null)
+                    {
+                        gibsDescriptor._normalSprites = gibsFromItem._normalSprites;
+                    }
+                    else
+                    {
+                        operationResult.AddWarning($"Unable to load gibs sprites from existing game item with ID: {customAmmoDescriptor.Gibs.BulletSpritesId}");
+                    }
                 }
                 else
                 {
-                    operationResult.AddWarning($"Unable to load gibs sprites from existing game item with ID: {customAmmoDescriptor.Gibs.BulletSpritesId}");
+                    operationResult.AddWarning($"Unable to find in-game ID \"{customAmmoDescriptor.Gibs.BulletSpritesId}\" for BulletSpritesId property for \"{ammoRecord.Id}\"");
                 }
-            }
-            else
-            {
-                operationResult.AddWarning($"Invalid BulletSpritesId for gibs. {customAmmoDescriptor.Gibs.BulletSpritesId} is not a valid game ID.");
-            }
 
-            if (QuasimorphHelper.IsGameId(customAmmoDescriptor.Gibs.BulletShadowsId))
-            {
-                var gibsFromItem = QuasimorphHelper.GetPropertyFromItem<AmmoDescriptor>(customAmmoDescriptor.Gibs.BulletShadowsId, "Gibs") as GibsDescriptor;
-                if (gibsFromItem != null)
+                if (QuasimorphHelper.IsGameId(customAmmoDescriptor.Gibs.BulletShadowsId))
                 {
-                    gibsDescriptor._shadowsSprites = gibsFromItem._shadowsSprites;
+                    var gibsFromItem = QuasimorphHelper.GetPropertyFromItem<AmmoDescriptor>(customAmmoDescriptor.Gibs.BulletShadowsId, nameof(AmmoDescriptor.Gibs)) as GibsDescriptor;
+                    if (gibsFromItem != null)
+                    {
+                        gibsDescriptor._shadowsSprites = gibsFromItem._shadowsSprites;
+                    }
+                    else
+                    {
+                        operationResult.AddWarning($"Unable to load gibs sprites from existing game item with ID: {customAmmoDescriptor.Gibs.BulletSpritesId}");
+                    }
                 }
                 else
                 {
-                    operationResult.AddWarning($"Unable to load gibs sprites from existing game item with ID: {customAmmoDescriptor.Gibs.BulletSpritesId}");
+                    operationResult.AddWarning($"Unable to find in-game ID \"{customAmmoDescriptor.Gibs.BulletSpritesId}\" for BulletSpritesId property for \"{ammoRecord.Id}\"");
                 }
-            }
-            else
-            {
-                operationResult.AddWarning($"Invalid BulletSpritesId for gibs. {customAmmoDescriptor.Gibs.BulletSpritesId} is not a valid game ID.");
-            }
+                ammoDescriptor._gibs = gibsDescriptor;
 
-            gibsDescriptor._animFramerateRange = new Vector2(customAmmoDescriptor.Gibs.AnimationFramerate, customAmmoDescriptor.Gibs.AnimationFramerate);
-            gibsDescriptor._flyDurationRange = new Vector2(customAmmoDescriptor.Gibs.FlightDurationMsMin, customAmmoDescriptor.Gibs.FlightDurationMsMax);
+                gibsDescriptor._animFramerateRange = new Vector2(customAmmoDescriptor.Gibs.AnimationFramerate, customAmmoDescriptor.Gibs.AnimationFramerate);
+                gibsDescriptor._flyDurationRange = new Vector2(customAmmoDescriptor.Gibs.FlightDurationMsMin, customAmmoDescriptor.Gibs.FlightDurationMsMax);
+            }
 
             ammoDescriptor.LoadSprites(customAmmoDescriptor, assetFolderPath);
-
-            ammoDescriptor._gibs = gibsDescriptor;
+            
             ammoRecord.ContentDescriptor = ammoDescriptor;
             return operationResult;
         }

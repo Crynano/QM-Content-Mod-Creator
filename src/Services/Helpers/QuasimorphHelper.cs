@@ -18,7 +18,7 @@ namespace QM_ImporterAPI.Services.Helpers
         {
             if (string.IsNullOrEmpty(id))
             {
-                Logger.LogError("ID is not game ID because its empty or null.");
+                Logger.LogWarning("ID is not game ID because its empty or null.");
                 return false;
             }
             return Data.Items.Ids.Contains(id);
@@ -291,15 +291,22 @@ namespace QM_ImporterAPI.Services.Helpers
                 }
                 else
                 {
-                    returnValue = fields.First(x => x.Name.Equals(propertyName)).GetValue(descriptor);
+                    returnValue = fields.FirstOrDefault(x => x.Name.Equals(propertyName)).GetValue(descriptor);
                 }
             }
             else
             {
-                returnValue = properties.First(x => x.Name.Equals(propertyName)).GetValue(descriptor, null);
+                returnValue = properties.FirstOrDefault(x => x.Name.Equals(propertyName)).GetValue(descriptor, null);
             }
-        
-            Logger.LogDebug($"Successfully obtained the \"{propertyName}\" from \"{id}\"");
+
+            if (returnValue != null)
+            {
+                Logger.LogDebug($"Successfully obtained the \"{propertyName}\" from \"{id}\" with value \"{returnValue}\" of type \"{returnValue?.GetType()}\"");
+            }
+            else
+            {
+                Logger.LogError($"Failed to obtain the \"{propertyName}\" from \"{id}\". The property exists but its value is null.");
+            }
             return returnValue;
         }
 
