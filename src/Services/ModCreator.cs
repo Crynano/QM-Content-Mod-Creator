@@ -1,5 +1,6 @@
 ﻿using MGSC;
 using Newtonsoft.Json;
+using QM_ImporterAPI.Services.Helpers;
 using QM_ImporterAPI.Services.Importing;
 using QM_ImporterAPI.Templates;
 using QM_ImporterAPI.Templates.Descriptors;
@@ -216,6 +217,21 @@ namespace QM_ImporterAPI.Services
             throw new NotImplementedException();
         }
 
+        public static void CreateTraitMod(string rootPath)
+        {
+            var assetsFolder = Path.Combine(rootPath, "Assets");
+            var traitsFolder = Path.Combine(assetsFolder, "Traits");
+
+            Directory.CreateDirectory(assetsFolder);
+            Directory.CreateDirectory(traitsFolder);
+
+            var traitRecord = Data.ItemTraits.Ids
+                .Select(id => Data.ItemTraits.GetRecord(id))
+                .First(x => x != null);
+
+            ExportItems(traitRecord, traitsFolder);
+        }
+
         public static void CreateConsumableMod(string rootPath)
         {
             var oneDatadisk = Data.Items.Ids
@@ -281,41 +297,17 @@ namespace QM_ImporterAPI.Services
 
         private static void ExportItems<TRecord>(TRecord item, string basePath) where TRecord : ConfigTableRecord
         {
-            if (item == null) { Debug.LogWarning($"Item null for \"{basePath}\", skipping export."); return; }
-            var classType = item.GetType();
-            var result = new ImportableJson()
-            {
-                RecordType = classType.FullName,
-                Data = item
-            };
-            var pathCombined = Path.Combine(basePath, $"{item.Id}.json");
-            File.WriteAllText(pathCombined, JsonConvert.SerializeObject(result, JsonExporterSettings.SerializerSettings));
+            ExportHelper.ExportItem(item, basePath);
         }
 
         private static void ExportCustomDescriptor<TDesc>(TDesc descriptor, string basePath) where TDesc : CustomBaseDescriptor
         {
-            if (descriptor == null) { Debug.LogWarning($"Item null for \"{basePath}\", skipping export."); return; }
-            var classType = descriptor.GetType();
-            var result = new ImportableJson()
-            {
-                RecordType = classType.FullName,
-                Data = descriptor
-            };
-            var pathCombined = Path.Combine(basePath, $"{descriptor.ItemId}_descriptor.json");
-            File.WriteAllText(pathCombined, JsonConvert.SerializeObject(result, JsonExporterSettings.SerializerSettings));
+            ExportHelper.ExportCustomDescriptor(descriptor, basePath);
         }
 
         private static void ExportCustom<T>(T item, string fileName, string basePath) where T : class, new()
         {
-            if (item == null) { Debug.LogWarning($"Item null for \"{basePath}\", skipping export."); return; }
-            var classType = item.GetType();
-            var result = new ImportableJson()
-            {
-                RecordType = classType.FullName,
-                Data = item
-            };
-            var pathCombined = Path.Combine(basePath, $"{fileName}.json");
-            File.WriteAllText(pathCombined, JsonConvert.SerializeObject(result, JsonExporterSettings.SerializerSettings));
+            ExportHelper.ExportCustom(item, fileName, basePath);
         }
     }
 }

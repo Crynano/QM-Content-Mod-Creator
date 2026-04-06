@@ -7,12 +7,12 @@ using UnityEngine;
 
 namespace QM_ImporterAPI.Commands
 {
-    [ConsoleCommand(new string[] { "create-mod", "api-create-mod" })]
-    public class CreateModScaffoldingCommand
+    [ConsoleCommand(new string[] { "update-mod", "api-update-mod" })]
+    public class UpdateModCommand
     {
         public static string Help(string command, bool verbose)
         {
-            return "Creates folders and example files to start creating a content mod using the Importer API. Syntax: create-mod <folder-path>";
+            return "updates files with new properties and properties for a mod using the Importer API. Syntax: update-mod <folder-path>";
         }
 
         public string Execute(string[] tokens)
@@ -31,9 +31,9 @@ namespace QM_ImporterAPI.Commands
                     return errorMessage;
                 }
 
-                ModCreator.CreateExampleMod(providedPath);
+                ModLoader.UpdateMod(providedPath);
 
-                return $"<color=green>Created Assets folder and example files at \"{providedPath}\".</color>";
+                return $"<color=green>Updated files at \"{providedPath}\".</color>";
             }
             catch (Exception ex)
             {
