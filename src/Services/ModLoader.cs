@@ -266,7 +266,6 @@ namespace QM_ImporterAPI.Services
                     operationResult.AddWarning($"Could not find a firemode record with id '{descriptor.ItemId}' for the firemode descriptor. Skipping this firemode.");
                 }
             }
-
             return operationResult;
         }
 
@@ -280,7 +279,7 @@ namespace QM_ImporterAPI.Services
                 operationResult.Absorb(result);
             }
 
-            foreach (   var craftingRecord in craftingRecords)
+            foreach (var craftingRecord in craftingRecords)
             {
                 var result = ItemCreator.AddItemCraftRecipe(craftingRecord);
                 operationResult.Absorb(result);
@@ -293,6 +292,9 @@ namespace QM_ImporterAPI.Services
         {
             var operationResult = new ImportOperationResult();
             Logger.LogDebug($"{nameof(LoadWeapons)}: Found {weaponRecords.Count()} records and {weaponDescriptors.Count()} descriptors.");
+            // We should be able to add a weapon even if we don't have a descriptor for it, but only if the ID matches an existing record,
+            // Otherwise we should skip it as no descriptor is a crash.
+
             foreach (var descriptor in weaponDescriptors)
             {
                 var weaponRecord = weaponRecords.FirstOrDefault(x => x.Id.Equals(descriptor.ItemId));

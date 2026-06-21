@@ -282,7 +282,7 @@ namespace QM_ImporterAPI.Services
 
             if (!descriptorAssignmentResult.IsSuccess)
             {
-                Logger.LogError($"Failed to set firemode descriptor properties for firemode with ID: {firemodeRecord.Id}. Firemode won't be added to the game. Errors: {string.Join(", ", descriptorAssignmentResult.ErrorMessages)}");
+                operationResult.AddError($"Failed to set firemode descriptor properties for firemode with ID: {firemodeRecord.Id}. Firemode won't be added to the game.");
                 return operationResult;
             }
 
