@@ -26,9 +26,9 @@ namespace QM_ImporterAPI.Services.Extensions.Records
             weaponDescriptor._prefab = prefabResult.Result;
 
             var muzzleResult = LoadMuzzle(customWeaponDescriptor, prefabResult.Result);
+            operationResult.Absorb(muzzleResult);
             if (!muzzleResult.IsSuccess)
             {
-                operationResult.AddErrors(muzzleResult.ErrorMessages);
                 return operationResult;
             }
             weaponDescriptor._muzzles = new Muzzle[1] { muzzleResult.Result };
@@ -40,7 +40,7 @@ namespace QM_ImporterAPI.Services.Extensions.Records
             weaponDescriptor._texture = textureResult.Result;
 
             var soundOpResult = LoadWeaponSounds(weaponDescriptor, customWeaponDescriptor, assetFolderPath);
-            operationResult.AddErrors(soundOpResult.ErrorMessages);
+            operationResult.Absorb(soundOpResult);
 
             weaponDescriptor._grip = customWeaponDescriptor.Grip;
             weaponDescriptor._hasHFGOverlay = customWeaponDescriptor.HasHFGOverlay;
@@ -106,15 +106,10 @@ namespace QM_ImporterAPI.Services.Extensions.Records
             }
             else
             {
+                muzzleResult.AddWarning($"Muzzle ID \"{modelProperties.MuzzleId}\" is not a valid game ID. Attempting to load default muzzle.");
                 var defaultMuzzleResult = LoadDefaultMuzzle(prefab);
-                if (!defaultMuzzleResult.IsSuccess)
-                {
-                    muzzleResult.AddErrors(defaultMuzzleResult.ErrorMessages);
-                }
-                else
-                {
-                    muzzleResult.SetResult(defaultMuzzleResult.Result);
-                }
+                muzzleResult.Absorb(defaultMuzzleResult);
+                muzzleResult.SetResult(defaultMuzzleResult.Result);
             }
 
             return muzzleResult;
@@ -192,10 +187,31 @@ namespace QM_ImporterAPI.Services.Extensions.Records
         private static ImportOperationResult<Muzzle> LoadDefaultMuzzle(GameObject parentGO)
         {
             var result = new ImportOperationResult<Muzzle>();
-            if (parentGO == null) return null;
+            if (parentGO is null)
+            {
+                result.AddError($"Prefab for muzzle is null!");
+                return result;
+            }
 
-            var muzzleTransform = parentGO.transform.Find("Muzzle");
-            var muzzle = muzzleTransform.gameObject.GetComponent<Muzzle>() ?? muzzleTransform.gameObject.AddComponent<Muzzle>();
+            var muzzleTransform = parentGO.transform.Find("Muzzle") ?? parentGO.transform.GetComponentInChildren<Muzzle>()?.transform;
+            if (muzzleTransform is null)
+            {
+                result.AddWarning($"Prefab for muzzle is missing a child named \"Muzzle\". Added a default one in prefab root.");
+                muzzleTransform = new GameObject("Muzzle").transform;
+                muzzleTransform.SetParent(parentGO.transform);
+                muzzleTransform.localPosition = Vector3.zero;
+
+                var itemBone = muzzleTransform.gameObject.AddComponent<ItemBone>();
+                itemBone.TargetBoneId = "Muzzle";
+            }
+
+            var muzzle = muzzleTransform.gameObject.GetComponent<Muzzle>();
+            if (muzzle is null)
+            {
+                result.AddWarning($"Prefab for muzzle is missing a Muzzle component. Added a default one.");
+                muzzle = muzzleTransform.gameObject.AddComponent<Muzzle>();
+            }
+
             muzzle._additLightIntencityMult = 0.5f;
 
             AnimationCurve val2 = new AnimationCurve()
