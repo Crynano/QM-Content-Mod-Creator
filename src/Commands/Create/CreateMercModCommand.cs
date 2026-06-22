@@ -5,14 +5,14 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
-namespace QM_ImporterAPI.Commands
+namespace QM_ImporterAPI.Commands.Create
 {
-    [ConsoleCommand(new string[] { "create-consumable-mod", "api-create-consumable-mod" })]
-    public class CreateConsumableModCommand
+    [ConsoleCommand(new string[] { "create-merc-mod", "api-create-merc-mod" })]
+    public class CreateMercModCommand
     {
         public static string Help(string command, bool verbose)
         {
-            return "Creates folders and example files to start creating a consumable mod using the Importer API. Syntax: create-consumable-mod <folder-path>";
+            return "Creates folders and example files to start creating a mercenary class mod using the Importer API. Syntax: create-merc-mod <folder-path>";
         }
 
         public string Execute(string[] tokens)
@@ -39,7 +39,7 @@ namespace QM_ImporterAPI.Commands
                     return "<color=red>ERROR: </color>Provided path does not exist.";
                 }
 
-                ModCreator.CreateConsumableMod(providedPath);
+                ModCreator.CreateMercMod(providedPath);
 
                 return $"<color=green>Created Assets folder and example files at \"{providedPath}\".</color>";
             }

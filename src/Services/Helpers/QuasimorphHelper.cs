@@ -380,6 +380,42 @@ namespace QM_ImporterAPI.Services.Helpers
 
             return null;
         }
+
+        public static TRecord GetExistingItemRecord<TRecord>(string id)
+            where TRecord : ConfigTableRecord
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                Logger.LogError("ID is empty or null. Cannot get existing item.");
+            }
+            else if (Data.Items.Ids.Contains(id))
+            {
+                Logger.LogDebug($"{nameof(GetExistingItemRecord)}({id}) good.");
+                var record = Data.Items.GetRecord(id, false);
+                if (record is CompositeItemRecord compositeRecord)
+                {
+                    Logger.LogDebug($"Record is a CompositeItemRecord");
+                    var primaryRecord = compositeRecord.PrimaryRecord;
+                    if (primaryRecord == null)
+                    {
+                        Logger.LogDebug($"Primary record for {id} NOT found.");
+                        return null;
+                    }
+                    Logger.LogDebug($"Record for {id} found. Type of record: {primaryRecord.GetType()}");
+                    return primaryRecord as TRecord;
+                }
+                else if (record is ConfigTableRecord itemRecord)
+                {
+                    return itemRecord as TRecord;
+                }
+                else
+                {
+                    Logger.LogError($"Record for {id} not found in list.");
+                }
+            }
+
+            return null;
+        }
         #endregion
 
         public static WeaponDescriptor GetExistingWeaponDescriptor(string id)

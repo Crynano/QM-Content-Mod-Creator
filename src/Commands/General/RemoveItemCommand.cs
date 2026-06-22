@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace QM_ImporterAPI.Commands
+namespace QM_ImporterAPI.Commands.General
 {
     [ConsoleCommand(new string[] { "removeitem" })]
     public class RemoveItemCommand

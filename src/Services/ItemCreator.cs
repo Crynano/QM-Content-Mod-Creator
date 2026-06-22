@@ -7,6 +7,7 @@ using QM_ImporterAPI.Services.Importing;
 using QM_ImporterAPI.Templates;
 using QM_ImporterAPI.Templates.Descriptors;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -68,22 +69,33 @@ namespace QM_ImporterAPI.Services
             return operationResult;
         }
 
-        public static ImportOperationResult AddItemTransformation(ItemTransformationRecord transRecord)
+        public static ImportOperationResult AddItemTransformation(ItemTransformationRecord craftingRecord)
         {
             var operationResult = new ImportOperationResult();
-            if (transRecord == null)
+            if (craftingRecord is null)
             {
                 operationResult.AddError("ItemTransformation record is null.");
                 return operationResult;
             }
 
-            if (QuasimorphHelper.IsGameId(transRecord.Id, Data.ItemTransformation))
+            if (QuasimorphHelper.IsGameId(craftingRecord.Id))
             {
-                Data.ItemTransformation.RemoveRecord(transRecord.Id);
-                operationResult.AddWarning($"Warning: An ItemTransformation with ID: [{transRecord.Id}] was overriden");
+                operationResult.AddWarning($"An item transformation with ID: [{craftingRecord.Id}] already exists. Its disassembly result will be overridden. " +
+                    $"This happens because this item has a legacy file called \"MGSC.ItemTransformationRecord\" associated to it. " +
+                    $"For compatibility, the old transformation data is being mapped to the new item transformation system. " +
+                    $"Please update your weapon model to include the \"Disassembly\" property. " +
+                    $"You can do so manually or by running the command: \"update-mod\" into your mod.");
+
+                var itemRecord = QuasimorphHelper.GetExistingItemRecord<ItemRecord>(craftingRecord.Id);
+                itemRecord.Disassembly = MapToItemQuantityList(craftingRecord.OutputItems);
             }
-            Data.ItemTransformation.AddRecord(transRecord.Id, transRecord);
+
             return operationResult;
+        }
+
+        private static List<ItemQuantity> MapToItemQuantityList(IEnumerable<OutputItem> input)
+        {
+            return input.Select(i => new ItemQuantity() { ItemId = i.ItemId, Count = i.Count }).ToList();
         }
 
         public static ImportOperationResult AddItemCraftRecipe(ItemProduceReceipt craftingRecipe)

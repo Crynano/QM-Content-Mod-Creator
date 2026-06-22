@@ -1,45 +1,37 @@
 ﻿using MGSC;
 using QM_ImporterAPI.Services;
+using QM_ImporterAPI.Services.Helpers;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using UnityEngine;
 
-namespace QM_ImporterAPI.Commands
+namespace QM_ImporterAPI.Commands.Create
 {
-    [ConsoleCommand(new string[] { "create-merc-mod", "api-create-merc-mod" })]
-    public class CreateMercModCommand
+    [ConsoleCommand(new string[] { "create-trait-mod", "api-create-trait-mod" })]
+    public class CreateTraitModCommand
     {
         public static string Help(string command, bool verbose)
         {
-            return "Creates folders and example files to start creating a mercenary class mod using the Importer API. Syntax: create-merc-mod <folder-path>";
+            return "Creates folders and example files to start creating a trait mod using the Importer API. Syntax: create-trait-mod <folder-path>";
         }
 
         public string Execute(string[] tokens)
         {
             try
             {
-                if (tokens.Length == 0)
-                {
-                    return "<color=red>ERROR: </color>No folder path provided. Syntax: create-mod <folder-path>";
-                }
-
-                var providedPath = tokens[0];
-
+                var providedPath = Helper.FilterToken(tokens, 0);
                 if (string.IsNullOrEmpty(providedPath))
                 {
-                    return "<color=red>ERROR: </color>No folder path provided. Syntax: create-mod <folder-path>";
-                }
-                else if (!Path.IsPathRooted(providedPath))
-                {
-                    return "<color=red>ERROR: </color>Provided path must be an absolute path.";
-                }
-                else if (!Directory.Exists(providedPath))
-                {
-                    return "<color=red>ERROR: </color>Provided path does not exist.";
+                    return "<color=red>ERROR: </color>No folder path provided.";
                 }
 
-                ModCreator.CreateMercMod(providedPath);
+                var errorMessage = Helper.ValidatePath(providedPath);
+                if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    return errorMessage;
+                }
+
+                ModCreator.CreateTraitMod(providedPath);
 
                 return $"<color=green>Created Assets folder and example files at \"{providedPath}\".</color>";
             }

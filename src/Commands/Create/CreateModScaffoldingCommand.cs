@@ -5,14 +5,14 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace QM_ImporterAPI.Commands
+namespace QM_ImporterAPI.Commands.Create
 {
-    [ConsoleCommand(new string[] { "create-trait-mod", "api-create-trait-mod" })]
-    public class CreateTraitModCommand
+    [ConsoleCommand(new string[] { "create-mod", "api-create-mod" })]
+    public class CreateModScaffoldingCommand
     {
         public static string Help(string command, bool verbose)
         {
-            return "Creates folders and example files to start creating a trait mod using the Importer API. Syntax: create-trait-mod <folder-path>";
+            return "Creates folders and example files to start creating a content mod using the Importer API. Syntax: create-mod <folder-path>";
         }
 
         public string Execute(string[] tokens)
@@ -31,7 +31,7 @@ namespace QM_ImporterAPI.Commands
                     return errorMessage;
                 }
 
-                ModCreator.CreateTraitMod(providedPath);
+                ModCreator.CreateExampleMod(providedPath);
 
                 return $"<color=green>Created Assets folder and example files at \"{providedPath}\".</color>";
             }

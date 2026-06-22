@@ -5,14 +5,14 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
-namespace QM_ImporterAPI.Commands
+namespace QM_ImporterAPI.Commands.Create
 {
-    [ConsoleCommand(new string[] { "create-weapon-mod", "api-create-weapon-mod" })]
-    public class CreateWeaponModCommand
+    [ConsoleCommand(new string[] { "create-consumable-mod", "api-create-consumable-mod" })]
+    public class CreateConsumableModCommand
     {
         public static string Help(string command, bool verbose)
         {
-            return "Creates folders and example files to start creating a weapon mod using the Importer API. Syntax: create-weapon-mod <folder-path>";
+            return "Creates folders and example files to start creating a consumable mod using the Importer API. Syntax: create-consumable-mod <folder-path>";
         }
 
         public string Execute(string[] tokens)
@@ -39,7 +39,7 @@ namespace QM_ImporterAPI.Commands
                     return "<color=red>ERROR: </color>Provided path does not exist.";
                 }
 
-                ModCreator.CreateWeaponMod(providedPath);
+                ModCreator.CreateConsumableMod(providedPath);
 
                 return $"<color=green>Created Assets folder and example files at \"{providedPath}\".</color>";
             }

@@ -4,7 +4,7 @@ using System.Linq;
 using UnityEngine;
 using MGSC;
 
-namespace QM_ImporterAPI.Commands
+namespace QM_ImporterAPI.Commands.General
 {
     [ConsoleCommand(new string[] { "give" })]
     public class GiveItemCommand

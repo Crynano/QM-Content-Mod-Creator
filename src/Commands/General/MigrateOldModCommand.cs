@@ -12,7 +12,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using UnityEngine;
 
-namespace QM_ImporterAPI.Commands
+namespace QM_ImporterAPI.Commands.General
 {
     [ConsoleCommand(new string[] { "migrate-old-mod" })]
     public class MigrateOldModCommand
