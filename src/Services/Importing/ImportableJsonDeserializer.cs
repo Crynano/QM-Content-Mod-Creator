@@ -37,7 +37,6 @@ namespace QM_ImporterAPI.Services.Importing
             // Because we use namespace to fit old MGSC types.
             if (recordType is null)
             {
-                Logger.LogDebug($"Type {item.RecordType} not found in MGSC assembly, searching in current assembly.");
                 recordType = OWN_ASSEMBLY.GetType(item.RecordType);
             }
 
