@@ -12,6 +12,11 @@ namespace QM_ImporterAPI.Services.Importing
         // Code recovered from C68.
         // https://forum.unity.com/threads/generating-sprites-dynamically-from-png-or-jpeg-files-in-c.343735/
         // Modded to use ImageConversion on Texture creation.
+        public static Sprite LoadSpriteWithDefaultScaling(string fullPath)
+        {
+            return SpriteImporter.ImportFromFile(fullPath, Vector2.zero, 100f);
+        }
+
         public static Sprite LoadNewSprite(string path)
         {
             return SpriteImporter.ImportFromFile(path, Vector2.zero, 200f);
