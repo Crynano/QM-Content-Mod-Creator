@@ -18,6 +18,36 @@ namespace QM_ImporterAPI.Services
         private const string MELEE_WEAPON_DESCRIPTOR_KEY = "meleeweapons";
         private const string RANGED_WEAPON_DESCRIPTOR_KEY = "rangeweapons";
 
+        public static ImportOperationResult ReplaceWeapon(WeaponRecord weapon, string assetFolderPath)
+        {
+            var operation = new ImportOperationResult();
+
+            var originalWeapon = QuasimorphHelper.GetExistingItemRecord<WeaponRecord>(weapon.Id);
+            if (originalWeapon is null)
+            {
+                operation.AddWarning($"Weapon with ID: {weapon.Id} does not exist in the game. If adding a new weapon, remember to add the descriptor too.");
+            }
+            else
+            {
+                var weaponPropertiesResult = weapon.CheckWeaponPropertiesRestrictions();
+                operation.CopyMessages(weaponPropertiesResult);
+                if (!weaponPropertiesResult.IsSuccess)
+                {
+                    return operation;
+                }
+
+                weapon.ContentDescriptor = originalWeapon.ContentDescriptor;
+
+                var addItemResult = AddItemToGame(weapon);
+                operation.Absorb(addItemResult);
+
+                operation.ContentList.Add(weapon.Id);
+                return operation;
+            }
+
+            return operation;
+        }
+
         public static ImportOperationResult CreateWeapon(WeaponRecord weapon, CustomWeaponDescriptor weaponDescriptor, string assetFolderPath)
         {
             Logger.LogDebug($"Called {nameof(CreateWeapon)} with ID: " + weapon.Id);
@@ -87,15 +117,10 @@ namespace QM_ImporterAPI.Services
                     $"You can do so manually or by running the command: \"update-mod\" into your mod.");
 
                 var itemRecord = QuasimorphHelper.GetExistingItemRecord<ItemRecord>(craftingRecord.Id);
-                itemRecord.Disassembly = MapToItemQuantityList(craftingRecord.OutputItems);
+                itemRecord.Disassembly = craftingRecord.OutputItems;
             }
 
             return operationResult;
-        }
-
-        private static List<ItemQuantity> MapToItemQuantityList(IEnumerable<OutputItem> input)
-        {
-            return input.Select(i => new ItemQuantity() { ItemId = i.ItemId, Count = i.Count }).ToList();
         }
 
         public static ImportOperationResult AddItemCraftRecipe(ItemProduceReceipt craftingRecipe)
@@ -183,7 +208,7 @@ namespace QM_ImporterAPI.Services
             if (QuasimorphHelper.IsGameId(record.Id, Data.Items))
             {
                 Data.Items.RemoveRecord(record.Id);
-                operationResult.AddWarning("An item with ID: [" + record.Id + "] was OVERRIDEN!!!");
+                operationResult.AddWarning($"An item with ID: \"{record.Id}\" was overriden.");
             }
 
             if (record is WeaponRecord weaponRecord)

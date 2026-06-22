@@ -309,6 +309,19 @@ namespace QM_ImporterAPI.Services
                     operationResult.AddWarning($"Could not find a weapon record with id '{descriptor.ItemId}' for the weapon descriptor. Skipping this weapon.");
                 }
             }
+
+            // For all weapon records that don't have a descriptor, we will try to add them with default values, but only if they have a valid ID that matches the record.
+            var weaponRecordsWithoutDescriptor = weaponRecords
+                .Where(wr => !weaponDescriptors.Any(d => d.ItemId.Equals(wr.Id)))
+                .ToList();
+
+            foreach (var weaponRecord in weaponRecordsWithoutDescriptor)
+            {
+                Logger.LogDebug($"Trying to add weapon '{weaponRecord.Id}' (without descriptor) to the game!");
+                var opResult = ItemCreator.ReplaceWeapon(weaponRecord, assetFolderPath);
+                operationResult.Absorb(opResult);
+            }
+
             return operationResult;
         }
 
