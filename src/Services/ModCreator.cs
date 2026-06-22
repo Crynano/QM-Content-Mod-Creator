@@ -17,15 +17,16 @@ namespace QM_ImporterAPI.Services
         {
             var rangedWeapon = Data.Items.Ids
                 .Select(id => Data.Items.GetSimpleRecord<WeaponRecord>(id))
-                .First(x => !x.IsMelee);
+                .Where(x => x != null)
+                .FirstOrDefault(x => !x.IsMelee);
 
             var ammoItem = Data.Items.Ids
                 .Select(id => Data.Items.GetSimpleRecord<AmmoRecord>(id))
-                .First(x => x != null);
+                .FirstOrDefault(x => x != null);
 
             var fireModeRecord = Data.Firemodes.Ids
                 .Select(id => Data.Firemodes.GetRecord(id))
-                .First(x => x != null);
+                .FirstOrDefault(x => x != null);
 
             //var rangedWeaponTransform = Data.ItemTransformation.Ids
             //   .Select(id => Data.ItemTransformation.GetRecord(rangedWeapon.Id))
@@ -36,7 +37,7 @@ namespace QM_ImporterAPI.Services
 
             var oneDatadisk = Data.Items.Ids
                 .Select(id => Data.Items.GetSimpleRecord<DatadiskRecord>(id) ?? null)
-                .First(x => x != null);
+                .FirstOrDefault(x => x != null);
 
             var customWeaponDescriptor = CustomWeaponDescriptor.GetExample(rangedWeapon.Id);
             var customAmmoDescriptor = CustomAmmoDescriptor.GetExample(ammoItem.Id);

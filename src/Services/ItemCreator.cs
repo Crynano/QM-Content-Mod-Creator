@@ -3,11 +3,8 @@ using QM_ImporterAPI.Services.ErrorManagement;
 using QM_ImporterAPI.Services.Extensions.Descriptors;
 using QM_ImporterAPI.Services.Extensions.Records;
 using QM_ImporterAPI.Services.Helpers;
-using QM_ImporterAPI.Services.Importing;
 using QM_ImporterAPI.Templates;
 using QM_ImporterAPI.Templates.Descriptors;
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -146,7 +143,7 @@ namespace QM_ImporterAPI.Services
         public static ImportOperationResult AddDatadiskItems(DatadiskRecord diskRecord, CustomDatadiskDescriptor customDatadiskDescriptor, string assetFolderPath)
         {
             var operationResult = new ImportOperationResult();
-
+            
             var dataDiskCompositeRecord = (CompositeItemRecord)MGSC.Data.Items.GetRecord(diskRecord.Id);
             if (dataDiskCompositeRecord != null)
             {
@@ -162,7 +159,7 @@ namespace QM_ImporterAPI.Services
             {
                 if (customDatadiskDescriptor is null)
                 {
-                    operationResult.AddError("Custom datadisk descriptor is null. Can't add new datadisk item without a descriptor.");
+                    operationResult.AddError($"Custom datadisk descriptor for {diskRecord.Id} is null. Can't add new datadisk item without a descriptor.");
                     return operationResult;
                 }
                 var datadiskDescriptor = ScriptableObject.CreateInstance<DatadiskDescriptor>();
