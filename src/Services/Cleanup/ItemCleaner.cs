@@ -128,10 +128,10 @@ namespace QM_ImporterAPI.Services.Cleanup
 
             Logger.LogDebug("CleanItemsInTradeShuttleDepartment");
 
-            if (department.ResultStorage != null && department.ResultStorage.Items != null)
-            {
-                items.AddRange(CleanItemStorage(department.ResultStorage, idList));
-            }
+            //if (department.ResultStorage != null && department.ResultStorage.Items != null)
+            //{
+            //    items.AddRange(CleanItemStorage(department.ResultStorage, idList));
+            //}
 
             if (department.TradeShuttleStorage != null && department.TradeShuttleStorage.Items != null)
             {

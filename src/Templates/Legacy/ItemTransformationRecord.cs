@@ -2,15 +2,8 @@
 
 namespace MGSC
 {
-    public class ItemTransformationRecord
+    public class ItemTransformationRecord : ConfigTableRecord
     {
-        public IEnumerable<OutputItem> OutputItems { get; set; }
-        public string Id { get; set; }
-    }
-
-    public class OutputItem
-    {
-        public string ItemId { get; set; }
-        public int Count { get; set; }
+        public List<ItemQuantity> OutputItems { get; set; }
     }
 }
