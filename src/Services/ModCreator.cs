@@ -123,10 +123,6 @@ namespace QM_ImporterAPI.Services
                 .Select(id => Data.Explosions.GetRecord(id))
                 .First(x => x != null);
 
-            //var rangedWeaponTransform = Data.ItemTransformation.Ids
-            //    .Select(id => Data.ItemTransformation.GetRecord(rangedWeapon.Id))
-            //    .First(x => x != null);
-
             var rangedWeaponReceipt = Data.ProduceReceipts
                 .Find(x => x.OutputItem == rangedWeapon.Id) ?? Data.ProduceReceipts[0];
 
