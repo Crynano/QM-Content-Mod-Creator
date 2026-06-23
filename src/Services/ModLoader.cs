@@ -12,7 +12,7 @@ using System.Linq;
 
 namespace QM_ImporterAPI.Services
 {
-    public class ModLoader
+    internal class ModLoader
     {
         private const string ASSETS_FOLDER_NAME = "Assets";
 
@@ -33,15 +33,16 @@ namespace QM_ImporterAPI.Services
             new DatadiskLoader(),        // Datadisks
             new CraftingLoader(),        // Crafting recipes (may reference items above)
             new FactionRewardsLoader(),  // Faction rewards (may reference items)
-            new LocalizationLoader()     // Localization last (labels for all items)
+            new LocalizationLoader(),    // Localization last (labels for all items)
+            new SpriteImageLoader(),     // Sprite images last (images for all items)
         };
 
-        public void LoadModFromContext(IModContext modContext)
+        internal void LoadModFromContext(IModContext modContext)
         {
             LoadModFromDirectory(modContext.ModContentPath);
         }
 
-        public void LoadModFromDirectory(string givenPath)
+        internal void LoadModFromDirectory(string givenPath)
         {
             // Here we could try to get the mod name from the directory name or a config file
             // The file is modmanifest.json, which is the steam standard for it.
