@@ -102,10 +102,12 @@ namespace QM_ImporterAPI.Services
         {
             var meleeWeapon = Data.Items.Ids
                 .Select(id => Data.Items.GetSimpleRecord<WeaponRecord>(id))
+                .Where(x => x != null)
                 .First(x => x.IsMelee);
 
             var rangedWeapon = Data.Items.Ids
                 .Select(id => Data.Items.GetSimpleRecord<WeaponRecord>(id))
+                .Where(x => x != null)
                 .First(x => !x.IsMelee);
 
             var armorItem = Data.Items.Ids
@@ -206,11 +208,25 @@ namespace QM_ImporterAPI.Services
             ExportCustom(rangedWeaponReceipt, $"{rangedWeapon.Id}_craftingReceipt", craftingReceiptsFolder);
 
             CreateTraitMod(rootPath);
+            CreateTooltipImage(rootPath);
         }
 
         public static void CreateMercMod(string providedPath)
         {
             throw new NotImplementedException();
+        }
+
+        public static void CreateTooltipImage(string rootPath)
+        {
+            var assetsFolder = Path.Combine(rootPath, ASSETS_FOLDER_NAME);
+            var tooltipsFolder = Path.Combine(assetsFolder, "Tooltips");
+
+            Directory.CreateDirectory(assetsFolder);
+            Directory.CreateDirectory(tooltipsFolder);
+
+            var testTooltipImage = CustomTooltipImage.GetExample("test_tooltip_image");
+
+            ExportCustom(testTooltipImage, $"{testTooltipImage.Tag}_tooltip", tooltipsFolder);
         }
 
         public static void CreateTraitMod(string rootPath)

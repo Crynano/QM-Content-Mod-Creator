@@ -2,8 +2,11 @@
 using QM_ImporterAPI.Services.ErrorManagement;
 using QM_ImporterAPI.Services.Importing;
 using QM_ImporterAPI.Templates.Descriptors;
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using UnityEngine;
 
 namespace QM_ImporterAPI.Services.Loaders
 {
@@ -19,7 +22,18 @@ namespace QM_ImporterAPI.Services.Loaders
             var gameSprites = ToTooltip(assetFolderPath, tooltipImages);
             foreach (var item in gameSprites)
             {
-                Data.TooltipIcons._entries.Add(item);
+                try
+                {
+                    var existingEntry = Data.TooltipIcons._entries.Find(x => x.Tag.Equals(item.Tag));
+                    existingEntry.Sprite = item.Sprite;
+                    existingEntry.SpriteName = item.SpriteName;
+                    operationResult.AddWarning($"Replacing tooltip icon: '{item.Tag}' with new sprite.");
+                }
+                catch
+                {
+                    // Controlled. If not replace, just add.
+                    Data.TooltipIcons._entries.Add(item);
+                }
             }
 
             return operationResult;
@@ -31,10 +45,11 @@ namespace QM_ImporterAPI.Services.Loaders
 
             foreach (var image in tooltipImages)
             {
-                var sprite = AssetImporter.LoadSpriteWithDefaultScaling(Path.Combine(assetFolderPath, image.SpritePathOrId));
+                var sprite = AssetImporter.LoadSpriteCustom(Path.Combine(assetFolderPath, image.SpritePathOrId), new Vector2(0.5f, 0.5f), 1);
                 var entry = new TooltipIconEntry
                 {
                     Sprite = sprite,
+                    SpriteName = image.SpritePathOrId,
                     Tag = image.Tag
                 };
                 result.Add(entry);
