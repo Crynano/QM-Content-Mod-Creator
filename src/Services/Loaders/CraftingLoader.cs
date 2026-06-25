@@ -21,17 +21,11 @@ namespace QM_ImporterAPI.Services.Loaders
 
             Logger.LogDebug($"{LoaderName}: Found {transformationRecords.Count()} transformation records and {craftingRecords.Count()} crafting records.");
 
-            foreach (var transformationRecord in transformationRecords)
-            {
-                var result = ItemCreator.AddItemTransformation(transformationRecord);
-                operationResult.Absorb(result);
-            }
+            var itemTransformResult = ItemCreator.AddItemTransformation(transformationRecords);
+            operationResult.Absorb(itemTransformResult);
 
-            foreach (var craftingRecord in craftingRecords)
-            {
-                var result = ItemCreator.AddItemCraftRecipe(craftingRecord);
-                operationResult.Absorb(result);
-            }
+            var craftRecipesResult = ItemCreator.AddItemCraftRecipe(craftingRecords);
+            operationResult.Absorb(craftRecipesResult);
 
             return operationResult;
         }

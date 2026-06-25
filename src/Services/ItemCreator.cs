@@ -5,6 +5,7 @@ using QM_ImporterAPI.Services.Extensions.Records;
 using QM_ImporterAPI.Services.Helpers;
 using QM_ImporterAPI.Templates;
 using QM_ImporterAPI.Templates.Descriptors;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -96,47 +97,67 @@ namespace QM_ImporterAPI.Services
             return operationResult;
         }
 
-        public static ImportOperationResult AddItemTransformation(ItemTransformationRecord craftingRecord)
+        public static ImportOperationResult AddItemTransformation(IEnumerable<ItemTransformationRecord> craftingRecords)
         {
             var operationResult = new ImportOperationResult();
-            if (craftingRecord is null)
-            {
-                operationResult.AddError("ItemTransformation record is null.");
-                return operationResult;
-            }
 
-            if (QuasimorphHelper.IsGameId(craftingRecord.Id))
+            foreach (var craftingRecord in craftingRecords)
             {
-                operationResult.AddWarning($"An item transformation with ID: [{craftingRecord.Id}] already exists. Its disassembly result will be overridden. " +
-                    $"This happens because this item has a legacy file called \"MGSC.ItemTransformationRecord\" associated to it. " +
-                    $"For compatibility, the old transformation data is being mapped to the new item transformation system. " +
-                    $"Please update your weapon model to include the \"Disassembly\" property. " +
-                    $"You can do so manually or by running the command: \"update-mod\" into your mod.");
+                if (craftingRecord is null) continue;
 
-                var itemRecord = QuasimorphHelper.GetExistingItemRecord<ItemRecord>(craftingRecord.Id);
-                itemRecord.Disassembly = craftingRecord.OutputItems;
+                if (QuasimorphHelper.IsGameId(craftingRecord.Id))
+                {
+                    operationResult.AddWarning($"An item transformation with ID: [{craftingRecord.Id}] already exists. Its disassembly result will be overridden. " +
+                        $"This happens because this item has a legacy file called \"MGSC.ItemTransformationRecord\" associated to it. " +
+                        $"For compatibility, the old transformation data is being mapped to the new item transformation system. " +
+                        $"Please update your weapon model to include the \"Disassembly\" property. " +
+                        $"You can do so manually or by running the command: \"update-mod\" into your mod.");
+
+                    var itemRecord = QuasimorphHelper.GetExistingItemRecord<ItemRecord>(craftingRecord.Id);
+                    itemRecord.Disassembly = craftingRecord.OutputItems;
+                }
             }
 
             return operationResult;
         }
 
-        public static ImportOperationResult AddItemCraftRecipe(ItemProduceReceipt craftingRecipe)
+        public static ImportOperationResult AddItemCraftRecipe(IEnumerable<ItemProduceReceipt> craftingRecipes)
         {
             var operationResult = new ImportOperationResult();
 
-            if (craftingRecipe == null)
+            foreach (var recipe in craftingRecipes)
             {
-                operationResult.AddError("Crafting recipe record is null.");
-                return operationResult;
+                if (recipe is null) continue;
+
+                if (!QuasimorphHelper.IsGameId(recipe.OutputItem))
+                {
+                    operationResult.AddWarning($"A crafting recipe contains a non-existing game ID: [{recipe.OutputItem}].");
+                    continue;
+                }
+
+                if (recipe.RequiredItems != null)
+                {
+                    var missingInputs = recipe.RequiredItems
+                        .Where(input => !QuasimorphHelper.IsGameId(input.ItemId))
+                        .Select(input => input.ItemId)
+                        .ToList();
+
+                    if (missingInputs.Any())
+                    {
+                        operationResult.AddWarning($"Crafting recipe for [{recipe.OutputItem}] references non-existing input items: [{string.Join(", ", missingInputs)}].");
+                        continue;
+                    }
+                }
+
+                var foundRecipe = Data.ProduceReceipts.FirstOrDefault(r => r.OutputItem.Equals(recipe.OutputItem));
+                if (foundRecipe != null)
+                {
+                    Data.ProduceReceipts.Remove(foundRecipe);
+                    operationResult.AddWarning($"Warning: A crafting recipe with ID: [{recipe.OutputItem}] was overriden");
+                }
+                Data.ProduceReceipts.Add(recipe);
             }
 
-            var foundRecipe = Data.ProduceReceipts.Find(recipe => recipe.OutputItem.Equals(craftingRecipe.OutputItem));
-            if (foundRecipe != null)
-            {
-                Data.ProduceReceipts.Remove(foundRecipe);
-                operationResult.AddWarning($"Warning: A crafting recipe with ID: [{craftingRecipe.OutputItem}] was overriden");
-            }
-            Data.ProduceReceipts.Add(craftingRecipe);
             return operationResult;
         }
 
@@ -150,8 +171,14 @@ namespace QM_ImporterAPI.Services
                 var dataDiskItemRecord = dataDiskCompositeRecord.GetRecord<DatadiskRecord>();
 
                 // Add ONLY those not registered and ingame!
+                // Should log all those not in game!
                 var addOnlyThoseNotInChip = diskRecord.UnlockIds
                     .FindAll(id => !dataDiskItemRecord.UnlockIds.Contains(id) && QuasimorphHelper.IsGameId(id));
+
+                var thoseNotInGame = diskRecord.UnlockIds
+                    .FindAll(id => !QuasimorphHelper.IsGameId(id));
+
+                thoseNotInGame.ForEach(id => operationResult.AddWarning($"Not adding {id} to datadisk item. Item does not exist in-game."));
 
                 dataDiskItemRecord.UnlockIds.AddRange(addOnlyThoseNotInChip);
             }
