@@ -17,7 +17,7 @@ namespace QM_ImporterAPI.Commands.General
     {
         public static string Help(string command, bool verbose)
         {
-            return "Migrates all Weapon Records to the new version!";
+            return "Migrates all weapons from the API Item And Weapon Importer Mod format to the Content Mod Creator format!";
         }
 
         public string Execute(string[] tokens)
