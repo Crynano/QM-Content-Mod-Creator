@@ -16,7 +16,7 @@ namespace QM_ImporterAPI.Services
     {
         private const string ASSETS_FOLDER_NAME = "Assets";
 
-        private List<ImportableJson> ImportableJsons = new List<ImportableJson>();
+        private readonly List<ImportableJson> ImportableJsons = new List<ImportableJson>();
 
         /// <summary>
         /// Static collection of all item loaders. Initialized once and reused across all ModLoader instances.
@@ -24,7 +24,8 @@ namespace QM_ImporterAPI.Services
         /// </summary>
         private static readonly List<BaseItemLoader> Loaders = new List<BaseItemLoader>
         {
-            new TraitLoader(),           // Load traits first (no dependencies)
+            new SpriteImageLoader(),     // Sprite images with no dependencies.
+            new TraitLoader(),           // Load traits, only depend on sprite images
             new FireModeLoader(),        // Fire modes before weapons
             new ExplosionLoader(),       // Explosions before weapons/ammo
             new AmmoLoader(),            // Ammo before weapons
@@ -34,7 +35,6 @@ namespace QM_ImporterAPI.Services
             new CraftingLoader(),        // Crafting recipes (may reference items above)
             new FactionRewardsLoader(),  // Faction rewards (may reference items)
             new LocalizationLoader(),    // Localization last (labels for all items)
-            new SpriteImageLoader(),     // Sprite images last (images for all items)
         };
 
         internal void LoadModFromContext(IModContext modContext)

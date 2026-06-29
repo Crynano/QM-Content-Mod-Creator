@@ -142,6 +142,7 @@ namespace QM_ImporterAPI.Services
             var fireModeDescriptor = CustomFireModeDescriptor.GetExample(fireModeRecord.Id);
             var explosionDescriptor = CustomExplosionDescriptor.GetExample(explosionRecord.Id);
             var consumableDescriptor = CustomConsumableDescriptor.GetExample(consumable.Id);
+            var datadiskDescriptor = CustomDatadiskDescriptor.GetExample(oneDatadisk.Id);
 
             var factionTemplate = FactionTemplate.GetExample(rangedWeapon.Id);
             var localizationItem = LocalizationTemplate.GetExample(rangedWeapon.Id);
@@ -202,6 +203,7 @@ namespace QM_ImporterAPI.Services
             ExportCustomDescriptor(fireModeDescriptor, descriptorsFolder);
             ExportCustomDescriptor(explosionDescriptor, descriptorsFolder);
             ExportCustomDescriptor(consumableDescriptor, descriptorsFolder);
+            ExportCustomDescriptor(datadiskDescriptor, descriptorsFolder);
 
             ExportCustom(localizationItem, $"{rangedWeapon.Id}_localization", localizationFolder);
             ExportCustom(factionTemplate, $"{rangedWeapon.Id}_factionReward", factionRewardsFolder);
