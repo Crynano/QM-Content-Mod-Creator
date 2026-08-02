@@ -3,10 +3,9 @@ using QM_ImporterAPI.Services.ErrorManagement;
 using QM_ImporterAPI.Services.Extensions.Descriptors;
 using QM_ImporterAPI.Services.Extensions.Records;
 using QM_ImporterAPI.Services.Helpers;
-using QM_ImporterAPI.Services.Importing;
 using QM_ImporterAPI.Templates;
 using QM_ImporterAPI.Templates.Descriptors;
-using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -16,6 +15,36 @@ namespace QM_ImporterAPI.Services
     {
         private const string MELEE_WEAPON_DESCRIPTOR_KEY = "meleeweapons";
         private const string RANGED_WEAPON_DESCRIPTOR_KEY = "rangeweapons";
+
+        public static ImportOperationResult ReplaceWeapon(WeaponRecord weapon, string assetFolderPath)
+        {
+            var operation = new ImportOperationResult();
+
+            var originalWeapon = QuasimorphHelper.GetExistingItemRecord<WeaponRecord>(weapon.Id);
+            if (originalWeapon is null)
+            {
+                operation.AddWarning($"Weapon with ID: {weapon.Id} does not exist in the game. If adding a new weapon, remember to add the descriptor too.");
+            }
+            else
+            {
+                var weaponPropertiesResult = weapon.CheckWeaponPropertiesRestrictions();
+                operation.CopyMessages(weaponPropertiesResult);
+                if (!weaponPropertiesResult.IsSuccess)
+                {
+                    return operation;
+                }
+
+                weapon.ContentDescriptor = originalWeapon.ContentDescriptor;
+
+                var addItemResult = AddItemToGame(weapon);
+                operation.Absorb(addItemResult);
+
+                operation.ContentList.Add(weapon.Id);
+                return operation;
+            }
+
+            return operation;
+        }
 
         public static ImportOperationResult CreateWeapon(WeaponRecord weapon, CustomWeaponDescriptor weaponDescriptor, string assetFolderPath)
         {
@@ -68,56 +97,88 @@ namespace QM_ImporterAPI.Services
             return operationResult;
         }
 
-        public static ImportOperationResult AddItemTransformation(ItemTransformationRecord transRecord)
+        public static ImportOperationResult AddItemTransformation(IEnumerable<ItemTransformationRecord> craftingRecords)
         {
             var operationResult = new ImportOperationResult();
-            if (transRecord == null)
+
+            foreach (var craftingRecord in craftingRecords)
             {
-                operationResult.AddError("ItemTransformation record is null.");
-                return operationResult;
+                if (craftingRecord is null) continue;
+
+                if (QuasimorphHelper.IsGameId(craftingRecord.Id))
+                {
+                    operationResult.AddWarning($"An item transformation with ID: [{craftingRecord.Id}] already exists. Its disassembly result will be overridden. " +
+                        $"This happens because this item has a legacy file called \"MGSC.ItemTransformationRecord\" associated to it. " +
+                        $"For compatibility, the old transformation data is being mapped to the new item transformation system. " +
+                        $"Please update your weapon model to include the \"Disassembly\" property. " +
+                        $"You can do so manually or by running the command: \"update-mod\" into your mod.");
+
+                    var itemRecord = QuasimorphHelper.GetExistingItemRecord<ItemRecord>(craftingRecord.Id);
+                    itemRecord.Disassembly = craftingRecord.OutputItems;
+                }
             }
 
-            if (QuasimorphHelper.IsGameId(transRecord.Id, Data.ItemTransformation))
-            {
-                Data.ItemTransformation.RemoveRecord(transRecord.Id);
-                operationResult.AddWarning($"Warning: An ItemTransformation with ID: [{transRecord.Id}] was overriden");
-            }
-            Data.ItemTransformation.AddRecord(transRecord.Id, transRecord);
             return operationResult;
         }
 
-        public static ImportOperationResult AddItemCraftRecipe(ItemProduceReceipt craftingRecipe)
+        public static ImportOperationResult AddItemCraftRecipe(IEnumerable<ItemProduceReceipt> craftingRecipes)
         {
             var operationResult = new ImportOperationResult();
 
-            if (craftingRecipe == null)
+            foreach (var recipe in craftingRecipes)
             {
-                operationResult.AddError("Crafting recipe record is null.");
-                return operationResult;
+                if (recipe is null) continue;
+
+                if (!QuasimorphHelper.IsGameId(recipe.OutputItem))
+                {
+                    operationResult.AddWarning($"A crafting recipe contains a non-existing game ID: [{recipe.OutputItem}].");
+                    continue;
+                }
+
+                if (recipe.RequiredItems != null)
+                {
+                    var missingInputs = recipe.RequiredItems
+                        .Where(input => !QuasimorphHelper.IsGameId(input.ItemId))
+                        .Select(input => input.ItemId)
+                        .ToList();
+
+                    if (missingInputs.Any())
+                    {
+                        operationResult.AddWarning($"Crafting recipe for [{recipe.OutputItem}] references non-existing input items: [{string.Join(", ", missingInputs)}].");
+                        continue;
+                    }
+                }
+
+                var foundRecipe = Data.ProduceReceipts.FirstOrDefault(r => r.OutputItem.Equals(recipe.OutputItem));
+                if (foundRecipe != null)
+                {
+                    Data.ProduceReceipts.Remove(foundRecipe);
+                    operationResult.AddWarning($"Warning: A crafting recipe with ID: [{recipe.OutputItem}] was overriden");
+                }
+                Data.ProduceReceipts.Add(recipe);
             }
 
-            var foundRecipe = Data.ProduceReceipts.Find(recipe => recipe.OutputItem.Equals(craftingRecipe.OutputItem));
-            if (foundRecipe != null)
-            {
-                Data.ProduceReceipts.Remove(foundRecipe);
-                operationResult.AddWarning($"Warning: A crafting recipe with ID: [{craftingRecipe.OutputItem}] was overriden");
-            }
-            Data.ProduceReceipts.Add(craftingRecipe);
             return operationResult;
         }
 
         public static ImportOperationResult AddDatadiskItems(DatadiskRecord diskRecord, CustomDatadiskDescriptor customDatadiskDescriptor, string assetFolderPath)
         {
             var operationResult = new ImportOperationResult();
-
+            
             var dataDiskCompositeRecord = (CompositeItemRecord)MGSC.Data.Items.GetRecord(diskRecord.Id);
             if (dataDiskCompositeRecord != null)
             {
                 var dataDiskItemRecord = dataDiskCompositeRecord.GetRecord<DatadiskRecord>();
 
                 // Add ONLY those not registered and ingame!
+                // Should log all those not in game!
                 var addOnlyThoseNotInChip = diskRecord.UnlockIds
                     .FindAll(id => !dataDiskItemRecord.UnlockIds.Contains(id) && QuasimorphHelper.IsGameId(id));
+
+                var thoseNotInGame = diskRecord.UnlockIds
+                    .FindAll(id => !QuasimorphHelper.IsGameId(id));
+
+                thoseNotInGame.ForEach(id => operationResult.AddWarning($"Not adding {id} to datadisk item. Item does not exist in-game."));
 
                 dataDiskItemRecord.UnlockIds.AddRange(addOnlyThoseNotInChip);
             }
@@ -125,7 +186,7 @@ namespace QM_ImporterAPI.Services
             {
                 if (customDatadiskDescriptor is null)
                 {
-                    operationResult.AddError("Custom datadisk descriptor is null. Can't add new datadisk item without a descriptor.");
+                    operationResult.AddError($"Custom datadisk descriptor for {diskRecord.Id} is null. Can't add new datadisk item without a descriptor.");
                     return operationResult;
                 }
                 var datadiskDescriptor = ScriptableObject.CreateInstance<DatadiskDescriptor>();
@@ -171,7 +232,7 @@ namespace QM_ImporterAPI.Services
             if (QuasimorphHelper.IsGameId(record.Id, Data.Items))
             {
                 Data.Items.RemoveRecord(record.Id);
-                operationResult.AddWarning("An item with ID: [" + record.Id + "] was OVERRIDEN!!!");
+                operationResult.AddWarning($"An item with ID: \"{record.Id}\" was overriden.");
             }
 
             if (record is WeaponRecord weaponRecord)
@@ -205,48 +266,52 @@ namespace QM_ImporterAPI.Services
         {
             var operationResult = new ImportOperationResult();
             var ammoDescriptor = ScriptableObject.CreateInstance<AmmoDescriptor>();
-            var gibsDescriptor = ScriptableObject.CreateInstance<GibsDescriptor>();
+            bool skipGibs = string.IsNullOrEmpty(customAmmoDescriptor.Gibs.BulletSpritesId) && string.IsNullOrEmpty(customAmmoDescriptor.Gibs.BulletShadowsId);
 
-            if (QuasimorphHelper.IsGameId(customAmmoDescriptor.Gibs.BulletSpritesId))
+            if (!skipGibs)
             {
-                var gibsFromItem = QuasimorphHelper.GetPropertyFromItem<AmmoDescriptor>(customAmmoDescriptor.Gibs.BulletSpritesId, "Gibs") as GibsDescriptor;
-                if (gibsFromItem != null)
+                var gibsDescriptor = ScriptableObject.CreateInstance<GibsDescriptor>();
+                if (QuasimorphHelper.IsGameId(customAmmoDescriptor.Gibs.BulletSpritesId))
                 {
-                    gibsDescriptor._normalSprites = gibsFromItem._normalSprites;
+                    var gibsFromItem = QuasimorphHelper.GetPropertyFromItem<AmmoDescriptor>(customAmmoDescriptor.Gibs.BulletSpritesId, nameof(AmmoDescriptor.Gibs)) as GibsDescriptor;
+                    if (gibsFromItem != null)
+                    {
+                        gibsDescriptor._normalSprites = gibsFromItem._normalSprites;
+                    }
+                    else
+                    {
+                        operationResult.AddWarning($"Unable to load gibs sprites from existing game item with ID: {customAmmoDescriptor.Gibs.BulletSpritesId}");
+                    }
                 }
                 else
                 {
-                    operationResult.AddWarning($"Unable to load gibs sprites from existing game item with ID: {customAmmoDescriptor.Gibs.BulletSpritesId}");
+                    operationResult.AddWarning($"Unable to find in-game ID \"{customAmmoDescriptor.Gibs.BulletSpritesId}\" for BulletSpritesId property for \"{ammoRecord.Id}\"");
                 }
-            }
-            else
-            {
-                operationResult.AddWarning($"Invalid BulletSpritesId for gibs. {customAmmoDescriptor.Gibs.BulletSpritesId} is not a valid game ID.");
-            }
 
-            if (QuasimorphHelper.IsGameId(customAmmoDescriptor.Gibs.BulletShadowsId))
-            {
-                var gibsFromItem = QuasimorphHelper.GetPropertyFromItem<AmmoDescriptor>(customAmmoDescriptor.Gibs.BulletShadowsId, "Gibs") as GibsDescriptor;
-                if (gibsFromItem != null)
+                if (QuasimorphHelper.IsGameId(customAmmoDescriptor.Gibs.BulletShadowsId))
                 {
-                    gibsDescriptor._shadowsSprites = gibsFromItem._shadowsSprites;
+                    var gibsFromItem = QuasimorphHelper.GetPropertyFromItem<AmmoDescriptor>(customAmmoDescriptor.Gibs.BulletShadowsId, nameof(AmmoDescriptor.Gibs)) as GibsDescriptor;
+                    if (gibsFromItem != null)
+                    {
+                        gibsDescriptor._shadowsSprites = gibsFromItem._shadowsSprites;
+                    }
+                    else 
+                    {
+                        operationResult.AddWarning($"Unable to load gibs sprites from existing game item with ID: {customAmmoDescriptor.Gibs.BulletSpritesId}");
+                    }
                 }
                 else
                 {
-                    operationResult.AddWarning($"Unable to load gibs sprites from existing game item with ID: {customAmmoDescriptor.Gibs.BulletSpritesId}");
+                    operationResult.AddWarning($"Unable to find in-game ID \"{customAmmoDescriptor.Gibs.BulletSpritesId}\" for BulletSpritesId property for \"{ammoRecord.Id}\"");
                 }
-            }
-            else
-            {
-                operationResult.AddWarning($"Invalid BulletSpritesId for gibs. {customAmmoDescriptor.Gibs.BulletSpritesId} is not a valid game ID.");
-            }
+                ammoDescriptor._gibs = gibsDescriptor;
 
-            gibsDescriptor._animFramerateRange = new Vector2(customAmmoDescriptor.Gibs.AnimationFramerate, customAmmoDescriptor.Gibs.AnimationFramerate);
-            gibsDescriptor._flyDurationRange = new Vector2(customAmmoDescriptor.Gibs.FlightDurationMsMin, customAmmoDescriptor.Gibs.FlightDurationMsMax);
+                gibsDescriptor._animFramerateRange = new Vector2(customAmmoDescriptor.Gibs.AnimationFramerate, customAmmoDescriptor.Gibs.AnimationFramerate);
+                gibsDescriptor._flyDurationRange = new Vector2(customAmmoDescriptor.Gibs.FlightDurationMsMin, customAmmoDescriptor.Gibs.FlightDurationMsMax);
+            }
 
             ammoDescriptor.LoadSprites(customAmmoDescriptor, assetFolderPath);
-
-            ammoDescriptor._gibs = gibsDescriptor;
+            
             ammoRecord.ContentDescriptor = ammoDescriptor;
             return operationResult;
         }
@@ -278,7 +343,7 @@ namespace QM_ImporterAPI.Services
 
             if (!descriptorAssignmentResult.IsSuccess)
             {
-                Logger.LogError($"Failed to set firemode descriptor properties for firemode with ID: {firemodeRecord.Id}. Firemode won't be added to the game. Errors: {string.Join(", ", descriptorAssignmentResult.ErrorMessages)}");
+                operationResult.AddError($"Failed to set firemode descriptor properties for firemode with ID: {firemodeRecord.Id}. Firemode won't be added to the game.");
                 return operationResult;
             }
 
@@ -327,6 +392,22 @@ namespace QM_ImporterAPI.Services
             var addItemResult = AddItemToGame(consumable);
             operationResult.Absorb(addItemResult);
 
+            return operationResult;
+        }
+
+        internal static ImportOperationResult AddTrait(ItemTraitRecord itemTrait)
+        {
+            var operationResult = new ImportOperationResult(); 
+            Logger.LogDebug($"Attempting to add trait");
+            if (QuasimorphHelper.IsGameId(itemTrait.Id, Data.ItemTraits))
+            {
+                Data.ItemTraits.RemoveRecord(itemTrait.Id);
+                operationResult.AddWarning($"Trait with ID: [{itemTrait.Id}] was overriden.");
+            }
+
+            MGSC.Data.ItemTraits.AddRecord(itemTrait.Id, itemTrait);
+            operationResult.ContentList.Add(itemTrait.Id);
+            Logger.LogDebug($"Added trait with ID: {itemTrait.Id}.");
             return operationResult;
         }
 

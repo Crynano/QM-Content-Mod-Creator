@@ -1,43 +1,43 @@
 ﻿using MGSC;
-using Newtonsoft.Json;
 using QM_ImporterAPI.Services.Helpers;
-using QM_ImporterAPI.Services.Importing;
 using QM_ImporterAPI.Templates;
 using QM_ImporterAPI.Templates.Descriptors;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using UnityEngine;
 
 namespace QM_ImporterAPI.Services
 {
     public static class ModCreator
     {
+        private const string ASSETS_FOLDER_NAME = "Assets";
+
         public static void CreateWeaponMod(string rootPath)
         {
             var rangedWeapon = Data.Items.Ids
                 .Select(id => Data.Items.GetSimpleRecord<WeaponRecord>(id))
-                .First(x => !x.IsMelee);
+                .Where(x => x != null)
+                .FirstOrDefault(x => !x.IsMelee);
 
             var ammoItem = Data.Items.Ids
                 .Select(id => Data.Items.GetSimpleRecord<AmmoRecord>(id))
-                .First(x => x != null);
+                .FirstOrDefault(x => x != null);
 
             var fireModeRecord = Data.Firemodes.Ids
                 .Select(id => Data.Firemodes.GetRecord(id))
-                .First(x => x != null);
+                .FirstOrDefault(x => x != null);
 
-            var rangedWeaponTransform = Data.ItemTransformation.Ids
-               .Select(id => Data.ItemTransformation.GetRecord(rangedWeapon.Id))
-               .First(x => x != null);
+            //var rangedWeaponTransform = Data.ItemTransformation.Ids
+            //   .Select(id => Data.ItemTransformation.GetRecord(rangedWeapon.Id))
+            //   .First(x => x != null);
 
             var rangedWeaponReceipt = Data.ProduceReceipts
                 .Find(x => x.OutputItem == rangedWeapon.Id) ?? Data.ProduceReceipts[0];
 
             var oneDatadisk = Data.Items.Ids
                 .Select(id => Data.Items.GetSimpleRecord<DatadiskRecord>(id) ?? null)
-                .First(x => x != null);
+                .FirstOrDefault(x => x != null);
 
             var customWeaponDescriptor = CustomWeaponDescriptor.GetExample(rangedWeapon.Id);
             var customAmmoDescriptor = CustomAmmoDescriptor.GetExample(ammoItem.Id);
@@ -48,7 +48,7 @@ namespace QM_ImporterAPI.Services
 
             // If everything went right, now create structure
 
-            var assetsFolder = Path.Combine(rootPath, "Assets");
+            var assetsFolder = Path.Combine(rootPath, ASSETS_FOLDER_NAME);
 
             var weaponsFolder = Path.Combine(assetsFolder, "Weapons");
             var armorFolder = Path.Combine(assetsFolder, "Armors");
@@ -95,7 +95,6 @@ namespace QM_ImporterAPI.Services
 
             ExportCustom(localizationItem, $"{rangedWeapon.Id}_localization", localizationFolder);
             ExportCustom(factionTemplate, $"{rangedWeapon.Id}_factionReward", factionRewardsFolder);
-            ExportCustom(rangedWeaponTransform, $"{rangedWeapon.Id}_transform", transformFolder);
             ExportCustom(rangedWeaponReceipt, $"{rangedWeapon.Id}_craftingReceipt", craftingReceiptsFolder);
         }
 
@@ -103,10 +102,12 @@ namespace QM_ImporterAPI.Services
         {
             var meleeWeapon = Data.Items.Ids
                 .Select(id => Data.Items.GetSimpleRecord<WeaponRecord>(id))
+                .Where(x => x != null)
                 .First(x => x.IsMelee);
 
             var rangedWeapon = Data.Items.Ids
                 .Select(id => Data.Items.GetSimpleRecord<WeaponRecord>(id))
+                .Where(x => x != null)
                 .First(x => !x.IsMelee);
 
             var armorItem = Data.Items.Ids
@@ -125,10 +126,6 @@ namespace QM_ImporterAPI.Services
                 .Select(id => Data.Explosions.GetRecord(id))
                 .First(x => x != null);
 
-            var rangedWeaponTransform = Data.ItemTransformation.Ids
-                .Select(id => Data.ItemTransformation.GetRecord(rangedWeapon.Id))
-                .First(x => x != null);
-
             var rangedWeaponReceipt = Data.ProduceReceipts
                 .Find(x => x.OutputItem == rangedWeapon.Id) ?? Data.ProduceReceipts[0];
 
@@ -145,13 +142,14 @@ namespace QM_ImporterAPI.Services
             var fireModeDescriptor = CustomFireModeDescriptor.GetExample(fireModeRecord.Id);
             var explosionDescriptor = CustomExplosionDescriptor.GetExample(explosionRecord.Id);
             var consumableDescriptor = CustomConsumableDescriptor.GetExample(consumable.Id);
+            var datadiskDescriptor = CustomDatadiskDescriptor.GetExample(oneDatadisk.Id);
 
             var factionTemplate = FactionTemplate.GetExample(rangedWeapon.Id);
             var localizationItem = LocalizationTemplate.GetExample(rangedWeapon.Id);
 
             // If everything went right, now create structure
 
-            var assetsFolder = Path.Combine(rootPath, "Assets");
+            var assetsFolder = Path.Combine(rootPath, ASSETS_FOLDER_NAME);
 
             var weaponsFolder = Path.Combine(assetsFolder, "Weapons");
             var armorFolder = Path.Combine(assetsFolder, "Armors");
@@ -205,11 +203,14 @@ namespace QM_ImporterAPI.Services
             ExportCustomDescriptor(fireModeDescriptor, descriptorsFolder);
             ExportCustomDescriptor(explosionDescriptor, descriptorsFolder);
             ExportCustomDescriptor(consumableDescriptor, descriptorsFolder);
+            ExportCustomDescriptor(datadiskDescriptor, descriptorsFolder);
 
             ExportCustom(localizationItem, $"{rangedWeapon.Id}_localization", localizationFolder);
             ExportCustom(factionTemplate, $"{rangedWeapon.Id}_factionReward", factionRewardsFolder);
-            ExportCustom(rangedWeaponTransform, $"{rangedWeapon.Id}_transform", transformFolder);
             ExportCustom(rangedWeaponReceipt, $"{rangedWeapon.Id}_craftingReceipt", craftingReceiptsFolder);
+
+            CreateTraitMod(rootPath);
+            CreateTooltipImage(rootPath);
         }
 
         public static void CreateMercMod(string providedPath)
@@ -217,9 +218,22 @@ namespace QM_ImporterAPI.Services
             throw new NotImplementedException();
         }
 
+        public static void CreateTooltipImage(string rootPath)
+        {
+            var assetsFolder = Path.Combine(rootPath, ASSETS_FOLDER_NAME);
+            var tooltipsFolder = Path.Combine(assetsFolder, "Tooltips");
+
+            Directory.CreateDirectory(assetsFolder);
+            Directory.CreateDirectory(tooltipsFolder);
+
+            var testTooltipImage = CustomTooltipImage.GetExample("test_tooltip_image");
+
+            ExportCustom(testTooltipImage, $"{testTooltipImage.Tag}_tooltip", tooltipsFolder);
+        }
+
         public static void CreateTraitMod(string rootPath)
         {
-            var assetsFolder = Path.Combine(rootPath, "Assets");
+            var assetsFolder = Path.Combine(rootPath, ASSETS_FOLDER_NAME);
             var traitsFolder = Path.Combine(assetsFolder, "Traits");
 
             Directory.CreateDirectory(assetsFolder);
@@ -244,11 +258,6 @@ namespace QM_ImporterAPI.Services
 
             oneDatadisk.UnlockIds = new List<string> { consumable.Id };
 
-            var consumableTransform = Data.ItemTransformation.GetRecord(consumable.Id)
-                ?? Data.ItemTransformation.GetRecord(Data.ItemTransformation.Ids.First());
-
-            consumableTransform.Id = consumable.Id;
-
             var consumableReceipt = Data.ProduceReceipts
                 .Find(x => x.OutputItem == consumable.Id) ?? Data.ProduceReceipts[0];
 
@@ -258,7 +267,7 @@ namespace QM_ImporterAPI.Services
             var factionTemplate = FactionTemplate.GetExample(consumable.Id);
             var localizationItem = LocalizationTemplate.GetExample(consumable.Id);
 
-            var assetsFolder = Path.Combine(rootPath, "Assets");
+            var assetsFolder = Path.Combine(rootPath, ASSETS_FOLDER_NAME);
 
             var consumablesFolder = Path.Combine(assetsFolder, "Consumables");
 
@@ -291,7 +300,6 @@ namespace QM_ImporterAPI.Services
 
             ExportCustom(localizationItem, $"{consumable.Id}_localization", localizationFolder);
             ExportCustom(factionTemplate, $"{consumable.Id}_factionReward", factionRewardsFolder);
-            ExportCustom(consumableTransform, $"{consumable.Id}_transform", transformFolder);
             ExportCustom(consumableReceipt, $"{consumable.Id}_craftingReceipt", craftingReceiptsFolder);
         }
 

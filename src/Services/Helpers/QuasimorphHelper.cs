@@ -18,7 +18,7 @@ namespace QM_ImporterAPI.Services.Helpers
         {
             if (string.IsNullOrEmpty(id))
             {
-                Logger.LogError("ID is not game ID because its empty or null.");
+                Logger.LogWarning("ID is not game ID because its empty or null.");
                 return false;
             }
             return Data.Items.Ids.Contains(id);
@@ -107,6 +107,21 @@ namespace QM_ImporterAPI.Services.Helpers
             if (IsGameId(path))
             {
                 var propertyFromItem = GetPropertyFromItem<WeaponDescriptor>(path, propertyName);
+                if (propertyFromItem is Sprite spriteProperty)
+                {
+                    return CloneSprite(spriteProperty);
+                }
+                Logger.LogWarning("Failed to load sprite for property [" + propertyName + "] from existing game item with ID: " + path + ". The property is either missing or not a Sprite.");
+            }
+            var fullPath = Helper.ResolvePath(assetFolderPath, path);
+            return loadFunc(fullPath);
+        }
+
+        public static Sprite LoadSpriteFromFiremode(string assetFolderPath, string path, string propertyName, Func<string, Sprite> loadFunc)
+        {
+            if (IsGameId(path))
+            {
+                var propertyFromItem = GetPropertyFromItem<FireModeDescriptor>(path, propertyName);
                 if (propertyFromItem is Sprite spriteProperty)
                 {
                     return CloneSprite(spriteProperty);
@@ -291,15 +306,22 @@ namespace QM_ImporterAPI.Services.Helpers
                 }
                 else
                 {
-                    returnValue = fields.First(x => x.Name.Equals(propertyName)).GetValue(descriptor);
+                    returnValue = fields.FirstOrDefault(x => x.Name.Equals(propertyName)).GetValue(descriptor);
                 }
             }
             else
             {
-                returnValue = properties.First(x => x.Name.Equals(propertyName)).GetValue(descriptor, null);
+                returnValue = properties.FirstOrDefault(x => x.Name.Equals(propertyName)).GetValue(descriptor, null);
             }
-        
-            Logger.LogDebug($"Successfully obtained the \"{propertyName}\" from \"{id}\"");
+
+            if (returnValue != null)
+            {
+                Logger.LogDebug($"Successfully obtained the \"{propertyName}\" from \"{id}\" with value \"{returnValue}\" of type \"{returnValue?.GetType()}\"");
+            }
+            else
+            {
+                Logger.LogError($"Failed to obtain the \"{propertyName}\" from \"{id}\". The property exists but its value is null.");
+            }
             return returnValue;
         }
 
@@ -349,6 +371,42 @@ namespace QM_ImporterAPI.Services.Helpers
                     {
                         Logger.LogDebug($"ContentDescriptor is null.");
                     }
+                }
+                else
+                {
+                    Logger.LogError($"Record for {id} not found in list.");
+                }
+            }
+
+            return null;
+        }
+
+        public static TRecord GetExistingItemRecord<TRecord>(string id)
+            where TRecord : ConfigTableRecord
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                Logger.LogError("ID is empty or null. Cannot get existing item.");
+            }
+            else if (Data.Items.Ids.Contains(id))
+            {
+                Logger.LogDebug($"{nameof(GetExistingItemRecord)}({id}) good.");
+                var record = Data.Items.GetRecord(id, false);
+                if (record is CompositeItemRecord compositeRecord)
+                {
+                    Logger.LogDebug($"Record is a CompositeItemRecord");
+                    var primaryRecord = compositeRecord.PrimaryRecord;
+                    if (primaryRecord == null)
+                    {
+                        Logger.LogDebug($"Primary record for {id} NOT found.");
+                        return null;
+                    }
+                    Logger.LogDebug($"Record for {id} found. Type of record: {primaryRecord.GetType()}");
+                    return primaryRecord as TRecord;
+                }
+                else if (record is ConfigTableRecord itemRecord)
+                {
+                    return itemRecord as TRecord;
                 }
                 else
                 {

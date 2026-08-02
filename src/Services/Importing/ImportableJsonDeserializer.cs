@@ -26,18 +26,21 @@ namespace QM_ImporterAPI.Services.Importing
             }
 
             var mgscRecordType = item.RecordType.Split('.')[0];
-            Type recordType;
+            Type recordType = null;
 
             if (mgscRecordType.Equals(MGSC_NAMESPACE))
             {
                 recordType = MGSC_ASSEMBLY.GetType(item.RecordType);
             }
-            else
+
+            // Search in the current assembly if not found in MGSC
+            // Because we use namespace to fit old MGSC types.
+            if (recordType is null)
             {
                 recordType = OWN_ASSEMBLY.GetType(item.RecordType);
             }
 
-            if (recordType == null)
+            if (recordType is null)
             {
                 Logger.LogWarning($"Could not find type {item.RecordType}.");
                 return null;

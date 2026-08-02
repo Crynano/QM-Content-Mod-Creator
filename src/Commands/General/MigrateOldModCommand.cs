@@ -8,18 +8,16 @@ using QM_ImporterAPI.Templates.OldDescriptors;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
 using UnityEngine;
 
-namespace QM_ImporterAPI.Commands
+namespace QM_ImporterAPI.Commands.General
 {
     [ConsoleCommand(new string[] { "migrate-old-mod" })]
     public class MigrateOldModCommand
     {
         public static string Help(string command, bool verbose)
         {
-            return "Migrates all Weapon Records to the new version!";
+            return "Migrates all weapons from the API Item And Weapon Importer Mod format to the Content Mod Creator format!";
         }
 
         public string Execute(string[] tokens)

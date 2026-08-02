@@ -1,45 +1,37 @@
 ﻿using MGSC;
 using QM_ImporterAPI.Services;
+using QM_ImporterAPI.Services.Helpers;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using UnityEngine;
 
-namespace QM_ImporterAPI.Commands
+namespace QM_ImporterAPI.Commands.Create
 {
-    [ConsoleCommand(new string[] { "create-consumable-mod", "api-create-consumable-mod" })]
-    public class CreateConsumableModCommand
+    [ConsoleCommand(new string[] { "create-mod", "api-create-mod" })]
+    public class CreateModScaffoldingCommand
     {
         public static string Help(string command, bool verbose)
         {
-            return "Creates folders and example files to start creating a consumable mod using the Importer API. Syntax: create-consumable-mod <folder-path>";
+            return "Creates folders and example files to start creating a content mod using the Importer API. Syntax: create-mod <folder-path>";
         }
 
         public string Execute(string[] tokens)
         {
             try
             {
-                if (tokens.Length == 0)
-                {
-                    return "<color=red>ERROR: </color>No folder path provided. Syntax: create-mod <folder-path>";
-                }
-
-                var providedPath = tokens[0];
-
+                var providedPath = Helper.FilterToken(tokens, 0);
                 if (string.IsNullOrEmpty(providedPath))
                 {
-                    return "<color=red>ERROR: </color>No folder path provided. Syntax: create-mod <folder-path>";
-                }
-                else if (!Path.IsPathRooted(providedPath))
-                {
-                    return "<color=red>ERROR: </color>Provided path must be an absolute path.";
-                }
-                else if (!Directory.Exists(providedPath))
-                {
-                    return "<color=red>ERROR: </color>Provided path does not exist.";
+                    return "<color=red>ERROR: </color>No folder path provided.";
                 }
 
-                ModCreator.CreateConsumableMod(providedPath);
+                var errorMessage = Helper.ValidatePath(providedPath);
+                if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    return errorMessage;
+                }
+
+                ModCreator.CreateExampleMod(providedPath);
 
                 return $"<color=green>Created Assets folder and example files at \"{providedPath}\".</color>";
             }

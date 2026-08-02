@@ -1,22 +1,18 @@
 ﻿using MGSC;
-using Newtonsoft.Json;
 using QM_ImporterAPI.Services;
-using QM_ImporterAPI.Services.Importing;
-using QM_ImporterAPI.Templates;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using UnityEngine;
 
-namespace QM_ImporterAPI.Commands
+namespace QM_ImporterAPI.Commands.Create
 {
-    [ConsoleCommand(new string[] { "import-mod", "api-import-mod" })]
-    public class ImportModCommand
+    [ConsoleCommand(new string[] { "create-merc-mod", "api-create-merc-mod" })]
+    public class CreateMercModCommand
     {
         public static string Help(string command, bool verbose)
         {
-            return "Import a mod folder manually. Syntax: import-mod <folderPath>";
+            return "Creates folders and example files to start creating a mercenary class mod using the Importer API. Syntax: create-merc-mod <folder-path>";
         }
 
         public string Execute(string[] tokens)
@@ -43,10 +39,9 @@ namespace QM_ImporterAPI.Commands
                     return "<color=red>ERROR: </color>Provided path does not exist.";
                 }
 
-                var modLoader = new ModLoader();
-                modLoader.LoadModFromDirectory(providedPath);
+                ModCreator.CreateMercMod(providedPath);
 
-                return $"<color=green>Imported mod successfully!</color>";
+                return $"<color=green>Created Assets folder and example files at \"{providedPath}\".</color>";
             }
             catch (Exception ex)
             {
@@ -56,21 +51,9 @@ namespace QM_ImporterAPI.Commands
             }
         }
 
-        private static void ExportItems<T>(T item, string basePath) where T : ConfigTableRecord
-        {
-            var classType = item.GetType();
-            var result = new ImportableJson()
-            {
-                RecordType = classType.FullName,
-                Data = item
-            };
-            var pathCombined = Path.Combine(basePath, $"{item.Id}.json");
-            File.WriteAllText(pathCombined, JsonConvert.SerializeObject(result, JsonExporterSettings.SerializerSettings));
-        }
-
         public static List<string> FetchAutocompleteOptions(string command, string[] tokens)
         {
-            return null;
+            return new List<string>();
         }
 
         public static bool IsAvailable()

@@ -3,6 +3,8 @@
 [![Support on Ko-fi](https://img.shields.io/badge/Support-Ko--fi-ff5f5f?logo=kofi&logoColor=white)](https://ko-fi.com/crynano)
 [![Author: Crynano](https://img.shields.io/badge/Author-Crynano-2f6f91)](https://github.com/Crynano)
 
+> **Requires the Quasimorph Beta Branch.** This mod is not compatible with the stable branch.
+
 Content Mod Creator helps you create Quasimorph weapon and item mods without having to touch code!
 It's a straight upgrade from the Weapon and Item Importer API I've previously developed.
 It handles folder creation, settings, image, audio and configuration so you can focus on building fun content! (Can't wait to see more content mods)
@@ -21,22 +23,41 @@ It handles folder creation, settings, image, audio and configuration so you can 
 - [Special Thanks](#special-thanks)
 - [Other Mods](#my-other-quasimorph-mods)
 
+> **Requires Quasimorph Beta Branch** — see [Restrictions](#restrictions) for details.
+
 ## Features
 - Creates mod folder structure and settings for you.
 - Imports JSON, images, and audio assets.
-- Supports weapons, armor, ammo, firemodes, explosions, and consumables.
+- Supports weapons, armor, ammo, firemodes, explosions, consumables, traits, datadisks, and implants.
+- Supports custom mercenary class mods.
 - Reduces repetitive setup so you can iterate faster.
 - Works through simple in-game console commands.
 
 ## Quick Commands
+### Create
 | Command | What it does |
 | --- | --- |
 | `create-mod "PathToAFolder"` | Creates a full mod template folder (all content types) |
 | `create-weapon-mod "PathToAFolder"` | Creates a weapon-focused mod template folder |
 | `create-consumable-mod "PathToAFolder"` | Creates a consumable-focused mod template folder |
+| `create-merc-mod "PathToAFolder"` | Creates a mercenary class mod template folder |
+| `create-trait-mod "PathToAFolder"` | Creates a trait mod template folder |
+
+### Import & Manage
+| Command | What it does |
+| --- | --- |
 | `import-mod "PathToAFolder"` | Imports your mod into the game |
+| `update-mod "PathToAFolder"` | Updates mod files with new properties |
+| `migrate-old-mod "PathToAFolder"` | Migrates old weapon records to the new format |
+| `give <itemId> [amount] [cargoIndex]` | Spawns items on the floor or in ship cargo (default amount: 1) |
+| `removeitem <itemId>` | Removes all instances of a specific item from the savegame |
+
+### Export
+| Command | What it does |
+| --- | --- |
 | `export-weapons "PathToAFolder"` | Exports 250+ in-game weapons for reference |
 | `export-armor "PathToAFolder"` | Exports in-game armor records for reference |
+| `export-chips "PathToAFolder"` | Exports all in-game item chips (datadisks) for reference |
 
 ## Create a Mod from Scratch
 1. Install Content Mod Creator
@@ -101,6 +122,7 @@ QM_ImporterAPI.Services.ImporterApi.LoadModFromContext(context);
 - ItemProduceReceipt or Crafting Recipes, define costs and time to craft and upgrade the item in the spaceship. 
 - FactionRewards define which faction and at what level the item will be given as reward.
 ### Restrictions
+- **Requires the Quasimorph Beta Branch.** This branch does not run on the stable branch.
 - You can't add custom recipes without adding a weapon first. It will be added in the future.
 - Custom models can't be added unless bundled in a Unity Assetbundle file. You can find tutorials online explaining this process. Requires Unity Engine installed but no prior knowledge of it.
 
@@ -114,6 +136,15 @@ QM_ImporterAPI.Services.ImporterApi.LoadModFromContext(context);
 ```console
 export-weapons "C:/Temp/WeaponDump"
 ```
+
+- To inspect all base game item chips and datadisks:
+
+```console
+export-chips "C:/Temp/ChipDump"
+```
+
+- Use `give <itemId>` to quickly spawn and test your custom items in-game.
+- Use `removeitem <itemId>` to clean up test items from a save without restarting.
 
 ### Crafting Recipes
 - Crafting recipes can be finicky with ongoing saves. If a newly added recipe does not appear in-game, start a new game to verify it works.
@@ -137,6 +168,30 @@ export-weapons "C:/Temp/WeaponDump"
 ### Creating New Chips
 - To create a new chip, define a chip with a brand new unique ID. It can be added to faction rewards via the mod.
 - New chips won't have a custom sprite unless you provide one. A simple starting approach is to add them as faction rewards.
+
+### Implants
+- Implants use `CustomImplantDescriptor`, which extends `CustomItemContentDescriptor`.
+- You can provide a `UseSoundPath` pointing to an audio file played when the implant activates.
+
+### Datadisks
+- Datadisks use `CustomDatadiskDescriptor`. Provide icon, small icon, and shadow sprite paths via `ImageProperties`.
+- Use `export-chips` to reference existing datadisk definitions.
+
+### Custom Wound Slots
+- `CustomWoundSlotDescriptor` lets you define custom wound slots for mercenary classes.
+- Set `SlotPosition` and provide icon paths for each wound state: `NormalIconPath`, `WoundedIconPath`, `FixatedIconPath`, and `AmputatedIconPath`.
+
+### Traits
+- Use `create-trait-mod` to scaffold a trait mod.
+- Trait IDs must be unique. Reference existing traits via `export` commands for formatting guidance.
+
+### Mercenary Classes
+- Use `create-merc-mod` to scaffold a mercenary class mod.
+- Mercenary mods support custom wound slots via `CustomWoundSlotDescriptor`.
+
+### Updating and Migrating Mods
+- Use `update-mod` to add newly introduced JSON properties to existing mod files without recreating them.
+- Use `migrate-old-mod` if you have mod files created with the original Weapon and Item Importer; this converts them to the current format.
 
 ### Mod Organization
 - Consider splitting content into separate mods per faction or theme. There is no built-in way to toggle individual elements within a single mod, so smaller focused mods give users more control over what they load.

@@ -9,17 +9,17 @@ namespace QM_ImporterAPI.Services.Extensions.Descriptors
 {
     internal static class CustomFireModeDescriptorExtensions
     {
-        internal static ImportOperationResult SetFireModeDescriptorProperties(this FireModeRecord ammoRecord, CustomFireModeDescriptor customAmmoDescriptor, string assetFolderPath)
+        internal static ImportOperationResult SetFireModeDescriptorProperties(this FireModeRecord ammoRecord, CustomFireModeDescriptor customFireModeDescriptor, string assetFolderPath)
         {
             var operationResult = new ImportOperationResult();
             var descriptor = ScriptableObject.CreateInstance<FireModeDescriptor>();
             Logger.LogDebug($"Setting firemode descriptor properties for firemode with ID: {ammoRecord.Id}");
 
-            descriptor.Icon = QuasimorphHelper.LoadSpriteFromWeapon(assetFolderPath, customAmmoDescriptor.SpriteIdOrPath, "Icon", AssetImporter.LoadNewSprite);
+            descriptor.Icon = QuasimorphHelper.LoadSpriteFromFiremode(assetFolderPath, customFireModeDescriptor.SpriteIdOrPath, nameof(FireModeDescriptor.Icon), AssetImporter.LoadNewSprite);
             if (descriptor.Icon is null)
             {
                 Logger.LogError($"Failed to add icon to {ammoRecord.Id}.");
-                operationResult.AddError($"Failed to load firemode icon sprite from path: {customAmmoDescriptor.SpriteIdOrPath}");
+                operationResult.AddError($"Failed to load firemode icon sprite from path: {customFireModeDescriptor.SpriteIdOrPath}");
                 return operationResult;
             }
             Logger.LogDebug($"Successfully loaded firemode icon for firemode with ID: {ammoRecord.Id}");
