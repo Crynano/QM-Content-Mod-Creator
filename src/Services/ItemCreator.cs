@@ -302,7 +302,7 @@ namespace QM_ImporterAPI.Services
                 }
                 else
                 {
-                    operationResult.AddWarning($"Unable to find in-game ID \"{customAmmoDescriptor.Gibs.BulletSpritesId}\" for BulletSpritesId property for \"{ammoRecord.Id}\"");
+                    operationResult.AddWarning($"Unable to find in-game ID \"{customAmmoDescriptor.Gibs.BulletSpritesId}\" for BulletShadowsId property for \"{ammoRecord.Id}\"");
                 }
                 ammoDescriptor._gibs = gibsDescriptor;
 
