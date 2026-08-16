@@ -55,7 +55,6 @@ namespace QM_ImporterAPI.Services
         public static void LogError(string message)
         {
             WriteToLog(message, LogType.Error, true);
-            WriteToGameConsole(message, LogType.Error);
         }
 
         public static void SetContext(string context)

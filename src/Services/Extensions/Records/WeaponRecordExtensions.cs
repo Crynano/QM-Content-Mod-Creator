@@ -99,12 +99,15 @@ namespace QM_ImporterAPI.Services.Extensions.Records
             var modelProperties = customWeaponDescriptor.ModelProperties;
             var muzzleResult = new ImportOperationResult<Muzzle>();
 
-            if (QuasimorphHelper.IsGameId(modelProperties.MuzzleId))
+            var isGameId = QuasimorphHelper.IsGameId(modelProperties.MuzzleId);
+            if (isGameId)
             {
                 var muzzle = QuasimorphHelper.GetMuzzleFromExistingWeapon(modelProperties.MuzzleId);
-                muzzleResult.SetResult(muzzle);
+                if (muzzle != null)
+                    muzzleResult.SetResult(muzzle);
             }
-            else
+
+            if (muzzleResult.Result == null)
             {
                 muzzleResult.AddWarning($"Muzzle ID \"{modelProperties.MuzzleId}\" is not a valid game ID. Attempting to load default muzzle.");
                 var defaultMuzzleResult = LoadDefaultMuzzle(prefab);

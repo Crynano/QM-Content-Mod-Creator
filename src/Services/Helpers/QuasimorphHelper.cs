@@ -277,7 +277,7 @@ namespace QM_ImporterAPI.Services.Helpers
             TDescriptor descriptor = GetExistingItem<TRecord, TDescriptor>(id, list);
             if (descriptor == null)
             {
-                Logger.LogError($"Couldn't get property from {id}. Item does not exist in-game.");
+                Logger.LogDebug($"Couldn't get property from {id}. Item does not exist in-game.");
                 return null;
             }
 
@@ -301,7 +301,7 @@ namespace QM_ImporterAPI.Services.Helpers
                 fields.ToList().ForEach(x => Logger.LogDebug($"Listing field {x} for {id}"));
                 if (fields.ToList().Find(x => x.Name.Equals(propertyName)) == null)
                 {
-                    Logger.LogError($"Field or Property \"{propertyName}\" has not been found.");
+                    Logger.LogDebug($"Field or Property \"{propertyName}\" has not been found.");
                     return null;
                 }
                 else
@@ -320,8 +320,9 @@ namespace QM_ImporterAPI.Services.Helpers
             }
             else
             {
-                Logger.LogError($"Failed to obtain the \"{propertyName}\" from \"{id}\". The property exists but its value is null.");
+                Logger.LogDebug($"Failed to obtain the \"{propertyName}\" from \"{id}\". The property exists but its value is null.");
             }
+
             return returnValue;
         }
 
@@ -330,7 +331,7 @@ namespace QM_ImporterAPI.Services.Helpers
         {
             if(string.IsNullOrEmpty(id))
             {
-                Logger.LogError("ID is empty or null. Cannot get existing item.");
+                Logger.LogDebug("ID is empty or null. Cannot get existing item.");
             }
             else if (list.Ids.Contains(id))
             {
@@ -374,7 +375,7 @@ namespace QM_ImporterAPI.Services.Helpers
                 }
                 else
                 {
-                    Logger.LogError($"Record for {id} not found in list.");
+                    Logger.LogDebug($"Record for {id} not found in list.");
                 }
             }
 
@@ -386,7 +387,7 @@ namespace QM_ImporterAPI.Services.Helpers
         {
             if (string.IsNullOrEmpty(id))
             {
-                Logger.LogError("ID is empty or null. Cannot get existing item.");
+                Logger.LogDebug("ID is empty or null. Cannot get existing item.");
             }
             else if (Data.Items.Ids.Contains(id))
             {
@@ -410,7 +411,7 @@ namespace QM_ImporterAPI.Services.Helpers
                 }
                 else
                 {
-                    Logger.LogError($"Record for {id} not found in list.");
+                    Logger.LogDebug($"Record for {id} not found in list.");
                 }
             }
 
