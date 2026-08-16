@@ -297,12 +297,12 @@ namespace QM_ImporterAPI.Services
                     }
                     else 
                     {
-                        operationResult.AddWarning($"Unable to load gibs sprites from existing game item with ID: {customAmmoDescriptor.Gibs.BulletSpritesId}");
+                        operationResult.AddWarning($"Unable to load gibs sprites from existing game item with ID: {customAmmoDescriptor.Gibs.BulletShadowsId}");
                     }
                 }
                 else
                 {
-                    operationResult.AddWarning($"Unable to find in-game ID \"{customAmmoDescriptor.Gibs.BulletSpritesId}\" for BulletShadowsId property for \"{ammoRecord.Id}\"");
+                    operationResult.AddWarning($"Unable to find in-game ID \"{customAmmoDescriptor.Gibs.BulletShadowsId}\" for BulletShadowsId property for \"{ammoRecord.Id}\"");
                 }
                 ammoDescriptor._gibs = gibsDescriptor;
 
