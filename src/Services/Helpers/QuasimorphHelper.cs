@@ -18,7 +18,7 @@ namespace QM_ImporterAPI.Services.Helpers
         {
             if (string.IsNullOrEmpty(id))
             {
-                Logger.LogWarning("ID is not game ID because its empty or null.");
+                Logger.LogDebug("ID is not game ID because its empty or null.");
                 return false;
             }
             return Data.Items.Ids.Contains(id);
@@ -28,7 +28,7 @@ namespace QM_ImporterAPI.Services.Helpers
         {
             if (string.IsNullOrEmpty(id))
             {
-                Logger.LogError("ID is not game ID because its empty or null.");
+                Logger.LogDebug("ID is not game ID because its empty or null.");
                 return false;
             }
             return list.Ids.Contains(id);
