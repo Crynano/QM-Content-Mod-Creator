@@ -25,7 +25,7 @@ namespace QM_ImporterAPI.Commands.Create
                     return "<color=red>ERROR: </color>No folder path provided.";
                 }
 
-                var errorMessage = Helper.ValidatePath(providedPath);
+                var errorMessage = Helper.ValidatePathForConsole(providedPath);
                 if (!string.IsNullOrEmpty(errorMessage))
                 {
                     return errorMessage;

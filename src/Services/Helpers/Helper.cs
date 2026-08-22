@@ -1,9 +1,10 @@
-﻿using System;
+﻿using QM_ImporterAPI.Services.ErrorManagement;
+using System;
 using System.IO;
 
 namespace QM_ImporterAPI.Services.Helpers
 {
-    public static class Helper
+    internal static class Helper
     {
         private static T StringToEnum<T>(string type) where T : Enum
         {
@@ -22,6 +23,21 @@ namespace QM_ImporterAPI.Services.Helpers
             return Path.Combine(basePath, path);
         }
 
+        public static ImportOperationResult<string> ResolveAndValidatePath(string basePath, string path)
+        {
+            var result = new ImportOperationResult<string>();
+
+            var resolvedPath = ResolvePath(basePath, path);
+            var isValid = ValidatePath(resolvedPath, out string errorMessage);
+
+            if (!isValid)
+            {
+                result.AddWarning(errorMessage);
+            }
+
+            return result.SetResult(resolvedPath);
+        }
+
         public static string FilterToken(string[] tokens, int index)
         {
             if (tokens.Length > index)
@@ -31,7 +47,28 @@ namespace QM_ImporterAPI.Services.Helpers
             return null;
         }
 
-        public static string ValidatePath(string providedPath)
+        private static bool ValidatePath(string providedPath, out string errorMessage)
+        {
+            errorMessage = null;
+            if (string.IsNullOrEmpty(providedPath))
+            {
+                errorMessage = "No folder path provided.";
+                return false;
+            }
+            else if (!Path.IsPathRooted(providedPath))
+            {
+                errorMessage = "Provided path must be an absolute path.";
+                return false;
+            }
+            else if (!Directory.Exists(providedPath))
+            {
+                errorMessage = "Provided path does not exist.";
+                return false;
+            }
+            return true;
+        }
+
+        public static string ValidatePathForConsole(string providedPath)
         {
             if (string.IsNullOrEmpty(providedPath))
             {

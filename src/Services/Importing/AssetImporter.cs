@@ -48,7 +48,7 @@ namespace QM_ImporterAPI.Services.Importing
             }
             else if (!File.Exists(bundlePath))
             {
-                operationResult.AddError($"Could not find bundle at {bundlePath}");
+                operationResult.AddWarning($"Could not find bundle at {bundlePath}");
             }
             else
             {

@@ -54,7 +54,13 @@ namespace QM_ImporterAPI.Services.Extensions.Records
         {
             var result = new ImportOperationResult<GameObject>();
 
-            if (QuasimorphHelper.IsGameId(customWeaponDescriptor.ModelProperties.PrefabId))
+            if (PrefabFactory.HasValidModelExtension(customWeaponDescriptor.ModelProperties.PrefabId))
+            {
+                var prefabFromFactory = PrefabFactory.LoadPrefab(customWeaponDescriptor.ModelProperties.PrefabId, assetFolderPath);
+                result.Absorb(prefabFromFactory);
+                return result;
+            }
+            else if (QuasimorphHelper.IsGameId(customWeaponDescriptor.ModelProperties.PrefabId))
             {
                 var prefabFromWeapon = QuasimorphHelper.GetPrefabFromExistingWeapon(customWeaponDescriptor.ModelProperties.PrefabId);
                 result.SetResult(prefabFromWeapon);

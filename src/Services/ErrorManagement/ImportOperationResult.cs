@@ -13,6 +13,13 @@ namespace QM_ImporterAPI.Services.ErrorManagement
         public List<string> ErrorMessages { get; private set; } = new List<string>();
         public List<string> WarningMessages { get; private set; } = new List<string>();
         public List<string> ContentList { get; private set; } = new List<string>();
+        public bool HasErrors => ErrorMessages.Count > 0;
+        public bool HasWarnings => WarningMessages.Count > 0;
+
+        public void AddItem(string itemId)
+        {
+            ContentList.Add(itemId);
+        }
 
         public ImportOperationResult AddError(string message)
         {
@@ -119,9 +126,24 @@ namespace QM_ImporterAPI.Services.ErrorManagement
             return msg;
         }
 
-        public void AddItem(string itemId)
+        public string GetWarningsAsString()
         {
-            ContentList.Add(itemId);
+            StringBuilder sb = new StringBuilder();
+            foreach (var warning in WarningMessages)
+            {
+                sb.AppendLine(warning);
+            }
+            return sb.ToString();
+        }
+
+        public string GetErrorsAsString()
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (var error in ErrorMessages)
+            {
+                sb.AppendLine(error);
+            }
+            return sb.ToString();
         }
     }
 
@@ -129,9 +151,10 @@ namespace QM_ImporterAPI.Services.ErrorManagement
     {
         public T Result { get; private set; }
 
-        public void SetResult(T item)
+        public ImportOperationResult<T> SetResult(T item)
         {
             Result = item;
+            return this;
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using MGSC;
 using QM_ImporterAPI.Services.ErrorManagement;
+using QM_ImporterAPI.Services.Helpers;
 using QM_ImporterAPI.Services.Importing;
 using QM_ImporterAPI.Templates.Descriptors;
 using System.Collections.Generic;
@@ -44,7 +45,7 @@ namespace QM_ImporterAPI.Services.Loaders
 
             foreach (var image in tooltipImages)
             {
-                var sprite = AssetImporter.LoadSpriteCustom(Path.Combine(assetFolderPath, image.SpritePathOrId), new Vector2(0.5f, 0.5f), 1);
+                var sprite = AssetImporter.LoadSpriteCustom(Helper.ResolvePath(assetFolderPath, image.SpritePathOrId), new Vector2(0.5f, 0.5f), 1);
                 var entry = new TooltipIconEntry
                 {
                     Sprite = sprite,
