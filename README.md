@@ -3,8 +3,6 @@
 [![Support on Ko-fi](https://img.shields.io/badge/Support-Ko--fi-ff5f5f?logo=kofi&logoColor=white)](https://ko-fi.com/crynano)
 [![Author: Crynano](https://img.shields.io/badge/Author-Crynano-2f6f91)](https://github.com/Crynano)
 
-> **Requires the Quasimorph Beta Branch.** This mod is not compatible with the stable branch.
-
 Content Mod Creator helps you create Quasimorph weapon and item mods without having to touch code!
 It's a straight upgrade from the Weapon and Item Importer API I've previously developed.
 It handles folder creation, settings, image, audio and configuration so you can focus on building fun content! (Can't wait to see more content mods)
