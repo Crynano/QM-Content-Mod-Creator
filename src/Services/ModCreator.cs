@@ -215,7 +215,49 @@ namespace QM_ImporterAPI.Services
 
         public static void CreateMercMod(string providedPath)
         {
-            throw new NotImplementedException();
+            var mercenaryClass = Data.MercenaryClasses.Ids
+                .Select(id => Data.MercenaryClasses.GetRecord(id))
+                .FirstOrDefault(x => x != null);
+
+            if (mercenaryClass == null)
+            {
+                throw new Exception("No mercenary class found in game data to use as an example.");
+            }
+
+            // Search for the datadisk that unlocks that mercenaryClass
+            // So in UnlockIds of the datadisk, there is the mercenaryClass.Id
+
+            var mercenaryDatadisk = Data.Items.Ids
+                .Select(id => Data.Items.GetSimpleRecord<DatadiskRecord>(id) ?? null)
+                .FirstOrDefault(x => x != null && x.UnlockIds != null && x.UnlockIds.Contains(mercenaryClass.Id));
+
+            var mercenaryClassDescriptor = CustomMercenaryClassDescriptor.GetExample(mercenaryClass.Id);
+            var datadiskDescriptor = mercenaryDatadisk != null ? CustomDatadiskDescriptor.GetExample(mercenaryDatadisk.Id) : null;
+            var localizationItem = LocalizationTemplate.GetExample(mercenaryClass.Id);
+
+            var assetsFolder = Path.Combine(providedPath, ASSETS_FOLDER_NAME);
+            var datadiskFolder = Path.Combine(assetsFolder, "Datadisks");
+
+            var mercenaryClassesFolder = Path.Combine(assetsFolder, "MercenaryClasses");
+            var descriptorsFolder = Path.Combine(assetsFolder, "Descriptors");
+            var localizationFolder = Path.Combine(assetsFolder, "Localization");
+            var spritesFolder = Path.Combine(assetsFolder, "Sprites");
+
+            Directory.CreateDirectory(assetsFolder);
+            Directory.CreateDirectory(mercenaryClassesFolder);
+            Directory.CreateDirectory(descriptorsFolder);
+            Directory.CreateDirectory(localizationFolder);
+            Directory.CreateDirectory(spritesFolder);
+
+            ExportItems(mercenaryClass, mercenaryClassesFolder);
+            ExportCustomDescriptor(mercenaryClassDescriptor, descriptorsFolder);
+            if (mercenaryDatadisk != null)
+            {
+                Directory.CreateDirectory(datadiskFolder);
+                ExportItems(mercenaryDatadisk, datadiskFolder);
+                ExportCustomDescriptor(datadiskDescriptor, descriptorsFolder);
+            }
+            ExportCustom(localizationItem, $"{mercenaryClass.Id}_localization", localizationFolder);
         }
 
         public static void CreateTooltipImage(string rootPath)

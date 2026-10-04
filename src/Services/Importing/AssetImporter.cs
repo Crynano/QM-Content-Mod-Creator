@@ -28,9 +28,14 @@ namespace QM_ImporterAPI.Services.Importing
             return SpriteImporter.ImportFromFile(path, Vector2.zero, 200f);
         }
 
-        public static Sprite LoadCenteredSprite(string path)
+        public static Sprite LoadOffsetSprite(string path)
         {
             return SpriteImporter.ImportFromFile(path, new Vector2(0.5f, 0f), 100f);
+        }
+
+        public static Sprite LoadSpriteCentered(string path)
+        {
+            return LoadSpriteCustom(path, new Vector2(0.5f, 0.5f), 100f);
         }
 
         public static ImportOperationResult<T> LoadFileFromBundle<T>(string bundlePath, string fileName) where T : class

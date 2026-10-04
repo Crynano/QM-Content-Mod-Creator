@@ -7,12 +7,12 @@ using UnityEngine;
 
 namespace QM_ImporterAPI.Commands.Create
 {
-    [ConsoleCommand(new string[] { "create-merc-mod", "api-create-merc-mod" })]
+    [ConsoleCommand(new string[] { "create-merc-class-mod", "api-create-merc-class-mod" })]
     public class CreateMercModCommand
     {
         public static string Help(string command, bool verbose)
         {
-            return "Creates folders and example files to start creating a mercenary class mod using the Importer API. Syntax: create-merc-mod <folder-path>";
+            return "Creates folders and example files to start creating a mercenary class mod using the Importer API. Syntax: create-merc-class-mod <folder-path>";
         }
 
         public string Execute(string[] tokens)

@@ -26,6 +26,7 @@ namespace QM_ImporterAPI.Services
         {
             new SpriteImageLoader(),     // Sprite images with no dependencies.
             new TraitLoader(),           // Load traits, only depend on sprite images
+            new MercenaryClassLoader(),  // Mercenary classes, only depend on sprite images
             new FireModeLoader(),        // Fire modes before weapons
             new ExplosionLoader(),       // Explosions before weapons/ammo
             new AmmoLoader(),            // Ammo before weapons
@@ -35,7 +36,7 @@ namespace QM_ImporterAPI.Services
             new DatadiskLoader(),        // Datadisks
             new CraftingLoader(),        // Crafting recipes (may reference items above)
             new FactionRewardsLoader(),  // Faction rewards (may reference items)
-            new LocalizationLoader(),    // Localization last (labels for all items)
+            new LocalizationLoader(),    // Localization last (labels for all items),
         };
 
         internal void LoadModFromContext(IModContext modContext)
