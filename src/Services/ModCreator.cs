@@ -303,6 +303,79 @@ namespace QM_ImporterAPI.Services
             ExportCustom(consumableReceipt, $"{consumable.Id}_craftingReceipt", craftingReceiptsFolder);
         }
 
+        public static void CreateGrenadeMod(string rootPath)
+        {
+            var oneDatadisk = Data.Items.Ids
+                .Select(id => Data.Items.GetSimpleRecord<DatadiskRecord>(id) ?? null)
+                .FirstOrDefault(x => x != null);
+
+            var grenade = Data.Items.Ids
+                .Select(id => Data.Items.GetSimpleRecord<GrenadeRecord>(id) ?? null)
+                .FirstOrDefault(x => x != null);
+
+            if (grenade == null)
+            {
+                throw new Exception("No grenade found in game data to use as an example.");
+            }
+
+            if (oneDatadisk != null)
+            {
+                oneDatadisk.UnlockIds = new List<string> { grenade.Id };
+            }
+
+            var grenadeReceipt = Data.ProduceReceipts
+                .Find(x => x.OutputItem == grenade.Id) ?? Data.ProduceReceipts[0];
+
+            grenadeReceipt.OutputItem = grenade.Id;
+
+            var grenadeDescriptor = CustomGrenadeDescriptor.GetExample(grenade.Id);
+            var factionTemplate = FactionTemplate.GetExample(grenade.Id);
+            var localizationItem = LocalizationTemplate.GetExample(grenade.Id);
+
+            var assetsFolder = Path.Combine(rootPath, ASSETS_FOLDER_NAME);
+
+            var grenadesFolder = Path.Combine(assetsFolder, "Grenades");
+
+            var transformFolder = Path.Combine(assetsFolder, "Transforms");
+            var craftingReceiptsFolder = Path.Combine(assetsFolder, "Crafting Recipes");
+            var datadiskFolder = Path.Combine(assetsFolder, "Datadisks");
+
+            var descriptorsFolder = Path.Combine(assetsFolder, "Descriptors");
+            var localizationFolder = Path.Combine(assetsFolder, "Localization");
+            var factionRewardsFolder = Path.Combine(assetsFolder, "FactionRewards");
+
+            var soundFolder = Path.Combine(assetsFolder, "Sounds");
+            var spritesFolder = Path.Combine(assetsFolder, "Sprites");
+
+            Directory.CreateDirectory(assetsFolder);
+
+            Directory.CreateDirectory(grenadesFolder);
+
+            Directory.CreateDirectory(transformFolder);
+            Directory.CreateDirectory(craftingReceiptsFolder);
+            if (oneDatadisk != null)
+            {
+                Directory.CreateDirectory(datadiskFolder);
+            }
+            Directory.CreateDirectory(descriptorsFolder);
+            Directory.CreateDirectory(localizationFolder);
+            Directory.CreateDirectory(factionRewardsFolder);
+
+            Directory.CreateDirectory(soundFolder);
+            Directory.CreateDirectory(spritesFolder);
+
+            ExportItems(grenade, grenadesFolder);
+            if (oneDatadisk != null)
+            {
+                ExportItems(oneDatadisk, datadiskFolder);
+            }
+            ExportCustomDescriptor(grenadeDescriptor, descriptorsFolder);
+
+            ExportCustom(localizationItem, $"{grenade.Id}_localization", localizationFolder);
+            ExportCustom(factionTemplate, $"{grenade.Id}_factionReward", factionRewardsFolder);
+            ExportCustom(grenadeReceipt, $"{grenade.Id}_craftingReceipt", craftingReceiptsFolder);
+        }
+
         private static void ExportItems<TRecord>(TRecord item, string basePath) where TRecord : ConfigTableRecord
         {
             ExportHelper.ExportItem(item, basePath);
