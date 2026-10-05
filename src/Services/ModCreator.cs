@@ -312,6 +312,10 @@ namespace QM_ImporterAPI.Services
                 .Select(id => Data.Items.GetSimpleRecord<ConsumableRecord>(id) ?? null)
                 .First(x => x != null);
 
+            var trash = Data.Items.Ids
+                .Select(id => Data.Items.GetSimpleRecord<TrashRecord>(id) ?? null)
+                .First(x => x != null);
+
             oneDatadisk.UnlockIds = new List<string> { consumable.Id };
 
             var consumableReceipt = Data.ProduceReceipts
@@ -320,12 +324,14 @@ namespace QM_ImporterAPI.Services
             consumableReceipt.OutputItem = consumable.Id;
 
             var consumableDescriptor = CustomConsumableDescriptor.GetExample(consumable.Id);
+            var trashDescriptor = CustomTrashDescriptor.GetExample(trash.Id);
             var factionTemplate = FactionTemplate.GetExample(consumable.Id);
             var localizationItem = LocalizationTemplate.GetExample(consumable.Id);
 
             var assetsFolder = Path.Combine(rootPath, ASSETS_FOLDER_NAME);
 
             var consumablesFolder = Path.Combine(assetsFolder, "Consumables");
+            var trashFolder = Path.Combine(assetsFolder, "Trash");
 
             var transformFolder = Path.Combine(assetsFolder, "Transforms");
             var craftingReceiptsFolder = Path.Combine(assetsFolder, "Crafting Recipes");
@@ -339,6 +345,7 @@ namespace QM_ImporterAPI.Services
 
             Directory.CreateDirectory(assetsFolder);
 
+            Directory.CreateDirectory(trashFolder);
             Directory.CreateDirectory(consumablesFolder);
 
             Directory.CreateDirectory(transformFolder);
@@ -350,9 +357,12 @@ namespace QM_ImporterAPI.Services
 
             Directory.CreateDirectory(soundFolder);
 
+            ExportItems(trash, trashFolder);
             ExportItems(consumable, consumablesFolder);
             ExportItems(oneDatadisk, datadiskFolder);
+
             ExportCustomDescriptor(consumableDescriptor, descriptorsFolder);
+            ExportCustomDescriptor(trashDescriptor, descriptorsFolder);
 
             ExportCustom(localizationItem, $"{consumable.Id}_localization", localizationFolder);
             ExportCustom(factionTemplate, $"{consumable.Id}_factionReward", factionRewardsFolder);

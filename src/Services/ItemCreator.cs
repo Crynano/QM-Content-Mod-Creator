@@ -7,6 +7,7 @@ using QM_ImporterAPI.Services.Importing;
 using QM_ImporterAPI.Services.Loaders;
 using QM_ImporterAPI.Templates;
 using QM_ImporterAPI.Templates.Descriptors;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -40,8 +41,6 @@ namespace QM_ImporterAPI.Services
 
                 var addItemResult = AddItemToGame(weapon);
                 operation.Absorb(addItemResult);
-
-                operation.ContentList.Add(weapon.Id);
                 return operation;
             }
 
@@ -60,7 +59,7 @@ namespace QM_ImporterAPI.Services
                 return operationResult;
             }
 
-            var descriptorPropertiesResult = weapon.SetDescriptorProperties(weaponDescriptor, assetFolderPath);
+            var descriptorPropertiesResult = weapon.SetItemContentDescriptorProperties(weaponDescriptor, assetFolderPath);
             operationResult.CopyMessages(descriptorPropertiesResult);
             if (!descriptorPropertiesResult.IsSuccess)
             {
@@ -69,8 +68,6 @@ namespace QM_ImporterAPI.Services
 
             var addItemResult = AddItemToGame(weapon);
             operationResult.Absorb(addItemResult);
-
-            operationResult.ContentList.Add(weapon.Id);
             return operationResult;
         }
 
@@ -94,8 +91,6 @@ namespace QM_ImporterAPI.Services
 
             var addItemResult = AddItemToGame(ammo);
             operationResult.Absorb(addItemResult);
-
-            operationResult.ContentList.Add(ammo.Id);
             return operationResult;
         }
 
@@ -277,13 +272,17 @@ namespace QM_ImporterAPI.Services
             {
                 Data.Descriptors["grenades"].AddDescriptor(record.Id, record.ItemDesc);
             }
+            else if (record is TrashRecord)
+            {
+                Data.Descriptors["trash"].AddDescriptor(record.Id, record.ItemDesc);
+            }
             else
             {
                 operationResult.AddWarning($"Item [{record.Id}] of type {record.GetType().Name} has NOT been added to Data.Descriptors");
             }
 
-            Logger.LogDebug($"Adding item with ID: \"{record.Id}\" of type \"{record.GetType().Name}\" to game.");
             Data.Items.AddRecord(record.Id, record);
+            operationResult.AddItem(record);
             return operationResult;
         }
 
@@ -381,7 +380,7 @@ namespace QM_ImporterAPI.Services
             Logger.LogDebug($"Adding firemode with ID: {firemodeRecord.Id} to the game.");
             Data.Descriptors["firemodes"].AddDescriptor(firemodeRecord.Id, firemodeRecord.ContentDescriptor);
             Data.Firemodes.AddRecord(firemodeRecord.Id, firemodeRecord);
-            operationResult.ContentList.Add(firemodeRecord.Id);
+            operationResult.AddItem(firemodeRecord);
 
             return operationResult;
         }
@@ -411,7 +410,7 @@ namespace QM_ImporterAPI.Services
                 return operationResult;
             }
 
-            var opResult = consumable.SetDescriptorProperties(descriptor, assetFolderPath);
+            var opResult = consumable.SetItemContentDescriptorProperties(descriptor, assetFolderPath);
             operationResult.Absorb(opResult);
 
             var addItemResult = AddItemToGame(consumable);
@@ -442,7 +441,7 @@ namespace QM_ImporterAPI.Services
                 return operationResult;
             }
 
-            var opResult = grenade.SetDescriptorProperties(descriptor, assetFolderPath);
+            var opResult = grenade.SetItemContentDescriptorProperties(descriptor, assetFolderPath);
             operationResult.Absorb(opResult);
 
             var addItemResult = AddItemToGame(grenade);
@@ -461,9 +460,8 @@ namespace QM_ImporterAPI.Services
                 operationResult.AddWarning($"Trait with ID: [{itemTrait.Id}] was overriden.");
             }
 
-            MGSC.Data.ItemTraits.AddRecord(itemTrait.Id, itemTrait);
-            operationResult.ContentList.Add(itemTrait.Id);
-            Logger.LogDebug($"Added trait with ID: {itemTrait.Id}.");
+            Data.ItemTraits.AddRecord(itemTrait.Id, itemTrait);
+            operationResult.AddItem(itemTrait);
             return operationResult;
         }
 
@@ -540,8 +538,8 @@ namespace QM_ImporterAPI.Services
 
                 var addItemResult = AddMercenaryClassToGame(mercenaryClass);
                 operation.Absorb(addItemResult);
+                operation.AddItem(mercenaryClass);
 
-                operation.ContentList.Add(mercenaryClass.Id);
                 return operation;
             }
 
@@ -562,8 +560,7 @@ namespace QM_ImporterAPI.Services
 
             var addItemResult = AddMercenaryClassToGame(mercenaryClass);
             operationResult.Absorb(addItemResult);
-
-            operationResult.ContentList.Add(mercenaryClass.Id);
+            operationResult.AddItem(mercenaryClass);
             return operationResult;
         }
 
@@ -582,7 +579,7 @@ namespace QM_ImporterAPI.Services
 
             Logger.LogDebug($"Adding mercenary profile with ID: \"{profile.Id}\" to game.");
             Data.MercenaryProfiles.AddRecord(profile.Id, profile);
-            operationResult.ContentList.Add(profile.Id);
+            operationResult.AddItem(profile);
             return operationResult;
         }
 
@@ -628,6 +625,58 @@ namespace QM_ImporterAPI.Services
 
             Logger.LogDebug($"Successfully loaded sprites for mercenary class with ID: {mercenaryClass.Id}");
             mercenaryClass.ContentDescriptor = descriptor;
+            return operationResult;
+        }
+
+        internal static ImportOperationResult AddTrash(TrashRecord trash, CustomTrashDescriptor descriptor, string assetFolderPath)
+        {
+            var operationResult = new ImportOperationResult();
+
+            Logger.LogDebug($"Attempting to add trash");
+
+            if (trash is null)
+            {
+                operationResult.AddError("Trash record is null.");
+                return operationResult;
+            }
+            else if (string.IsNullOrEmpty(trash.Id))
+            {
+                operationResult.AddError("Trash ID is null or empty.");
+                return operationResult;
+            }
+            else if (descriptor is null)
+            {
+                operationResult.AddError($"Trash content descriptor for {trash.Id} is null.");
+                return operationResult;
+            }
+
+            var opResult = trash.SetItemContentDescriptorProperties(descriptor, assetFolderPath);
+            operationResult.Absorb(opResult);
+            if (!opResult.IsSuccess)
+            {
+                operationResult.AddError($"Failed to set trash descriptor properties for trash with ID: {trash.Id}. Trash won't be added to the game.");
+                return operationResult;
+            }
+
+            var addItemResult = AddItemToGame(trash);
+            operationResult.Absorb(addItemResult);
+
+            return operationResult;
+        }
+
+        internal static ImportOperationResult SetItemContentDescriptorProperties<TRecord>(this TRecord record, CustomItemContentDescriptor customBaseDescriptor, string assetFolderPath) where TRecord : ItemRecord
+        {
+            var operationResult = new ImportOperationResult();
+            var baseDescriptor = ScriptableObject.CreateInstance<ItemContentDescriptor>();
+
+            if (customBaseDescriptor == null)
+            {
+                operationResult.AddWarning($"{nameof(CustomItemContentDescriptor)} for {record.Id} is null.");
+                return operationResult;
+            }
+
+            baseDescriptor.LoadSprites(customBaseDescriptor, assetFolderPath);
+            record.ContentDescriptor = baseDescriptor;
             return operationResult;
         }
     }

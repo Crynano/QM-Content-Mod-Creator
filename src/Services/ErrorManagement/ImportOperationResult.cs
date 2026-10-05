@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using MGSC;
+using System.Collections.Generic;
 using System.Text;
 
 namespace QM_ImporterAPI.Services.ErrorManagement
@@ -12,7 +13,7 @@ namespace QM_ImporterAPI.Services.ErrorManagement
         public double ExecutionTime { get; private set; } = 0f;
         public List<string> ErrorMessages { get; private set; } = new List<string>();
         public List<string> WarningMessages { get; private set; } = new List<string>();
-        public List<string> ContentList { get; private set; } = new List<string>();
+        private List<string> ContentList { get; set; } = new List<string>();
 
         public ImportOperationResult AddError(string message)
         {
@@ -86,6 +87,7 @@ namespace QM_ImporterAPI.Services.ErrorManagement
         {
             string msg = "";
 
+            msg += $"Import Operation Result:\n";
             msg += $"Result: {this.IsSuccess}\n";
             msg += $"Execution Time: {this.ExecutionTime}ms\n";
 
@@ -119,9 +121,12 @@ namespace QM_ImporterAPI.Services.ErrorManagement
             return msg;
         }
 
-        public void AddItem(string itemId)
+        public void AddItem(ConfigTableRecord item)
         {
-            ContentList.Add(itemId);
+#if DEBUG
+            Logger.LogDebug($"Adding item with ID: \"{item.Id}\" of type \"{item.GetType().Name}\" to content list.");
+#endif
+            ContentList.Add(item.Id);
         }
     }
 

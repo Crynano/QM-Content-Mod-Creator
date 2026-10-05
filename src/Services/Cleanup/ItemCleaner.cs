@@ -11,8 +11,6 @@ namespace QM_ImporterAPI.Services.Cleanup
         {
             // Check if user is ingame.
             string resultMessage = "";
-            Logger.SetConfig("QM_WeaponImporter");
-            Logger.SetContext("PerformCleanupWithidList()");
             try
             {
                 // Execute cleanup.
@@ -25,11 +23,6 @@ namespace QM_ImporterAPI.Services.Cleanup
             {
                 Logger.LogError($"PerformCleanupWithidList(): Error when performing cleanup with idList {idList}.\n{e.Message}\n{e.StackTrace}\n{e.Source}");
                 resultMessage = $"Error occurred while cleaning references with idList: {idList}";
-            }
-            finally
-            {
-                Logger.FlushAdditive();
-                Logger.ClearContext();
             }
             return resultMessage;
         }
