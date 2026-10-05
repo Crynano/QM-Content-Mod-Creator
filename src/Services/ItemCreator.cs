@@ -3,6 +3,8 @@ using QM_ImporterAPI.Services.ErrorManagement;
 using QM_ImporterAPI.Services.Extensions.Descriptors;
 using QM_ImporterAPI.Services.Extensions.Records;
 using QM_ImporterAPI.Services.Helpers;
+using QM_ImporterAPI.Services.Importing;
+using QM_ImporterAPI.Services.Loaders;
 using QM_ImporterAPI.Templates;
 using QM_ImporterAPI.Templates.Descriptors;
 using System.Collections.Generic;
@@ -164,7 +166,7 @@ namespace QM_ImporterAPI.Services
         public static ImportOperationResult AddDatadiskItems(DatadiskRecord diskRecord, CustomDatadiskDescriptor customDatadiskDescriptor, string assetFolderPath)
         {
             var operationResult = new ImportOperationResult();
-            
+
             var dataDiskCompositeRecord = (CompositeItemRecord)MGSC.Data.Items.GetRecord(diskRecord.Id);
             if (dataDiskCompositeRecord != null)
             {
@@ -299,7 +301,7 @@ namespace QM_ImporterAPI.Services
                     {
                         gibsDescriptor._shadowsSprites = gibsFromItem._shadowsSprites;
                     }
-                    else 
+                    else
                     {
                         operationResult.AddWarning($"Unable to load gibs sprites from existing game item with ID: {customAmmoDescriptor.Gibs.BulletShadowsId}");
                     }
@@ -315,7 +317,7 @@ namespace QM_ImporterAPI.Services
             }
 
             ammoDescriptor.LoadSprites(customAmmoDescriptor, assetFolderPath);
-            
+
             ammoRecord.ContentDescriptor = ammoDescriptor;
             return operationResult;
         }
@@ -432,7 +434,7 @@ namespace QM_ImporterAPI.Services
 
         internal static ImportOperationResult AddTrait(ItemTraitRecord itemTrait)
         {
-            var operationResult = new ImportOperationResult(); 
+            var operationResult = new ImportOperationResult();
             Logger.LogDebug($"Attempting to add trait");
             if (QuasimorphHelper.IsGameId(itemTrait.Id, Data.ItemTraits))
             {
@@ -501,6 +503,93 @@ namespace QM_ImporterAPI.Services
 
             Logger.LogDebug($"Successfully loaded explosion icon for explosion with ID: {explosionRecord.Id}");
             explosionRecord.ContentDescriptor = descriptor;
+            return operationResult;
+        }
+
+        public static ImportOperationResult ReplaceMercenaryClass(MercenaryClassRecord mercenaryClass, string assetFolderPath)
+        {
+            var operation = new ImportOperationResult();
+
+            var originalMercenaryClass = Data.MercenaryClasses.Ids.Contains(mercenaryClass.Id) ? Data.MercenaryClasses.GetRecord(mercenaryClass.Id) : null;
+            if (originalMercenaryClass is null)
+            {
+                operation.AddWarning($"Mercenary class with ID: {mercenaryClass.Id} does not exist in the game. If adding a new mercenary class, remember to add the descriptor too.");
+            }
+            else
+            {
+                mercenaryClass.ContentDescriptor = originalMercenaryClass.ContentDescriptor;
+
+                var addItemResult = AddMercenaryClassToGame(mercenaryClass);
+                operation.Absorb(addItemResult);
+
+                operation.ContentList.Add(mercenaryClass.Id);
+                return operation;
+            }
+
+            return operation;
+        }
+
+        public static ImportOperationResult CreateMercenaryClass(MercenaryClassRecord mercenaryClass, CustomMercenaryClassDescriptor mercenaryClassDescriptor, string assetFolderPath)
+        {
+            Logger.LogDebug($"Called {nameof(CreateMercenaryClass)} with ID: " + mercenaryClass.Id);
+            var operationResult = new ImportOperationResult();
+
+            var descriptorPropertiesResult = SetMercenaryClassDescriptorProperties(mercenaryClass, mercenaryClassDescriptor, assetFolderPath);
+            operationResult.CopyMessages(descriptorPropertiesResult);
+            if (!descriptorPropertiesResult.IsSuccess)
+            {
+                return operationResult;
+            }
+
+            var addItemResult = AddMercenaryClassToGame(mercenaryClass);
+            operationResult.Absorb(addItemResult);
+
+            operationResult.ContentList.Add(mercenaryClass.Id);
+            return operationResult;
+        }
+
+        private static ImportOperationResult AddMercenaryClassToGame(MercenaryClassRecord record)
+        {
+            var operationResult = new ImportOperationResult();
+            if (Data.MercenaryClasses.Ids.Contains(record.Id))
+            {
+                Data.MercenaryClasses.RemoveRecord(record.Id);
+                operationResult.AddWarning($"A mercenary class with ID: \"{record.Id}\" was overriden.");
+            }
+
+            Logger.LogDebug($"Adding mercenary class with ID: \"{record.Id}\" to game.");
+            Data.MercenaryClasses.AddRecord(record.Id, record);
+            return operationResult;
+        }
+
+        private static ImportOperationResult SetMercenaryClassDescriptorProperties(MercenaryClassRecord mercenaryClass, CustomMercenaryClassDescriptor customMercenaryClassDescriptor, string assetFolderPath)
+        {
+            var operationResult = new ImportOperationResult();
+            var descriptor = ScriptableObject.CreateInstance<MercenaryClassDescriptor>();
+
+            Logger.LogDebug($"Setting mercenary class descriptor properties for mercenary class with ID: {mercenaryClass.Id}");
+            var iconSprite = QuasimorphHelper.LoadSpriteFromMercenaries(assetFolderPath, customMercenaryClassDescriptor?.IconSpriteIdOrPath, nameof(MercenaryClassDescriptor.Icon), AssetImporter.LoadSpriteCentered);
+            if (iconSprite != null)
+            {
+                descriptor._icon = iconSprite;
+            }
+            else
+            {
+                return operationResult.AddWarning($"Unable to load icon sprite from path: {customMercenaryClassDescriptor?.IconSpriteIdOrPath}");
+            }
+
+            var smallIcon = QuasimorphHelper.LoadSpriteFromMercenaries(assetFolderPath, customMercenaryClassDescriptor?.SmallIconSpriteIdOrPath, nameof(MercenaryClassDescriptor.SmallIcon), AssetImporter.LoadSpriteWithDefaultScaling);
+            if (smallIcon != null)
+            {
+                descriptor._smallIcon = smallIcon;
+            }
+            else
+            {
+                return operationResult.AddWarning($"Unable to load small icon sprite from path: {customMercenaryClassDescriptor?.SmallIconSpriteIdOrPath}");
+            }
+
+            Logger.LogDebug($"Successfully loaded sprites for mercenary class with ID: {mercenaryClass.Id}");
+            mercenaryClass.ContentDescriptor = descriptor;
             return operationResult;
         }
     }

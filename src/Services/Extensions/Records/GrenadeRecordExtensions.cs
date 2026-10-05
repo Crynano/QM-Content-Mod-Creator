@@ -153,7 +153,7 @@ namespace QM_ImporterAPI.Services.Extensions.Records
             // Load sprite from file
             try
             {
-                var sprite = AssetImporter.LoadCenteredSprite(fullPath);
+                var sprite = AssetImporter.LoadOffsetSprite(fullPath);
                 if (sprite != null)
                 {
                     result.SetResult(new[] { sprite });

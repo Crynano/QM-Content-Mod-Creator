@@ -12,6 +12,8 @@ namespace QM_ImporterAPI.Services
     public static class ModCreator
     {
         private const string ASSETS_FOLDER_NAME = "Assets";
+        private const string WEAPONS_FOLDER_NAME = "Weapons";
+        private const string DATADISKS_FOLDER_NAME = "Datadisks";
 
         public static void CreateWeaponMod(string rootPath)
         {
@@ -28,10 +30,6 @@ namespace QM_ImporterAPI.Services
                 .Select(id => Data.Firemodes.GetRecord(id))
                 .FirstOrDefault(x => x != null);
 
-            //var rangedWeaponTransform = Data.ItemTransformation.Ids
-            //   .Select(id => Data.ItemTransformation.GetRecord(rangedWeapon.Id))
-            //   .First(x => x != null);
-
             var rangedWeaponReceipt = Data.ProduceReceipts
                 .Find(x => x.OutputItem == rangedWeapon.Id) ?? Data.ProduceReceipts[0];
 
@@ -46,18 +44,16 @@ namespace QM_ImporterAPI.Services
             var factionTemplate = FactionTemplate.GetExample(rangedWeapon.Id);
             var localizationItem = LocalizationTemplate.GetExample(rangedWeapon.Id);
 
-            // If everything went right, now create structure
-
             var assetsFolder = Path.Combine(rootPath, ASSETS_FOLDER_NAME);
 
-            var weaponsFolder = Path.Combine(assetsFolder, "Weapons");
+            var weaponsFolder = Path.Combine(assetsFolder, WEAPONS_FOLDER_NAME);
             var armorFolder = Path.Combine(assetsFolder, "Armors");
             var ammoFolder = Path.Combine(assetsFolder, "Ammo");
             var firemodesFolder = Path.Combine(assetsFolder, "Firemodes");
 
             var transformFolder = Path.Combine(assetsFolder, "Transforms");
             var craftingReceiptsFolder = Path.Combine(assetsFolder, "Crafting Recipes");
-            var datadiskFolder = Path.Combine(assetsFolder, "Datadisks");
+            var datadiskFolder = Path.Combine(assetsFolder, DATADISKS_FOLDER_NAME);
 
             var descriptorsFolder = Path.Combine(assetsFolder, "Descriptors");
             var localizationFolder = Path.Combine(assetsFolder, "Localization");
@@ -151,7 +147,7 @@ namespace QM_ImporterAPI.Services
 
             var assetsFolder = Path.Combine(rootPath, ASSETS_FOLDER_NAME);
 
-            var weaponsFolder = Path.Combine(assetsFolder, "Weapons");
+            var weaponsFolder = Path.Combine(assetsFolder, WEAPONS_FOLDER_NAME);
             var armorFolder = Path.Combine(assetsFolder, "Armors");
             var ammoFolder = Path.Combine(assetsFolder, "Ammo");
             var firemodesFolder = Path.Combine(assetsFolder, "Firemodes");
@@ -160,7 +156,7 @@ namespace QM_ImporterAPI.Services
 
             var transformFolder = Path.Combine(assetsFolder, "Transforms");
             var craftingReceiptsFolder = Path.Combine(assetsFolder, "Crafting Recipes");
-            var datadiskFolder = Path.Combine(assetsFolder, "Datadisks");
+            var datadiskFolder = Path.Combine(assetsFolder, DATADISKS_FOLDER_NAME);
 
             var descriptorsFolder = Path.Combine(assetsFolder, "Descriptors");
             var localizationFolder = Path.Combine(assetsFolder, "Localization");
@@ -215,7 +211,52 @@ namespace QM_ImporterAPI.Services
 
         public static void CreateMercMod(string providedPath)
         {
-            throw new NotImplementedException();
+            var mercenaryClass = Data.MercenaryClasses.Ids
+                .Select(id => Data.MercenaryClasses.GetRecord(id))
+                .FirstOrDefault(x => x != null);
+
+            if (mercenaryClass == null)
+            {
+                throw new Exception("No mercenary class found in game data to use as an example.");
+            }
+
+            // Search for the datadisk that unlocks that mercenaryClass
+            // So in UnlockIds of the datadisk, there is the mercenaryClass.Id
+
+            var mercenaryDatadisk = Data.Items.Ids
+                .Select(id => Data.Items.GetSimpleRecord<DatadiskRecord>(id) ?? null)
+                .FirstOrDefault(x => x != null && x.UnlockIds != null && x.UnlockIds.Contains(mercenaryClass.Id));
+
+            var mercenaryClassDescriptor = CustomMercenaryClassDescriptor.GetExample(mercenaryClass.Id);
+            var datadiskDescriptor = mercenaryDatadisk != null ? CustomDatadiskDescriptor.GetExample(mercenaryDatadisk.Id) : null;
+            var localizationItem = LocalizationTemplate.GetExample(mercenaryClass.Id);
+
+            var assetsFolder = Path.Combine(providedPath, ASSETS_FOLDER_NAME);
+            var datadiskFolder = Path.Combine(assetsFolder, DATADISKS_FOLDER_NAME);
+
+            var mercenaryClassesFolder = Path.Combine(assetsFolder, "MercenaryClasses");
+            var descriptorsFolder = Path.Combine(assetsFolder, "Descriptors");
+            var localizationFolder = Path.Combine(assetsFolder, "Localization");
+            var spritesFolder = Path.Combine(assetsFolder, "Sprites");
+
+            Directory.CreateDirectory(assetsFolder);
+            Directory.CreateDirectory(mercenaryClassesFolder);
+            Directory.CreateDirectory(descriptorsFolder);
+            Directory.CreateDirectory(localizationFolder);
+            Directory.CreateDirectory(spritesFolder);
+
+            ExportItems(mercenaryClass, mercenaryClassesFolder);
+            ExportCustomDescriptor(mercenaryClassDescriptor, descriptorsFolder);
+            if (mercenaryDatadisk != null)
+            {
+                Directory.CreateDirectory(datadiskFolder);
+                ExportItems(mercenaryDatadisk, datadiskFolder);
+                ExportCustomDescriptor(datadiskDescriptor, descriptorsFolder);
+            }
+            ExportCustom(localizationItem, $"{mercenaryClass.Id}_localization", localizationFolder);
+
+            ExportHelper.CreateVoidFile("92x92_Icon_Sprite", spritesFolder);
+            ExportHelper.CreateVoidFile("24x24_SmallIcon_Sprite", spritesFolder);
         }
 
         public static void CreateTooltipImage(string rootPath)
@@ -273,7 +314,7 @@ namespace QM_ImporterAPI.Services
 
             var transformFolder = Path.Combine(assetsFolder, "Transforms");
             var craftingReceiptsFolder = Path.Combine(assetsFolder, "Crafting Recipes");
-            var datadiskFolder = Path.Combine(assetsFolder, "Datadisks");
+            var datadiskFolder = Path.Combine(assetsFolder, DATADISKS_FOLDER_NAME);
 
             var descriptorsFolder = Path.Combine(assetsFolder, "Descriptors");
             var localizationFolder = Path.Combine(assetsFolder, "Localization");
@@ -338,7 +379,7 @@ namespace QM_ImporterAPI.Services
 
             var transformFolder = Path.Combine(assetsFolder, "Transforms");
             var craftingReceiptsFolder = Path.Combine(assetsFolder, "Crafting Recipes");
-            var datadiskFolder = Path.Combine(assetsFolder, "Datadisks");
+            var datadiskFolder = Path.Combine(assetsFolder, DATADISKS_FOLDER_NAME);
 
             var descriptorsFolder = Path.Combine(assetsFolder, "Descriptors");
             var localizationFolder = Path.Combine(assetsFolder, "Localization");

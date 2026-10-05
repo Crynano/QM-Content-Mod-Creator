@@ -12,8 +12,8 @@ namespace QM_ImporterAPI.Services.Extensions.Descriptors
             var imageProps = customItemDescriptor.ImageProperties;
 
             descriptor._icon = QuasimorphHelper.LoadSpriteFromItem<TDesciptor>(assetFolderPath, imageProps.IconSpriteIdOrPath, nameof(ItemContentDescriptor.Icon), AssetImporter.LoadNewSprite);
-            descriptor._smallIcon = QuasimorphHelper.LoadSpriteFromItem<TDesciptor>(assetFolderPath, imageProps.SmallIconSpriteIdOrPath, nameof(ItemContentDescriptor.SmallIcon), AssetImporter.LoadCenteredSprite);
-            descriptor._shadow = QuasimorphHelper.LoadSpriteFromItem<TDesciptor>(assetFolderPath, imageProps.ShadowOnFloorSpriteIdOrPath, nameof(ItemContentDescriptor.ShadowOnFloor), AssetImporter.LoadCenteredSprite);
+            descriptor._smallIcon = QuasimorphHelper.LoadSpriteFromItem<TDesciptor>(assetFolderPath, imageProps.SmallIconSpriteIdOrPath, nameof(ItemContentDescriptor.SmallIcon), AssetImporter.LoadOffsetSprite);
+            descriptor._shadow = QuasimorphHelper.LoadSpriteFromItem<TDesciptor>(assetFolderPath, imageProps.ShadowOnFloorSpriteIdOrPath, nameof(ItemContentDescriptor.ShadowOnFloor), AssetImporter.LoadOffsetSprite);
         }
 
         internal static ItemContentDescriptor ToItemContentDescriptor(this CustomItemContentDescriptor customItemDescriptor, ItemContentDescriptor descriptor, string assetFolderPath)
@@ -21,8 +21,8 @@ namespace QM_ImporterAPI.Services.Extensions.Descriptors
             var imageProps = customItemDescriptor.ImageProperties;
 
             descriptor._icon = QuasimorphHelper.LoadSpriteFromWeapon(assetFolderPath, imageProps.IconSpriteIdOrPath, nameof(ItemContentDescriptor.Icon), AssetImporter.LoadNewSprite);
-            descriptor._smallIcon = QuasimorphHelper.LoadSpriteFromWeapon(assetFolderPath, imageProps.SmallIconSpriteIdOrPath, nameof(ItemContentDescriptor.SmallIcon), AssetImporter.LoadCenteredSprite);
-            descriptor._shadow = QuasimorphHelper.LoadSpriteFromWeapon(assetFolderPath, imageProps.ShadowOnFloorSpriteIdOrPath, nameof(ItemContentDescriptor.ShadowOnFloor), AssetImporter.LoadCenteredSprite);
+            descriptor._smallIcon = QuasimorphHelper.LoadSpriteFromWeapon(assetFolderPath, imageProps.SmallIconSpriteIdOrPath, nameof(ItemContentDescriptor.SmallIcon), AssetImporter.LoadOffsetSprite);
+            descriptor._shadow = QuasimorphHelper.LoadSpriteFromWeapon(assetFolderPath, imageProps.ShadowOnFloorSpriteIdOrPath, nameof(ItemContentDescriptor.ShadowOnFloor), AssetImporter.LoadOffsetSprite);
             return descriptor;
         }
     }
