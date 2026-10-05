@@ -252,6 +252,10 @@ namespace QM_ImporterAPI.Services
             {
                 Data.Descriptors["consumables"].AddDescriptor(record.Id, record.ItemDesc);
             }
+            else if (record is GrenadeRecord)
+            {
+                Data.Descriptors["grenades"].AddDescriptor(record.Id, record.ItemDesc);
+            }
             else
             {
                 operationResult.AddWarning($"Item [{record.Id}] of type {record.GetType().Name} has NOT been added to Data.Descriptors");
@@ -390,6 +394,37 @@ namespace QM_ImporterAPI.Services
             operationResult.Absorb(opResult);
 
             var addItemResult = AddItemToGame(consumable);
+            operationResult.Absorb(addItemResult);
+
+            return operationResult;
+        }
+
+        internal static ImportOperationResult AddGrenade(GrenadeRecord grenade, CustomGrenadeDescriptor descriptor, string assetFolderPath)
+        {
+            var operationResult = new ImportOperationResult();
+
+            Logger.LogDebug($"Attempting to add grenade");
+
+            if (grenade is null)
+            {
+                operationResult.AddError("Grenade record is null.");
+                return operationResult;
+            }
+            else if (grenade.Id is null || grenade.Id.Trim() is "")
+            {
+                operationResult.AddError("Grenade ID is null or empty.");
+                return operationResult;
+            }
+            else if (descriptor is null)
+            {
+                operationResult.AddError($"Grenade content descriptor for {grenade.Id} is null.");
+                return operationResult;
+            }
+
+            var opResult = grenade.SetDescriptorProperties(descriptor, assetFolderPath);
+            operationResult.Absorb(opResult);
+
+            var addItemResult = AddItemToGame(grenade);
             operationResult.Absorb(addItemResult);
 
             return operationResult;

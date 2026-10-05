@@ -102,6 +102,21 @@ namespace QM_ImporterAPI.Services.Helpers
 
         #region Sprites
 
+        public static Sprite LoadSpriteFromItem<TDescriptor>(string assetFolderPath, string path, string propertyName, Func<string, Sprite> loadFunc) where TDescriptor : ItemContentDescriptor
+        {
+            if (IsGameId(path))
+            {
+                var propertyFromItem = GetPropertyFromItem<TDescriptor>(path, propertyName);
+                if (propertyFromItem is Sprite spriteProperty)
+                {
+                    return CloneSprite(spriteProperty);
+                }
+                Logger.LogWarning("Failed to load sprite for property [" + propertyName + "] from existing game item with ID: " + path + ". The property is either missing or not a Sprite.");
+            }
+            var fullPath = Helper.ResolvePath(assetFolderPath, path);
+            return loadFunc(fullPath);
+        }
+
         public static Sprite LoadSpriteFromWeapon(string assetFolderPath, string path, string propertyName, Func<string, Sprite> loadFunc)
         {
             if (IsGameId(path))

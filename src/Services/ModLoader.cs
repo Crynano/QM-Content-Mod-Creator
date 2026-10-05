@@ -31,6 +31,7 @@ namespace QM_ImporterAPI.Services
             new AmmoLoader(),            // Ammo before weapons
             new WeaponLoader(),          // Weapons depend on traits, fire modes, ammo
             new ConsumableLoader(),      // Consumables
+            new GrenadeLoader(),         // Grenades
             new DatadiskLoader(),        // Datadisks
             new CraftingLoader(),        // Crafting recipes (may reference items above)
             new FactionRewardsLoader(),  // Faction rewards (may reference items)
