@@ -7,12 +7,12 @@ using UnityEngine;
 
 namespace QM_ImporterAPI.Commands.Create
 {
-    [ConsoleCommand(new string[] { "create-merc-class-mod", "api-create-merc-class-mod" })]
+    [ConsoleCommand(new string[] { "create-merc-mod", "api-create-merc-mod" })]
     public class CreateMercModCommand
     {
         public static string Help(string command, bool verbose)
         {
-            return "Creates folders and example files to start creating a mercenary class mod using the Importer API. Syntax: create-merc-class-mod <folder-path>";
+            return "Creates folders and example files to start creating a mercenary class mod using the Importer API. Syntax: create-merc-mod <folder-path>";
         }
 
         public string Execute(string[] tokens)
@@ -21,14 +21,14 @@ namespace QM_ImporterAPI.Commands.Create
             {
                 if (tokens.Length == 0)
                 {
-                    return "<color=red>ERROR: </color>No folder path provided. Syntax: create-mod <folder-path>";
+                    return "<color=red>ERROR: </color>No folder path provided. Syntax: create-merc-mod <folder-path>";
                 }
 
                 var providedPath = tokens[0];
 
                 if (string.IsNullOrEmpty(providedPath))
                 {
-                    return "<color=red>ERROR: </color>No folder path provided. Syntax: create-mod <folder-path>";
+                    return "<color=red>ERROR: </color>No folder path provided. Syntax: create-merc-mod <folder-path>";
                 }
                 else if (!Path.IsPathRooted(providedPath))
                 {

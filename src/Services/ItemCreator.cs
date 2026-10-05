@@ -174,11 +174,30 @@ namespace QM_ImporterAPI.Services
 
                 // Add ONLY those not registered and ingame!
                 // Should log all those not in game!
-                var addOnlyThoseNotInChip = diskRecord.UnlockIds
-                    .FindAll(id => !dataDiskItemRecord.UnlockIds.Contains(id) && QuasimorphHelper.IsGameId(id));
+                
+                // If the Datadisk is of type UnlockType, we should search in MercenaryClasses or MercenaryProfiles
+                // if its item type, search in Items
+                System.Func<string, bool> existsInGame;
+                switch (diskRecord.UnlockType)
+                {
+                    case DatadiskUnlockType.MercenaryClass:
+                        existsInGame = id => QuasimorphHelper.IsGameId(id, Data.MercenaryClasses);
+                        break;
+                    case DatadiskUnlockType.Mercenary:
+                        existsInGame = id => QuasimorphHelper.IsGameId(id, Data.MercenaryProfiles);
+                        break;
+                    case DatadiskUnlockType.ProductionItem:
+                        existsInGame = id => QuasimorphHelper.IsGameId(id, Data.Items);
+                        break;
+                    default:
+                        operationResult.AddWarning($"Unlock type {diskRecord.UnlockType} is not supported for datadisk item {diskRecord.Id}. No unlocks will be added.");
+                        return operationResult;
+                }
 
+                var addOnlyThoseNotInChip = diskRecord.UnlockIds
+                    .FindAll(id => !dataDiskItemRecord.UnlockIds.Contains(id) && existsInGame(id));
                 var thoseNotInGame = diskRecord.UnlockIds
-                    .FindAll(id => !QuasimorphHelper.IsGameId(id));
+                    .FindAll(id => !existsInGame(id));
 
                 thoseNotInGame.ForEach(id => operationResult.AddWarning($"Not adding {id} to datadisk item. Item does not exist in-game."));
 
@@ -545,6 +564,25 @@ namespace QM_ImporterAPI.Services
             operationResult.Absorb(addItemResult);
 
             operationResult.ContentList.Add(mercenaryClass.Id);
+            return operationResult;
+        }
+
+        public static ImportOperationResult CreateMercenaryProfile(MercenaryProfileRecord profile)
+        {
+            Logger.LogDebug($"Called {nameof(CreateMercenaryProfile)} with ID: " + profile.Id);
+            var operationResult = new ImportOperationResult();
+
+            if (Data.MercenaryProfiles.Ids.Contains(profile.Id))
+            {
+                var original = Data.MercenaryProfiles.GetRecord(profile.Id);
+                profile.ContentDescriptor = original.ContentDescriptor;
+                Data.MercenaryProfiles.RemoveRecord(profile.Id);
+                operationResult.AddWarning($"A mercenary profile with ID: \"{profile.Id}\" was overriden.");
+            }
+
+            Logger.LogDebug($"Adding mercenary profile with ID: \"{profile.Id}\" to game.");
+            Data.MercenaryProfiles.AddRecord(profile.Id, profile);
+            operationResult.ContentList.Add(profile.Id);
             return operationResult;
         }
 

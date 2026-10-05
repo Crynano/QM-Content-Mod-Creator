@@ -9,11 +9,11 @@ namespace QM_ImporterAPI.Templates
     {
         public Dictionary<string, Dictionary<Localization.Lang, string>> Keys { get; set; } = new Dictionary<string, Dictionary<Localization.Lang, string>>();
 
-        public static LocalizationTemplate GetExample(string itemId)
+        public static LocalizationTemplate GetExample(string itemId, string key = "item")
         {
             var localizationTemplate = new LocalizationTemplate();
 
-            localizationTemplate.Keys.Add($"item.{itemId}.name", new Dictionary<Localization.Lang, string>()
+            localizationTemplate.Keys.Add($"{key}.{itemId}.name", new Dictionary<Localization.Lang, string>()
             {
                 { Localization.Lang.EnglishUS, "Example Name" },
                 { Localization.Lang.Russian,"" },
@@ -28,7 +28,7 @@ namespace QM_ImporterAPI.Templates
                 { Localization.Lang.ChineseSimp,"" },
             });
 
-            localizationTemplate.Keys.Add($"item.{itemId}.desc", new Dictionary<Localization.Lang, string>()
+            localizationTemplate.Keys.Add($"{key}.{itemId}.desc", new Dictionary<Localization.Lang, string>()
             {
                 { Localization.Lang.EnglishUS,"Example Description" },
                 { Localization.Lang.Russian,"" },
@@ -43,7 +43,7 @@ namespace QM_ImporterAPI.Templates
                 { Localization.Lang.ChineseSimp,"" },
             });
 
-            localizationTemplate.Keys.Add($"item.{itemId}.shortdesc", new Dictionary<Localization.Lang, string>()
+            localizationTemplate.Keys.Add($"{key}.{itemId}.shortdesc", new Dictionary<Localization.Lang, string>()
             {
                 { Localization.Lang.EnglishUS,"Example Description" },
                 { Localization.Lang.Russian,"" },
