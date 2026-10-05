@@ -24,20 +24,21 @@ namespace QM_ImporterAPI.Services
         /// </summary>
         private static readonly List<BaseItemLoader> Loaders = new List<BaseItemLoader>
         {
-            new SpriteImageLoader(),     // Sprite images with no dependencies.
-            new TraitLoader(),           // Load traits, only depend on sprite images
-            new MercenaryClassLoader(),  // Mercenary classes, only depend on sprite images
-            new MercenaryProfileLoader(), // Mercenary profiles
-            new FireModeLoader(),        // Fire
-            new ExplosionLoader(),       // Explosions before weapons/ammo
-            new AmmoLoader(),            // Ammo before weapons
-            new WeaponLoader(),          // Weapons depend on traits, fire modes, ammo
-            new ConsumableLoader(),      // Consumables
-            new GrenadeLoader(),         // Grenades
-            new DatadiskLoader(),        // Datadisks
-            new CraftingLoader(),        // Crafting recipes (may reference items above)
-            new FactionRewardsLoader(),  // Faction rewards (may reference items)
-            new LocalizationLoader(),    // Localization last (labels for all items),
+            new SpriteImageLoader(),        // Sprite images with no dependencies.
+            new TraitLoader(),              // Load traits, only depend on sprite images
+            new MercenaryClassLoader(),     // Mercenary classes, only depend on sprite images
+            new MercenaryProfileLoader(),   // Mercenary profiles
+            new FireModeLoader(),           // Fire
+            new ExplosionLoader(),          // Explosions before weapons/ammo
+            new AmmoLoader(),               // Ammo before weapons
+            new WeaponLoader(),             // Weapons depend on traits, fire modes, ammo
+            new TrashLoader(),              // Trash
+            new ConsumableLoader(),         // Consumables
+            new GrenadeLoader(),            // Grenades
+            new DatadiskLoader(),           // Datadisks
+            new CraftingLoader(),           // Crafting recipes (may reference items above)
+            new FactionRewardsLoader(),     // Faction rewards (may reference items)
+            new LocalizationLoader(),       // Localization last (labels for all items),
         };
 
         internal void LoadModFromContext(IModContext modContext)
@@ -163,7 +164,7 @@ namespace QM_ImporterAPI.Services
 
             stopWatch.Stop();
             cumulativeOperation.SetExecutionTime(stopWatch.ElapsedMilliseconds);
-            Logger.LogInfo("Import Operation Result: \n" + cumulativeOperation.Print());
+            Logger.LogInfo( cumulativeOperation.Print());
         }
     }
 }
