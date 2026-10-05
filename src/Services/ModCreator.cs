@@ -215,45 +215,60 @@ namespace QM_ImporterAPI.Services
                 .Select(id => Data.MercenaryClasses.GetRecord(id))
                 .FirstOrDefault(x => x != null);
 
-            if (mercenaryClass == null)
-            {
-                throw new Exception("No mercenary class found in game data to use as an example.");
-            }
-
-            // Search for the datadisk that unlocks that mercenaryClass
-            // So in UnlockIds of the datadisk, there is the mercenaryClass.Id
-
             var mercenaryDatadisk = Data.Items.Ids
                 .Select(id => Data.Items.GetSimpleRecord<DatadiskRecord>(id) ?? null)
                 .FirstOrDefault(x => x != null && x.UnlockIds != null && x.UnlockIds.Contains(mercenaryClass.Id));
 
+            var mercenaryProfile = Data.MercenaryProfiles.Ids
+                .Select(id => Data.MercenaryProfiles.GetRecord(id))
+                .Where(x => x != null)
+                .ElementAtOrDefault(5);
+
+            var mercenaryDatadiskProfile = Data.Items.Ids
+                .Select(id => Data.Items.GetSimpleRecord<DatadiskRecord>(id) ?? null)
+                .FirstOrDefault(x => x != null && x.UnlockIds != null && x.UnlockIds.Contains(mercenaryProfile.Id));
+
             var mercenaryClassDescriptor = CustomMercenaryClassDescriptor.GetExample(mercenaryClass.Id);
             var datadiskDescriptor = mercenaryDatadisk != null ? CustomDatadiskDescriptor.GetExample(mercenaryDatadisk.Id) : null;
-            var localizationItem = LocalizationTemplate.GetExample(mercenaryClass.Id);
+            var datadiskProfileDescriptor = mercenaryDatadiskProfile != null ? CustomDatadiskDescriptor.GetExample(mercenaryDatadiskProfile.Id) : null;
+            var localizationItem = LocalizationTemplate.GetExample(mercenaryClass.Id, "class");
+            var locForProfile = LocalizationTemplate.GetExample(mercenaryProfile.Id, "spec");
 
             var assetsFolder = Path.Combine(providedPath, ASSETS_FOLDER_NAME);
             var datadiskFolder = Path.Combine(assetsFolder, DATADISKS_FOLDER_NAME);
 
             var mercenaryClassesFolder = Path.Combine(assetsFolder, "MercenaryClasses");
+            var mercenaryProfilesFolder = Path.Combine(assetsFolder, "MercenaryProfiles");
             var descriptorsFolder = Path.Combine(assetsFolder, "Descriptors");
             var localizationFolder = Path.Combine(assetsFolder, "Localization");
             var spritesFolder = Path.Combine(assetsFolder, "Sprites");
 
             Directory.CreateDirectory(assetsFolder);
             Directory.CreateDirectory(mercenaryClassesFolder);
+            Directory.CreateDirectory(mercenaryProfilesFolder);
             Directory.CreateDirectory(descriptorsFolder);
             Directory.CreateDirectory(localizationFolder);
             Directory.CreateDirectory(spritesFolder);
+            Directory.CreateDirectory(datadiskFolder);
 
             ExportItems(mercenaryClass, mercenaryClassesFolder);
+            ExportItems(mercenaryProfile, mercenaryProfilesFolder);
             ExportCustomDescriptor(mercenaryClassDescriptor, descriptorsFolder);
+
             if (mercenaryDatadisk != null)
             {
-                Directory.CreateDirectory(datadiskFolder);
                 ExportItems(mercenaryDatadisk, datadiskFolder);
                 ExportCustomDescriptor(datadiskDescriptor, descriptorsFolder);
             }
+
+            if (mercenaryDatadiskProfile != null)
+            {
+                ExportItems(mercenaryDatadiskProfile, datadiskFolder);
+                ExportCustomDescriptor(datadiskProfileDescriptor, descriptorsFolder);
+            }
+
             ExportCustom(localizationItem, $"{mercenaryClass.Id}_localization", localizationFolder);
+            ExportCustom(locForProfile, $"{mercenaryProfile.Id}_localization", localizationFolder);
 
             ExportHelper.CreateVoidFile("92x92_Icon_Sprite", spritesFolder);
             ExportHelper.CreateVoidFile("24x24_SmallIcon_Sprite", spritesFolder);

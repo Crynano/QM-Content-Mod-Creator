@@ -27,7 +27,8 @@ namespace QM_ImporterAPI.Services
             new SpriteImageLoader(),     // Sprite images with no dependencies.
             new TraitLoader(),           // Load traits, only depend on sprite images
             new MercenaryClassLoader(),  // Mercenary classes, only depend on sprite images
-            new FireModeLoader(),        // Fire modes before weapons
+            new MercenaryProfileLoader(), // Mercenary profiles
+            new FireModeLoader(),        // Fire
             new ExplosionLoader(),       // Explosions before weapons/ammo
             new AmmoLoader(),            // Ammo before weapons
             new WeaponLoader(),          // Weapons depend on traits, fire modes, ammo
