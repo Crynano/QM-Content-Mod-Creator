@@ -61,5 +61,11 @@ namespace QM_ImporterAPI.Services.Helpers
             var pathCombined = Path.Combine(basePath, $"{fileName}.json");
             File.WriteAllText(pathCombined, JsonConvert.SerializeObject(result, JsonExporterSettings.SerializerSettings));
         }
+
+        internal static void CreateVoidFile(string fileName, string basePath)
+        {
+            var pathCombined = Path.Combine(basePath, $"{fileName}");
+            File.WriteAllText(pathCombined, null);
+        }
     }
 }

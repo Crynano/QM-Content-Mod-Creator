@@ -13,8 +13,8 @@ namespace QM_ImporterAPI.Templates.Descriptors
             return new CustomMercenaryClassDescriptor
             {
                 ItemId = id ?? "example_mercenaryclass",
-                IconSpriteIdOrPath = "example_icon_sprite",
-                SmallIconSpriteIdOrPath = "example_small_icon_sprite"
+                IconSpriteIdOrPath = "Sprites/92x92Sprite.png",
+                SmallIconSpriteIdOrPath = "Sprites/24x24Sprite.png"
             };
         }
     }

@@ -38,7 +38,6 @@ namespace QM_ImporterAPI.Services.Loaders
                 }
             }
 
-            // Load mercenary class records without descriptors (replacements)
             var mercenaryClassRecordsWithoutDescriptor = mercenaryClassRecords
                 .Where(mcr => !mercenaryClassDescriptors.Any(d => d.ItemId.Equals(mcr.Id)))
                 .ToList();

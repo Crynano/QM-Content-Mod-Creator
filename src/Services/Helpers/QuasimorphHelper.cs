@@ -104,7 +104,7 @@ namespace QM_ImporterAPI.Services.Helpers
 
         public static Sprite LoadSpriteFromMercenaries(string assetFolderPath, string path, string propertyName, Func<string, Sprite> loadFunc)
         {
-            if (IsGameId(path))
+            if (IsGameId(path, Data.MercenaryClasses))
             {
                 var propertyFromItem = GetPropertyFromList<MercenaryClassRecord, MercenaryClassDescriptor>(path, propertyName, Data.MercenaryClasses);
                 if (propertyFromItem is Sprite spriteProperty)

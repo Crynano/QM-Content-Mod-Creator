@@ -568,7 +568,7 @@ namespace QM_ImporterAPI.Services
             var descriptor = ScriptableObject.CreateInstance<MercenaryClassDescriptor>();
 
             Logger.LogDebug($"Setting mercenary class descriptor properties for mercenary class with ID: {mercenaryClass.Id}");
-            var iconSprite = QuasimorphHelper.LoadSpriteFromMercenaries(assetFolderPath, customMercenaryClassDescriptor?.IconSpriteIdOrPath, "_icon", AssetImporter.LoadSpriteCentered);
+            var iconSprite = QuasimorphHelper.LoadSpriteFromMercenaries(assetFolderPath, customMercenaryClassDescriptor?.IconSpriteIdOrPath, nameof(MercenaryClassDescriptor.Icon), AssetImporter.LoadSpriteCentered);
             if (iconSprite != null)
             {
                 descriptor._icon = iconSprite;
@@ -578,7 +578,7 @@ namespace QM_ImporterAPI.Services
                 return operationResult.AddWarning($"Unable to load icon sprite from path: {customMercenaryClassDescriptor?.IconSpriteIdOrPath}");
             }
 
-            var smallIcon = QuasimorphHelper.LoadSpriteFromMercenaries(assetFolderPath, customMercenaryClassDescriptor?.SmallIconSpriteIdOrPath, "_smallIcon", AssetImporter.LoadNewSprite);
+            var smallIcon = QuasimorphHelper.LoadSpriteFromMercenaries(assetFolderPath, customMercenaryClassDescriptor?.SmallIconSpriteIdOrPath, nameof(MercenaryClassDescriptor.SmallIcon), AssetImporter.LoadSpriteWithDefaultScaling);
             if (smallIcon != null)
             {
                 descriptor._smallIcon = smallIcon;
