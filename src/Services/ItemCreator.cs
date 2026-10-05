@@ -59,7 +59,7 @@ namespace QM_ImporterAPI.Services
                 return operationResult;
             }
 
-            var descriptorPropertiesResult = weapon.SetItemContentDescriptorProperties(weaponDescriptor, assetFolderPath);
+            var descriptorPropertiesResult = weapon.SetWeaponDescriptorProperties(weaponDescriptor, assetFolderPath);
             operationResult.CopyMessages(descriptorPropertiesResult);
             if (!descriptorPropertiesResult.IsSuccess)
             {
