@@ -1,7 +1,9 @@
 ﻿using MGSC;
+using QM_ImporterAPI.Services.ErrorManagement;
 using QM_ImporterAPI.Services.Helpers;
 using QM_ImporterAPI.Services.Importing;
 using QM_ImporterAPI.Templates.Descriptors;
+using UnityEngine;
 
 namespace QM_ImporterAPI.Services.Extensions.Descriptors
 {
@@ -24,6 +26,22 @@ namespace QM_ImporterAPI.Services.Extensions.Descriptors
             descriptor._smallIcon = QuasimorphHelper.LoadSpriteFromWeapon(assetFolderPath, imageProps.SmallIconSpriteIdOrPath, nameof(ItemContentDescriptor.SmallIcon), AssetImporter.LoadOffsetSprite);
             descriptor._shadow = QuasimorphHelper.LoadSpriteFromWeapon(assetFolderPath, imageProps.ShadowOnFloorSpriteIdOrPath, nameof(ItemContentDescriptor.ShadowOnFloor), AssetImporter.LoadOffsetSprite);
             return descriptor;
+        }
+
+        internal static ImportOperationResult SetItemContentDescriptorProperties<TRecord>(this TRecord record, CustomItemContentDescriptor customBaseDescriptor, string assetFolderPath) where TRecord : ItemRecord
+        {
+            var operationResult = new ImportOperationResult();
+            var baseDescriptor = ScriptableObject.CreateInstance<ItemContentDescriptor>();
+
+            if (customBaseDescriptor == null)
+            {
+                operationResult.AddWarning($"{nameof(CustomItemContentDescriptor)} for {record.Id} is null.");
+                return operationResult;
+            }
+
+            baseDescriptor.LoadSprites(customBaseDescriptor, assetFolderPath);
+            record.ContentDescriptor = baseDescriptor;
+            return operationResult;
         }
     }
 }

@@ -44,18 +44,19 @@ namespace QM_ImporterAPI.Commands
                 }
 
                 var profiles = Data.MercenaryProfiles;
-                var profile = profiles.Ids
-                    .Select(id => profiles.GetRecord(id))
-                    .FirstOrDefault(p => p != null);
 
-                if (profile == null)
+                var exportedCount = Data.MercenaryProfiles.Ids
+                    .Select(id => profiles.GetRecord(id))
+                    .Where(mercenaryProfile => mercenaryProfile != null && !mercenaryProfile.Id.Contains("_custom"))
+                    .Select(mercenaryProfile => { ExportHelper.ExportItem(mercenaryProfile, providedPath); return mercenaryProfile; })
+                    .Count();
+
+                if (exportedCount == 0)
                 {
                     return "<color=red>ERROR: </color>No mercenary profile records found.";
                 }
 
-                ExportHelper.ExportItem(profile, providedPath);
-
-                return $"<color=green>Exported mercenary profile '{profile.Id}' to JSON file.</color>";
+                return $"<color=green>Exported {exportedCount} mercenary profile(s) to JSON file.</color>";
             }
             catch (Exception ex)
             {
@@ -67,13 +68,7 @@ namespace QM_ImporterAPI.Commands
 
         public static List<string> FetchAutocompleteOptions(string command, string[] tokens)
         {
-            var suggestions = CommandsHelper.GetDirectorySuggestions(tokens[0] ?? string.Empty);
-            if (suggestions == null)
-            {
-                return null;
-            }
-
-            return suggestions.Select(s => command + " " + s).ToList();
+            return null;
         }
 
         public static bool IsAvailable()

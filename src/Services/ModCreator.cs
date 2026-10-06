@@ -442,6 +442,31 @@ namespace QM_ImporterAPI.Services
             ExportCustom(grenadeReceipt, $"{grenade.Id}_craftingReceipt", craftingReceiptsFolder);
         }
 
+        public static void CreateAugmentationMod(string rootPath)
+        {
+            var augmentation = Data.Items.Ids
+                .Select(id => Data.Items.GetSimpleRecord<AugmentationRecord>(id))
+                .First(x => x != null);
+
+            var augmentationDescriptor = CustomAugmentationDescriptor.GetExample(augmentation.Id);
+            var localizationItem = LocalizationTemplate.GetExample(augmentation.Id);
+
+            var assetsFolder = Path.Combine(rootPath, ASSETS_FOLDER_NAME);
+            var augmentationsFolder = Path.Combine(assetsFolder, "Augmentations");
+            var descriptorsFolder = Path.Combine(assetsFolder, "Descriptors");
+            var localizationFolder = Path.Combine(assetsFolder, "Localization");
+            var spritesFolder = Path.Combine(assetsFolder, "Sprites");
+
+            Directory.CreateDirectory(augmentationsFolder);
+            Directory.CreateDirectory(descriptorsFolder);
+            Directory.CreateDirectory(localizationFolder);
+            Directory.CreateDirectory(spritesFolder);
+
+            ExportItems(augmentation, augmentationsFolder);
+            ExportCustomDescriptor(augmentationDescriptor, descriptorsFolder);
+            ExportCustom(localizationItem, $"{augmentation.Id}_localization", localizationFolder);
+        }
+
         private static void ExportItems<TRecord>(TRecord item, string basePath) where TRecord : ConfigTableRecord
         {
             ExportHelper.ExportItem(item, basePath);

@@ -35,6 +35,8 @@ namespace QM_ImporterAPI.Services
             new TrashLoader(),              // Trash
             new ConsumableLoader(),         // Consumables
             new GrenadeLoader(),            // Grenades
+            new WoundLoader(),              // Wounds
+            new AugmentationLoader(),       // Augmentations
             new DatadiskLoader(),           // Datadisks
             new CraftingLoader(),           // Crafting recipes (may reference items above)
             new FactionRewardsLoader(),     // Faction rewards (may reference items)

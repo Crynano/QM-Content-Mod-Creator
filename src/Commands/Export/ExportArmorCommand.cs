@@ -1,5 +1,6 @@
 ﻿using MGSC;
 using Newtonsoft.Json;
+using QM_ImporterAPI.Services.Helpers;
 using QM_ImporterAPI.Services.Importing;
 using QM_ImporterAPI.Templates;
 using System;
@@ -47,22 +48,22 @@ namespace QM_ImporterAPI.Commands
                 var armorCount = Data.Items.Ids
                     .Select(id => items.GetSimpleRecord<ArmorRecord>(id))
                     .Where(armor => armor != null)
-                    .Select(armor => { ExportItems(armor, providedPath); return armor; });
+                    .Select(armor => { ExportHelper.ExportItem(armor, providedPath); return armor; });
 
                 var bootsCount = Data.Items.Ids
                     .Select(id => items.GetSimpleRecord<BootsRecord>(id))
                     .Where(boot => boot != null)
-                    .Select(boot => { ExportItems(boot, providedPath); return boot; });
+                    .Select(boot => { ExportHelper.ExportItem(boot, providedPath); return boot; });
 
                 var leggingsCount = Data.Items.Ids
                     .Select(id => items.GetSimpleRecord<LeggingsRecord>(id))
                     .Where(leggings => leggings != null)
-                    .Select(leggings => { ExportItems(leggings, providedPath); return leggings; });
+                    .Select(leggings => { ExportHelper.ExportItem(leggings, providedPath); return leggings; });
 
                 var helmetCount = Data.Items.Ids
                     .Select(id => items.GetSimpleRecord<HelmetRecord>(id))
                     .Where(helmet => helmet != null)
-                    .Select(helmet => { ExportItems(helmet, providedPath); return helmet; });
+                    .Select(helmet => { ExportHelper.ExportItem(helmet, providedPath); return helmet; });
 
                 var sum = armorCount.Count() + bootsCount.Count() + leggingsCount.Count() + helmetCount.Count();
 
@@ -76,19 +77,6 @@ namespace QM_ImporterAPI.Commands
                 return msg;
             }
         }
-
-        private static void ExportItems<T>(T item, string basePath) where T : ConfigTableRecord
-        {
-            var classType = item.GetType();
-            var result = new ImportableJson()
-            {
-                RecordType = classType.FullName,
-                Data = item
-            };
-            var pathCombined = Path.Combine(basePath, $"{item.Id}.json");
-            File.WriteAllText(pathCombined, JsonConvert.SerializeObject(result, JsonExporterSettings.SerializerSettings));
-        }
-
         public static List<string> FetchAutocompleteOptions(string command, string[] tokens)
         {
             return null;

@@ -3,8 +3,10 @@ using QM_ImporterAPI.Services.ErrorManagement;
 using QM_ImporterAPI.Services.Extensions.Descriptors;
 using QM_ImporterAPI.Services.Extensions.Records;
 using QM_ImporterAPI.Services.Helpers;
+using QM_ImporterAPI.Services.Helpers.Import;
 using QM_ImporterAPI.Services.Importing;
 using QM_ImporterAPI.Services.Loaders;
+using QM_ImporterAPI.Services.Validation;
 using QM_ImporterAPI.Templates;
 using QM_ImporterAPI.Templates.Descriptors;
 using System;
@@ -242,7 +244,7 @@ namespace QM_ImporterAPI.Services
             return operationResult;
         }
 
-        private static ImportOperationResult AddItemToGame<TRecord>(TRecord record) where TRecord : BasePickupItemRecord
+        internal static ImportOperationResult AddItemToGame<TRecord>(TRecord record) where TRecord : BasePickupItemRecord
         {
             var operationResult = new ImportOperationResult();
             if (QuasimorphHelper.IsGameId(record.Id, Data.Items))
@@ -275,6 +277,10 @@ namespace QM_ImporterAPI.Services
             else if (record is TrashRecord)
             {
                 Data.Descriptors["trash"].AddDescriptor(record.Id, record.ItemDesc);
+            }
+            else if (record is AugmentationRecord)
+            {
+                Data.Descriptors["augmentations"].AddDescriptor(record.Id, record.ItemDesc);
             }
             else
             {
@@ -633,20 +639,10 @@ namespace QM_ImporterAPI.Services
             var operationResult = new ImportOperationResult();
 
             Logger.LogDebug($"Attempting to add trash");
-
-            if (trash is null)
+            var validationResult = ImportHelper.PerformImportValidation(trash, descriptor);
+            if (!validationResult.IsSuccess)
             {
-                operationResult.AddError("Trash record is null.");
-                return operationResult;
-            }
-            else if (string.IsNullOrEmpty(trash.Id))
-            {
-                operationResult.AddError("Trash ID is null or empty.");
-                return operationResult;
-            }
-            else if (descriptor is null)
-            {
-                operationResult.AddError($"Trash content descriptor for {trash.Id} is null.");
+                operationResult.Absorb(validationResult);
                 return operationResult;
             }
 
@@ -664,20 +660,11 @@ namespace QM_ImporterAPI.Services
             return operationResult;
         }
 
-        internal static ImportOperationResult SetItemContentDescriptorProperties<TRecord>(this TRecord record, CustomItemContentDescriptor customBaseDescriptor, string assetFolderPath) where TRecord : ItemRecord
+
+
+        internal static ImportOperationResult ReplaceAugmentation(AugmentationRecord augmentationRecord, string assetFolderPath)
         {
-            var operationResult = new ImportOperationResult();
-            var baseDescriptor = ScriptableObject.CreateInstance<ItemContentDescriptor>();
-
-            if (customBaseDescriptor == null)
-            {
-                operationResult.AddWarning($"{nameof(CustomItemContentDescriptor)} for {record.Id} is null.");
-                return operationResult;
-            }
-
-            baseDescriptor.LoadSprites(customBaseDescriptor, assetFolderPath);
-            record.ContentDescriptor = baseDescriptor;
-            return operationResult;
+            throw new NotImplementedException();
         }
     }
 }
