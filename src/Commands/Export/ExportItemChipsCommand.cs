@@ -1,5 +1,6 @@
 ﻿using MGSC;
 using Newtonsoft.Json;
+using QM_ImporterAPI.Services.Helpers;
 using QM_ImporterAPI.Services.Importing;
 using QM_ImporterAPI.Templates;
 using System;
@@ -47,7 +48,7 @@ namespace QM_ImporterAPI.Commands
                 var exportedCount = Data.Items.Ids
                     .Select(id => items.GetSimpleRecord<DatadiskRecord>(id))
                     .Where(chip => chip != null && !chip.Id.Contains("_custom"))
-                    .Select(chip => { ExportItems(chip, providedPath); return chip; })
+                    .Select(chip => { ExportHelper.ExportItem(chip, providedPath); return chip; })
                     .Count();
 
                 return $"<color=green>Exported {exportedCount} item chips to JSON files.</color>";
@@ -58,18 +59,6 @@ namespace QM_ImporterAPI.Commands
                 Debug.LogError(ex.InnerException);
                 return msg;
             }
-        }
-
-        private static void ExportItems<T>(T item, string basePath) where T : ConfigTableRecord
-        {
-            var classType = item.GetType();
-            var result = new ImportableJson()
-            {
-                RecordType = classType.FullName,
-                Data = item
-            };
-            var pathCombined = Path.Combine(basePath, $"{item.Id}.json");
-            File.WriteAllText(pathCombined, JsonConvert.SerializeObject(result, JsonExporterSettings.SerializerSettings));
         }
 
         public static List<string> FetchAutocompleteOptions(string command, string[] tokens)

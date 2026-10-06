@@ -91,8 +91,12 @@ namespace QM_ImporterAPI.Commands.General
         public static List<string> FetchAutocompleteOptions(string command, string[] tokens)
         {
             string enteredText = ((tokens.Length != 0) ? tokens[0] : "");
-            //UI.Get<DevConsole>().Daemon.CommandList.Where((string name) => name.StartsWith(enteredText)).ToList();
-            List<string> list = Data.Items.Ids.Where((string name) => name.Contains(enteredText)).ToList();
+            
+            // First starts with, then contains. Exclude all that start with from the contains.
+            var itemsStartingWith = Data.Items.Ids.Where((string name) => name.StartsWith(enteredText)).ToList();
+            var itemsContaining = Data.Items.Ids.Where((string name) => name.Contains(enteredText) && !itemsStartingWith.Contains(name)).ToList();
+
+            List<string> list = itemsStartingWith.Concat(itemsContaining).ToList();
             if (list.Count == 0)
             {
                 return null;

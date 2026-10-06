@@ -31,10 +31,12 @@ namespace QM_ImporterAPI.Services
             new FireModeLoader(),           // Fire
             new ExplosionLoader(),          // Explosions before weapons/ammo
             new AmmoLoader(),               // Ammo before weapons
+            new AugmentationLoader(),       // Augmentations
             new WeaponLoader(),             // Weapons depend on traits, fire modes, ammo
             new TrashLoader(),              // Trash
             new ConsumableLoader(),         // Consumables
             new GrenadeLoader(),            // Grenades
+            new WoundLoader(),              // Wounds
             new DatadiskLoader(),           // Datadisks
             new CraftingLoader(),           // Crafting recipes (may reference items above)
             new FactionRewardsLoader(),     // Faction rewards (may reference items)

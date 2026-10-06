@@ -20,7 +20,7 @@ namespace QM_ImporterAPI.Services.Helpers
                 RecordType = classType.FullName,
                 Data = item
             };
-            var pathCombined = Path.Combine(basePath, $"{item.Id}.json");
+            var pathCombined = Path.Combine(basePath, $"{item.Id.TrimId()}.json");
             File.WriteAllText(pathCombined, JsonConvert.SerializeObject(result, JsonExporterSettings.SerializerSettings));
         }
 
@@ -33,7 +33,7 @@ namespace QM_ImporterAPI.Services.Helpers
                 RecordType = classType.FullName,
                 Data = descriptor
             };
-            var pathCombined = Path.Combine(basePath, $"{descriptor.ItemId}_descriptor.json");
+            var pathCombined = Path.Combine(basePath, $"{descriptor.ItemId.TrimId()}_descriptor.json");
             File.WriteAllText(pathCombined, JsonConvert.SerializeObject(result, JsonExporterSettings.SerializerSettings));
         }
 

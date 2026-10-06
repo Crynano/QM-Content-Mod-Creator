@@ -34,6 +34,16 @@ namespace QM_ImporterAPI.Services.Helpers
             return list.Ids.Contains(id);
         }
 
+        public static bool IsGameId(string id, ItemPropertyIconSheet list)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                Logger.LogDebug("ID is not game ID because its empty or null.");
+                return false;
+            }
+            return list.GetSpriteByTag(id) != null;
+        }
+
         public static SoundBank[] GetAudiosFromExistingWeapons(string id, int category)
         {
             WeaponDescriptor existingWeaponDescriptor = GetExistingWeaponDescriptor(id);
@@ -319,10 +329,10 @@ namespace QM_ImporterAPI.Services.Helpers
 
             var properties = type.GetProperties(bindingAttr);
 
-            foreach (var item in properties)
-            {
-                Logger.LogDebug($"Listing property {item} for {id}");
-            }
+            //foreach (var item in properties)
+            //{
+            //    Logger.LogDebug($"Listing property {item} for {id}");
+            //}
 
             object returnValue;
             if (properties.ToList().Find(x => x.Name.Equals(propertyName)) == null)

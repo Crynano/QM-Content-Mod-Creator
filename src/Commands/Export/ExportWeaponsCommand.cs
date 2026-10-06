@@ -1,5 +1,6 @@
 ﻿using MGSC;
 using Newtonsoft.Json;
+using QM_ImporterAPI.Services.Helpers;
 using QM_ImporterAPI.Services.Importing;
 using QM_ImporterAPI.Templates;
 using System;
@@ -47,7 +48,7 @@ namespace QM_ImporterAPI.Commands
                 var exportedCount = Data.Items.Ids
                     .Select(id => items.GetSimpleRecord<WeaponRecord>(id))
                     .Where(weapon => weapon != null && !weapon.Id.Contains("_custom"))
-                    .Select(weapon => { ExportItems(weapon, providedPath); return weapon; })
+                    .Select(weapon => { ExportHelper.ExportItem(weapon, providedPath); return weapon; })
                     .Count();
 
                 return $"<color=green>Exported {exportedCount} weapons to JSON files.</color>";
@@ -60,17 +61,6 @@ namespace QM_ImporterAPI.Commands
             }
         }
 
-        private static void ExportItems<T>(T item, string basePath) where T : ConfigTableRecord
-        {
-            var classType = item.GetType();
-            var result = new ImportableJson()
-            {
-                RecordType = classType.FullName,
-                Data = item
-            };
-            var pathCombined = Path.Combine(basePath, $"{item.Id}.json");
-            File.WriteAllText(pathCombined, JsonConvert.SerializeObject(result, JsonExporterSettings.SerializerSettings));
-        }
 
         public static List<string> FetchAutocompleteOptions(string command, string[] tokens)
         {
