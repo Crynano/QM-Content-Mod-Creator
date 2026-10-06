@@ -171,7 +171,7 @@ namespace QM_ImporterAPI.Services
 
                 // Add ONLY those not registered and ingame!
                 // Should log all those not in game!
-                
+
                 // If the Datadisk is of type UnlockType, we should search in MercenaryClasses or MercenaryProfiles
                 // if its item type, search in Items
                 System.Func<string, bool> existsInGame;
@@ -242,6 +242,21 @@ namespace QM_ImporterAPI.Services
                 }
             }
             return operationResult;
+        }
+
+        internal static ImportOperationResult AddAugmentToGame(AugmentationRecord record)
+        {
+            var result = new ImportOperationResult();
+            if (QuasimorphHelper.IsGameId(record.Id.TrimId(), Data.Items))
+            {
+                Logger.LogDebug($"An augmentation with ID: \"{record.Id}\" is completed!.");
+                //Data.Items.RemoveRecord(record.Id);
+            }
+
+            Data.Descriptors["augmentations"].AddDescriptor(record.Id, record.ItemDesc);
+            Data.Items.AddRecord(record.Id, record);
+            result.AddItem(record);
+            return result;
         }
 
         internal static ImportOperationResult AddItemToGame<TRecord>(TRecord record) where TRecord : BasePickupItemRecord

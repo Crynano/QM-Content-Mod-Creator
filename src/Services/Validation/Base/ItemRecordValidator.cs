@@ -13,9 +13,13 @@ namespace QM_ImporterAPI.Services.Validation.Base
         {
             var result = base.Validate(record, descriptor);
 
-            if (record.InventoryWidthSize <= 0)
+            if (record.InventoryWidthSize < 0)
             {
                 result.AddError($"Item {record.Id} has an inventory width size of {record.InventoryWidthSize}. Inventory width size should be greater than 0.");
+            }
+            else if (record.InventoryWidthSize == 0 && record.GetType() != typeof(AugmentationRecord))
+            {
+                result.AddWarning($"Item {record.Id} has an inventory width size of {record.InventoryWidthSize}. Inventory width size should be greater than 0.");
             }
             else if (record.InventoryWidthSize > 2)
             {

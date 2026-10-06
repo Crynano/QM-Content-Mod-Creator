@@ -43,17 +43,17 @@ namespace QM_ImporterAPI.Services.Loaders
                 }
             }
 
-            // Load augmentation records without descriptors (replacements)
-            var augmentationRecordsWithoutDescriptor = augmentationRecords
-                .Where(ar => !augmentationDescriptors.Any(d => d.ItemId.Equals(ar.Id)))
-                .ToList();
+            //// Load augmentation records without descriptors (replacements)
+            //var augmentationRecordsWithoutDescriptor = augmentationRecords
+            //    .Where(ar => !augmentationDescriptors.Any(d => d.ItemId.Equals(ar.Id)))
+            //    .ToList();
 
-            foreach (var augmentationRecord in augmentationRecordsWithoutDescriptor)
-            {
-                Logger.LogDebug($"Trying to add augmentation '{augmentationRecord.Id}' (without descriptor) to the game!");
-                var opResult = ItemCreator.ReplaceAugmentation(augmentationRecord, assetFolderPath);
-                operationResult.Absorb(opResult);
-            }
+            //foreach (var augmentationRecord in augmentationRecordsWithoutDescriptor)
+            //{
+            //    Logger.LogDebug($"Trying to add augmentation '{augmentationRecord.Id}' (without descriptor) to the game!");
+            //    var opResult = ItemCreator.ReplaceAugmentation(augmentationRecord, assetFolderPath);
+            //    operationResult.Absorb(opResult);
+            //}
 
             return operationResult;
         }
@@ -77,7 +77,7 @@ namespace QM_ImporterAPI.Services.Loaders
                 return result;
             }
 
-            var addItemToGame = ItemCreator.AddItemToGame(augmentationRecord);
+            var addItemToGame = ItemCreator.AddAugmentToGame(augmentationRecord);
             result.Absorb(addItemToGame);
 
             return result;

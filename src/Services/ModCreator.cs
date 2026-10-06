@@ -14,6 +14,11 @@ namespace QM_ImporterAPI.Services
         private const string ASSETS_FOLDER_NAME = "Assets";
         private const string WEAPONS_FOLDER_NAME = "Weapons";
         private const string DATADISKS_FOLDER_NAME = "Datadisks";
+        private const string DESCRIPTORS_FOLDER_NAME = "Descriptors";
+        private const string LOCALIZATION_FOLDER_NAME = "Localization";
+        private const string SPRITES_FOLDER_NAME = "Sprites";
+
+        private const string AUGMENTATIONS_FOLDER_NAME = "Augmentations";
 
         public static void CreateWeaponMod(string rootPath)
         {
@@ -55,8 +60,8 @@ namespace QM_ImporterAPI.Services
             var craftingReceiptsFolder = Path.Combine(assetsFolder, "Crafting Recipes");
             var datadiskFolder = Path.Combine(assetsFolder, DATADISKS_FOLDER_NAME);
 
-            var descriptorsFolder = Path.Combine(assetsFolder, "Descriptors");
-            var localizationFolder = Path.Combine(assetsFolder, "Localization");
+            var descriptorsFolder = Path.Combine(assetsFolder, DESCRIPTORS_FOLDER_NAME);
+            var localizationFolder = Path.Combine(assetsFolder, LOCALIZATION_FOLDER_NAME);
             var factionRewardsFolder = Path.Combine(assetsFolder, "FactionRewards");
 
             var soundFolder = Path.Combine(assetsFolder, "Sounds");
@@ -158,8 +163,8 @@ namespace QM_ImporterAPI.Services
             var craftingReceiptsFolder = Path.Combine(assetsFolder, "Crafting Recipes");
             var datadiskFolder = Path.Combine(assetsFolder, DATADISKS_FOLDER_NAME);
 
-            var descriptorsFolder = Path.Combine(assetsFolder, "Descriptors");
-            var localizationFolder = Path.Combine(assetsFolder, "Localization");
+            var descriptorsFolder = Path.Combine(assetsFolder, DESCRIPTORS_FOLDER_NAME);
+            var localizationFolder = Path.Combine(assetsFolder, LOCALIZATION_FOLDER_NAME);
             var factionRewardsFolder = Path.Combine(assetsFolder, "FactionRewards");
 
             var soundFolder = Path.Combine(assetsFolder, "Sounds");
@@ -239,9 +244,9 @@ namespace QM_ImporterAPI.Services
 
             var mercenaryClassesFolder = Path.Combine(assetsFolder, "MercenaryClasses");
             var mercenaryProfilesFolder = Path.Combine(assetsFolder, "MercenaryProfiles");
-            var descriptorsFolder = Path.Combine(assetsFolder, "Descriptors");
-            var localizationFolder = Path.Combine(assetsFolder, "Localization");
-            var spritesFolder = Path.Combine(assetsFolder, "Sprites");
+            var descriptorsFolder = Path.Combine(assetsFolder, DESCRIPTORS_FOLDER_NAME);
+            var localizationFolder = Path.Combine(assetsFolder, LOCALIZATION_FOLDER_NAME);
+            var spritesFolder = Path.Combine(assetsFolder, SPRITES_FOLDER_NAME);
 
             Directory.CreateDirectory(assetsFolder);
             Directory.CreateDirectory(mercenaryClassesFolder);
@@ -337,8 +342,8 @@ namespace QM_ImporterAPI.Services
             var craftingReceiptsFolder = Path.Combine(assetsFolder, "Crafting Recipes");
             var datadiskFolder = Path.Combine(assetsFolder, DATADISKS_FOLDER_NAME);
 
-            var descriptorsFolder = Path.Combine(assetsFolder, "Descriptors");
-            var localizationFolder = Path.Combine(assetsFolder, "Localization");
+            var descriptorsFolder = Path.Combine(assetsFolder, DESCRIPTORS_FOLDER_NAME);
+            var localizationFolder = Path.Combine(assetsFolder, LOCALIZATION_FOLDER_NAME);
             var factionRewardsFolder = Path.Combine(assetsFolder, "FactionRewards");
 
             var soundFolder = Path.Combine(assetsFolder, "Sounds");
@@ -406,12 +411,12 @@ namespace QM_ImporterAPI.Services
             var craftingReceiptsFolder = Path.Combine(assetsFolder, "Crafting Recipes");
             var datadiskFolder = Path.Combine(assetsFolder, DATADISKS_FOLDER_NAME);
 
-            var descriptorsFolder = Path.Combine(assetsFolder, "Descriptors");
-            var localizationFolder = Path.Combine(assetsFolder, "Localization");
+            var descriptorsFolder = Path.Combine(assetsFolder, DESCRIPTORS_FOLDER_NAME);
+            var localizationFolder = Path.Combine(assetsFolder, LOCALIZATION_FOLDER_NAME);
             var factionRewardsFolder = Path.Combine(assetsFolder, "FactionRewards");
 
             var soundFolder = Path.Combine(assetsFolder, "Sounds");
-            var spritesFolder = Path.Combine(assetsFolder, "Sprites");
+            var spritesFolder = Path.Combine(assetsFolder, SPRITES_FOLDER_NAME);
 
             Directory.CreateDirectory(assetsFolder);
 
@@ -444,27 +449,46 @@ namespace QM_ImporterAPI.Services
 
         public static void CreateAugmentationMod(string rootPath)
         {
-            var augmentation = Data.Items.Ids
-                .Select(id => Data.Items.GetSimpleRecord<AugmentationRecord>(id))
-                .First(x => x != null);
+            var augmentation = Data.Items.GetRecord("spider_claw") as CompositeItemRecord 
+                ?? throw new InvalidDataException("Augmentation record 'spider_claw' not found in game data.");
 
-            var augmentationDescriptor = CustomAugmentationDescriptor.GetExample(augmentation.Id);
+            foreach (var rec in augmentation.Records)
+            {
+                Logger.LogDebug($"Record: {rec.GetType()} - {rec.Id}");
+            }
+
+            var augmentationWeapon = augmentation.GetRecord<WeaponRecord>();
+            augmentationWeapon.Id = $"*{augmentationWeapon.Id}";
+            var augmentationRecord = augmentation.GetRecord<AugmentationRecord>();
+            augmentationRecord.Id = $"*{augmentationRecord.Id}";
+
+            var augmentationDescriptor = CustomAugmentationDescriptor.GetExample(augmentation.Id + "_aug");
+            var augmentationWeaponDescriptor = CustomWeaponDescriptor.GetExample(augmentation.Id + "_weap");
+
             var localizationItem = LocalizationTemplate.GetExample(augmentation.Id);
+            var weaponLocalizationItem = LocalizationTemplate.GetExample(augmentationWeapon.Id);
 
             var assetsFolder = Path.Combine(rootPath, ASSETS_FOLDER_NAME);
-            var augmentationsFolder = Path.Combine(assetsFolder, "Augmentations");
-            var descriptorsFolder = Path.Combine(assetsFolder, "Descriptors");
-            var localizationFolder = Path.Combine(assetsFolder, "Localization");
-            var spritesFolder = Path.Combine(assetsFolder, "Sprites");
+            var weaponsFolder = Path.Combine(assetsFolder, WEAPONS_FOLDER_NAME);
+            var augmentationsFolder = Path.Combine(assetsFolder, AUGMENTATIONS_FOLDER_NAME);
+            var descriptorsFolder = Path.Combine(assetsFolder, DESCRIPTORS_FOLDER_NAME);
+            var localizationFolder = Path.Combine(assetsFolder, LOCALIZATION_FOLDER_NAME);
+            var spritesFolder = Path.Combine(assetsFolder, SPRITES_FOLDER_NAME);
 
             Directory.CreateDirectory(augmentationsFolder);
             Directory.CreateDirectory(descriptorsFolder);
             Directory.CreateDirectory(localizationFolder);
             Directory.CreateDirectory(spritesFolder);
+            Directory.CreateDirectory(weaponsFolder);
 
-            ExportItems(augmentation, augmentationsFolder);
+            ExportItems(augmentationWeapon, weaponsFolder);
+            ExportItems(augmentationRecord, augmentationsFolder);
+
             ExportCustomDescriptor(augmentationDescriptor, descriptorsFolder);
-            ExportCustom(localizationItem, $"{augmentation.Id}_localization", localizationFolder);
+            ExportCustomDescriptor(augmentationWeaponDescriptor, descriptorsFolder);
+
+            ExportCustom(localizationItem, $"{augmentation.Id.TrimId()}_localization", localizationFolder);
+            ExportCustom(weaponLocalizationItem, $"{augmentationWeapon.Id.TrimId()}_localization", localizationFolder);
         }
 
         private static void ExportItems<TRecord>(TRecord item, string basePath) where TRecord : ConfigTableRecord

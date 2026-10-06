@@ -329,10 +329,10 @@ namespace QM_ImporterAPI.Services.Helpers
 
             var properties = type.GetProperties(bindingAttr);
 
-            foreach (var item in properties)
-            {
-                Logger.LogDebug($"Listing property {item} for {id}");
-            }
+            //foreach (var item in properties)
+            //{
+            //    Logger.LogDebug($"Listing property {item} for {id}");
+            //}
 
             object returnValue;
             if (properties.ToList().Find(x => x.Name.Equals(propertyName)) == null)

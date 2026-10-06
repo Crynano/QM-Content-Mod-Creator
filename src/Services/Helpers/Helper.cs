@@ -47,5 +47,11 @@ namespace QM_ImporterAPI.Services.Helpers
             }
             return null;
         }
+
+        public static string TrimId(this string id)
+        {
+            if (id is null) return null;
+            return id.Trim('*', ' ');
+        }
     }
 }
