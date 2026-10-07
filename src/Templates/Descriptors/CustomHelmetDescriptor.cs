@@ -19,7 +19,12 @@ namespace QM_ImporterAPI.Templates.Descriptors
                     SmallIconSpriteIdOrPath = "Sprites/SmallIcon/SmallIcon.png",
                     ShadowOnFloorSpriteIdOrPath = "Sprites/Shadow/shadow.png",
                 },
-                Parts = CustomResistDescriptor.GetExample(id).Parts
+                Part = new CustomArmorPartInfo()
+                {
+                    ArmorPart = "Head",
+                    ArmorType = "ArmorLight",
+                    TextureIdOrPath = "Textures/ExampleHelmetTexture.png"
+                }
             };
         }
     }

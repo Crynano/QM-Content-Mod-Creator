@@ -28,6 +28,7 @@ namespace QM_ImporterAPI.Services
         private const string TRANSFORMS_FOLDER_NAME = "Transforms";
         private const string CONSUMABLES_FOLDER_NAME = "Consumables";
         private const string IMPLANTS_FOLDER_NAME = "Implants";
+        private const string HELMETS_FOLDER_NAME = "Helmets";
 
         public static void CreateWeaponMod(string rootPath)
         {
@@ -498,6 +499,33 @@ namespace QM_ImporterAPI.Services
 
             ExportHelper.ExportCustom(localizationItem, $"{augmentation.Id.TrimId()}_localization", localizationFolder);
             ExportHelper.ExportCustom(weaponLocalizationItem, $"{augmentationWeapon.Id.TrimId()}_localization", localizationFolder);
+        }
+
+        public static void CreateHelmetMod(string rootPath)
+        {
+            var helmet = Data.Items.Ids
+                .Select(id => Data.Items.GetSimpleRecord<HelmetRecord>(id))
+                .First(x => x != null);
+
+            var helmetDescriptor = CustomHelmetDescriptor.GetExample(helmet.Id);
+            var localizationItem = LocalizationTemplate.GetExample(helmet.Id);
+
+            var assetsFolder = Path.Combine(rootPath, ASSETS_FOLDER_NAME);
+            var helmetsFolder = Path.Combine(assetsFolder, HELMETS_FOLDER_NAME);
+            var descriptorsFolder = Path.Combine(assetsFolder, DESCRIPTORS_FOLDER_NAME);
+            var localizationFolder = Path.Combine(assetsFolder, LOCALIZATION_FOLDER_NAME);
+            var spritesFolder = Path.Combine(assetsFolder, SPRITES_FOLDER_NAME);
+            var modelsFolder = Path.Combine(assetsFolder, "Models");
+
+            Directory.CreateDirectory(helmetsFolder);
+            Directory.CreateDirectory(descriptorsFolder);
+            Directory.CreateDirectory(localizationFolder);
+            Directory.CreateDirectory(spritesFolder);
+            Directory.CreateDirectory(modelsFolder);
+
+            ExportHelper.ExportItem(helmet, helmetsFolder);
+            ExportHelper.ExportCustomDescriptor(helmetDescriptor, descriptorsFolder);
+            ExportHelper.ExportCustom(localizationItem, $"{helmet.Id}_localization", localizationFolder);
         }
 
         public static void CreateImplantMod(string rootPath)

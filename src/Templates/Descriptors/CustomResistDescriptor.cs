@@ -6,7 +6,7 @@ namespace QM_ImporterAPI.Templates.Descriptors
     [Serializable]
     public class CustomResistDescriptor : CustomItemContentDescriptor
     {
-        public List<CustomArmorPartInfo> Parts { get; set; }
+        public CustomArmorPartInfo Part { get; set; }
 
         public CustomResistDescriptor()
         {
@@ -24,48 +24,21 @@ namespace QM_ImporterAPI.Templates.Descriptors
                     SmallIconSpriteIdOrPath = "Sprites/ExampleWeaponSmall.png",
                     ShadowOnFloorSpriteIdOrPath = "Sprites/ExampleWeaponShadow.png"
                 },
-                Parts = new List<CustomArmorPartInfo>()
+                Part = new CustomArmorPartInfo()
                 {
-                    new CustomArmorPartInfo()
-                    {
-                        ArmorType = "ClothCommon",
-                        ArmorPart = "Hip",
-                        TextureIdOrPath = "Textures/ExampleTextureAtlas.png"
-                    },
-                    new CustomArmorPartInfo()
-                    {
-                        ArmorType = "ClothCommon",
-                        ArmorPart = "RThigh",
-                        TextureIdOrPath = "Textures/ExampleTextureAtlas.png"
-                    },
-                    new CustomArmorPartInfo()
-                    {
-                        ArmorType = "ClothCommon",
-                        ArmorPart = "LThigh",
-                        TextureIdOrPath = "Textures/ExampleTextureAtlas.png"
-                    },
-                    new CustomArmorPartInfo()
-                    {
-                        ArmorType = "ClothCommon",
-                        ArmorPart = "RLeg",
-                        TextureIdOrPath = "Textures/ExampleTextureAtlas.png"
-                    },
-                    new CustomArmorPartInfo()
-                    {
-                        ArmorType = "ClothCommon",
-                        ArmorPart = "LLeg",
-                        TextureIdOrPath = "Textures/ExampleTextureAtlas.png"
-                    },
+                    ArmorType = "ClothCommon",
+                    ArmorPart = "Hip",
+                    TextureIdOrPath = "Textures/ExampleTextureAtlas.png"
                 }
             };
         }
     }
+}
 
-    [Serializable]
-    public struct CustomArmorPartInfo
-    {
-        public string ArmorType { get; set; }
-        public string ArmorPart { get; set; }
-        public string TextureIdOrPath { get; set; }
-    }
+[Serializable]
+public class CustomArmorPartInfo
+{
+    public string ArmorType { get; set; }
+    public string ArmorPart { get; set; }
+    public string TextureIdOrPath { get; set; }
 }

@@ -59,21 +59,15 @@ namespace QM_ImporterAPI.Services.Loaders
                 return operationResult;
             }
 
-            if (customBaseDescriptor.Parts == null || customBaseDescriptor.Parts.Count == 0)
+            if (customBaseDescriptor.Part == null)
             {
-                operationResult.AddError($"{nameof(CustomHelmetDescriptor)} for {record.Id} must contain at least one armor part.");
+                operationResult.AddError($"{nameof(CustomHelmetDescriptor)} for {record.Id} must contain one armor part.");
                 return operationResult;
             }
 
             if (!string.IsNullOrWhiteSpace(customBaseDescriptor.PrefabPath))
             {
-                if (customBaseDescriptor.Parts.Count != 1)
-                {
-                    operationResult.AddError($"{nameof(CustomHelmetDescriptor)} for {record.Id} must contain exactly one armor part when using one PrefabPath.");
-                    return operationResult;
-                }
-
-                var part = customBaseDescriptor.Parts[0];
+                var part = customBaseDescriptor.Part;
                 if (string.IsNullOrWhiteSpace(part.ArmorType) || string.IsNullOrWhiteSpace(part.ArmorPart))
                 {
                     operationResult.AddError($"The armor part for {record.Id} must specify both ArmorType and ArmorPart when using PrefabPath.");
@@ -88,20 +82,16 @@ namespace QM_ImporterAPI.Services.Loaders
                 }
 
                 helmetPrefab = prefabResult.Result;
-                helmetPrefab.name = customBaseDescriptor.Parts[0].ArmorPart;
+                helmetPrefab.name = customBaseDescriptor.Part.ArmorPart;
 
-                var itemBone = helmetPrefab.GetComponent<ItemBone>();
-                if (itemBone == null)
-                {
-                    itemBone = helmetPrefab.AddComponent<ItemBone>();
-                }
+                var itemBone = helmetPrefab.GetComponent<ItemBone>() ?? helmetPrefab.AddComponent<ItemBone>();
 
                 itemBone.TargetBoneId = "Head";
-                itemBone.Scale = Vector3.one;
+                itemBone.Scale = new Vector3(.12f, .12f, .12f);
             }
 
             baseDescriptor.LoadSprites(customBaseDescriptor, assetFolderPath);
-            baseDescriptor._parts = customBaseDescriptor.Parts.ToGame();
+            baseDescriptor._parts = customBaseDescriptor.Part.ToGameList();
 
             record.ContentDescriptor = baseDescriptor;
             return operationResult;
@@ -109,7 +99,7 @@ namespace QM_ImporterAPI.Services.Loaders
 
         private static void RegisterHelmetPrefab(CustomHelmetDescriptor descriptor, GameObject prefab, ImportOperationResult operationResult)
         {
-            var part = descriptor.Parts[0];
+            var part = descriptor.Part;
             var eligibleActorCount = 0;
 
             foreach (ActorRecord actorRecord in Data.Actors.Records)

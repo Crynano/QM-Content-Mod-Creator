@@ -1,5 +1,5 @@
 ﻿using MGSC;
-using QM_ImporterAPI.Templates.Descriptors;
+using QM_ImporterAPI.Services.Images;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -18,7 +18,15 @@ namespace QM_ImporterAPI.Services.Extensions
             {
                 ArmorType = customPart.ArmorType,
                 ArmorPart = customPart.ArmorPart,
-                Texture = null // TODO import texture from path or item
+                Texture = TextureImporter.ImportFromFile(customPart.TextureIdOrPath)
+            };
+        }
+
+        public static List<ArmorPartInfo> ToGameList(this CustomArmorPartInfo customPart)
+        {
+            return new List<ArmorPartInfo>
+            {
+                customPart.ToGame()
             };
         }
     }

@@ -31,6 +31,7 @@ namespace QM_ImporterAPI.Services
             new AmmoLoader(),               // Ammo before weapons
             new AugmentationLoader(),       // Augmentations
             new WeaponLoader(),             // Weapons depend on traits, fire modes, ammo
+            new HelmetLoader(),             // Helmets
             new TrashLoader(),              // Trash
             new ConsumableLoader(),         // Consumables
             new GrenadeLoader(),            // Grenades
