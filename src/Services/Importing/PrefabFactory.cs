@@ -2,6 +2,7 @@
 using QM_ImporterAPI.Services.Helpers;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEngine;
 
@@ -9,17 +10,17 @@ namespace QM_ImporterAPI.Services.Importing
 {
     internal static class PrefabFactory
     {
-        private static Dictionary<string , GameObject> CachedPrefabsById = new Dictionary<string, GameObject>();
         private static IEnumerable<string> ValidFileExtensions => new[] { ".obj" };
+        private static Transform ROOT_FOR_PREFABS;
 
         public static bool HasValidModelExtension(string fullPath)
         {
-            return ValidFileExtensions.Any(ext => fullPath.EndsWith(ext, StringComparison.OrdinalIgnoreCase));
+            return ValidFileExtensions.Any(ext => Path.GetExtension(fullPath).Equals(ext, StringComparison.OrdinalIgnoreCase));
         }
-        
+
         private static string GetModelExtension(string fullPath)
         {
-            return ValidFileExtensions.FirstOrDefault(ext => fullPath.EndsWith(ext, StringComparison.OrdinalIgnoreCase));
+            return Path.GetExtension(fullPath).ToLowerInvariant();
         }
 
         public static ImportOperationResult<GameObject> LoadPrefab(string assetPath, string root)
@@ -27,22 +28,32 @@ namespace QM_ImporterAPI.Services.Importing
             var result = new ImportOperationResult<GameObject>();
 
             var resolvedPath = Helper.ResolveAndValidatePath(root, assetPath);
-            if (resolvedPath.HasWarnings)
+            result.Absorb(resolvedPath);
+
+            if (!resolvedPath.IsSuccess)
             {
-                result.AddWarning(resolvedPath.GetWarningsAsString());
                 return result.SetResult(null);
             }
 
-            var modelExtension = GetModelExtension(resolvedPath.Result);
+            var finalPath = resolvedPath.Result;
+            if (!HasValidModelExtension(finalPath))
+            {
+                result.AddWarning($"Unsupported model extension for id: {assetPath}");
+                return result.SetResult(null);
+            }
+
+            var modelExtension = GetModelExtension(finalPath);
 
             Mesh meshResult;
             switch (modelExtension)
             {
                 case ".obj":
-                    meshResult = ObjImporter.ImportModelFromPath(resolvedPath.Result);
+                    var import = MeshImporter.ImportMeshFromObj(finalPath);
+                    result.Absorb(import);
+                    meshResult = import.Result;
                     break;
                 default:
-                    result.AddWarning($"Unsupported model extension for id: {assetPath}");
+                    result.AddError($"Unsupported model extension for id: {assetPath}");
                     return result.SetResult(null);
             }
 
@@ -50,7 +61,6 @@ namespace QM_ImporterAPI.Services.Importing
 
             if (prefabFromModel != null)
             {
-                CachedPrefabsById[assetPath] = prefabFromModel;
                 return result.SetResult(prefabFromModel);
             }
             else
@@ -62,17 +72,33 @@ namespace QM_ImporterAPI.Services.Importing
 
         private static GameObject PrepareModelForGame(Mesh meshResult)
         {
-            throw new NotImplementedException();
-        }
-
-        public static ImportOperationResult<GameObject> GetPrefabById(string id)
-        {
-            var result = new ImportOperationResult<GameObject>();
-            if (CachedPrefabsById.TryGetValue(id, out GameObject prefab))
+            if (meshResult == null)
             {
-                return result.SetResult(prefab);
+                return null;
             }
-            return result;
+
+            meshResult.name = "ImportedMesh";
+
+            if (ROOT_FOR_PREFABS == null)
+            {
+                var prefabsRoot = new GameObject("MgsPackMod_Prefabs");
+                prefabsRoot.transform.position = Vector3.zero;
+                prefabsRoot.SetActive(false);
+                GameObject.DontDestroyOnLoad(prefabsRoot);
+                ROOT_FOR_PREFABS = prefabsRoot.transform;
+            }
+
+            var prefabInstance = new GameObject("ImportedPrefab");
+            prefabInstance.transform.SetParent(ROOT_FOR_PREFABS, false);
+            prefabInstance.transform.position = Vector3.zero;
+
+            var meshFilter = prefabInstance.AddComponent<MeshFilter>();
+            meshFilter.sharedMesh = meshResult;
+
+            var meshRenderer = prefabInstance.AddComponent<MeshRenderer>();
+            // Maybe its a good idea to clone any of the default objects.
+
+            return prefabInstance;
         }
     }
 }
