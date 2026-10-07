@@ -43,5 +43,21 @@ namespace QM_ImporterAPI.Services.Extensions.Descriptors
             record.ContentDescriptor = baseDescriptor;
             return operationResult;
         }
+
+        internal static ImportOperationResult SetImplantDescriptorProperties(this ImplantRecord record, CustomImplantDescriptor customImplantDescriptor, string assetFolderPath)
+        {
+            var operationResult = new ImportOperationResult();
+            var implantDescriptor = ScriptableObject.CreateInstance<ImplantDescriptor>();
+            if (customImplantDescriptor == null)
+            {
+                operationResult.AddWarning($"{nameof(CustomImplantDescriptor)} for {record.Id} is null.");
+                return operationResult;
+            }
+            implantDescriptor.LoadSprites(customImplantDescriptor, assetFolderPath);
+            // TODO: Implement sound loading for implants
+            //implantDescriptor._useSound = QuasimorphHelper.LoadAudioClipFromExternalFile(assetFolderPath, customImplantDescriptor.UseSoundPath, nameof(ImplantDescriptor.UseSound), AssetImporter);
+            record.ContentDescriptor = implantDescriptor;
+            return operationResult;
+        }
     }
 }

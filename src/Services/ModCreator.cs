@@ -12,13 +12,22 @@ namespace QM_ImporterAPI.Services
     public static class ModCreator
     {
         private const string ASSETS_FOLDER_NAME = "Assets";
-        private const string WEAPONS_FOLDER_NAME = "Weapons";
-        private const string DATADISKS_FOLDER_NAME = "Datadisks";
+        private const string SPRITES_FOLDER_NAME = "Sprites";
+        private const string RECIPES_FOLDER_NAME = "Crafting Recipes";
         private const string DESCRIPTORS_FOLDER_NAME = "Descriptors";
         private const string LOCALIZATION_FOLDER_NAME = "Localization";
-        private const string SPRITES_FOLDER_NAME = "Sprites";
-
+        private const string FACTIONREWARDS_FOLDER_NAME = "FactionRewards";
+        private const string DATADISKS_FOLDER_NAME = "Datadisks";
+        private const string SOUNDS_FOLDER_NAME = "Sounds";
+        private const string BUNDLE_FOLDER_NAME = "Bundles";
+        private const string WEAPONS_FOLDER_NAME = "Weapons";
+        private const string FIREMODES_FOLDER_NAME = "Firemodes";
+        private const string AMMO_FOLDER_NAME = "Ammo";
+        private const string ARMORS_FOLDER_NAME = "Armors";
         private const string AUGMENTATIONS_FOLDER_NAME = "Augmentations";
+        private const string TRANSFORMS_FOLDER_NAME = "Transforms";
+        private const string CONSUMABLES_FOLDER_NAME = "Consumables";
+        private const string IMPLANTS_FOLDER_NAME = "Implants";
 
         public static void CreateWeaponMod(string rootPath)
         {
@@ -52,20 +61,20 @@ namespace QM_ImporterAPI.Services
             var assetsFolder = Path.Combine(rootPath, ASSETS_FOLDER_NAME);
 
             var weaponsFolder = Path.Combine(assetsFolder, WEAPONS_FOLDER_NAME);
-            var armorFolder = Path.Combine(assetsFolder, "Armors");
-            var ammoFolder = Path.Combine(assetsFolder, "Ammo");
-            var firemodesFolder = Path.Combine(assetsFolder, "Firemodes");
+            var armorFolder = Path.Combine(assetsFolder, ARMORS_FOLDER_NAME);
+            var ammoFolder = Path.Combine(assetsFolder, AMMO_FOLDER_NAME);
+            var firemodesFolder = Path.Combine(assetsFolder, FIREMODES_FOLDER_NAME);
 
-            var transformFolder = Path.Combine(assetsFolder, "Transforms");
-            var craftingReceiptsFolder = Path.Combine(assetsFolder, "Crafting Recipes");
+            var transformFolder = Path.Combine(assetsFolder, TRANSFORMS_FOLDER_NAME);
+            var craftingReceiptsFolder = Path.Combine(assetsFolder, RECIPES_FOLDER_NAME);
             var datadiskFolder = Path.Combine(assetsFolder, DATADISKS_FOLDER_NAME);
 
             var descriptorsFolder = Path.Combine(assetsFolder, DESCRIPTORS_FOLDER_NAME);
             var localizationFolder = Path.Combine(assetsFolder, LOCALIZATION_FOLDER_NAME);
-            var factionRewardsFolder = Path.Combine(assetsFolder, "FactionRewards");
+            var factionRewardsFolder = Path.Combine(assetsFolder, FACTIONREWARDS_FOLDER_NAME);
 
-            var soundFolder = Path.Combine(assetsFolder, "Sounds");
-            var bundlesFolder = Path.Combine(assetsFolder, "Bundles");
+            var soundFolder = Path.Combine(assetsFolder, SOUNDS_FOLDER_NAME);
+            var bundlesFolder = Path.Combine(assetsFolder, BUNDLE_FOLDER_NAME);
 
             Directory.CreateDirectory(assetsFolder);
 
@@ -84,19 +93,19 @@ namespace QM_ImporterAPI.Services
             Directory.CreateDirectory(soundFolder);
             Directory.CreateDirectory(bundlesFolder);
 
-            ExportItems(rangedWeapon, weaponsFolder);
-            ExportItems(ammoItem, ammoFolder);
-            ExportItems(fireModeRecord, firemodesFolder);
+            ExportHelper.ExportItem(rangedWeapon, weaponsFolder);
+            ExportHelper.ExportItem(ammoItem, ammoFolder);
+            ExportHelper.ExportItem(fireModeRecord, firemodesFolder);
 
-            ExportItems(oneDatadisk, datadiskFolder);
+            ExportHelper.ExportItem(oneDatadisk, datadiskFolder);
 
-            ExportCustomDescriptor(customWeaponDescriptor, descriptorsFolder);
-            ExportCustomDescriptor(customAmmoDescriptor, descriptorsFolder);
-            ExportCustomDescriptor(fireModeDescriptor, descriptorsFolder);
+            ExportHelper.ExportCustomDescriptor(customWeaponDescriptor, descriptorsFolder);
+            ExportHelper.ExportCustomDescriptor(customAmmoDescriptor, descriptorsFolder);
+            ExportHelper.ExportCustomDescriptor(fireModeDescriptor, descriptorsFolder);
 
-            ExportCustom(localizationItem, $"{rangedWeapon.Id}_localization", localizationFolder);
-            ExportCustom(factionTemplate, $"{rangedWeapon.Id}_factionReward", factionRewardsFolder);
-            ExportCustom(rangedWeaponReceipt, $"{rangedWeapon.Id}_craftingReceipt", craftingReceiptsFolder);
+            ExportHelper.ExportCustom(localizationItem, $"{rangedWeapon.Id}_localization", localizationFolder);
+            ExportHelper.ExportCustom(factionTemplate, $"{rangedWeapon.Id}_factionReward", factionRewardsFolder);
+            ExportHelper.ExportCustom(rangedWeaponReceipt, $"{rangedWeapon.Id}_craftingReceipt", craftingReceiptsFolder);
         }
 
         public static void CreateExampleMod(string rootPath)
@@ -153,22 +162,22 @@ namespace QM_ImporterAPI.Services
             var assetsFolder = Path.Combine(rootPath, ASSETS_FOLDER_NAME);
 
             var weaponsFolder = Path.Combine(assetsFolder, WEAPONS_FOLDER_NAME);
-            var armorFolder = Path.Combine(assetsFolder, "Armors");
-            var ammoFolder = Path.Combine(assetsFolder, "Ammo");
-            var firemodesFolder = Path.Combine(assetsFolder, "Firemodes");
+            var armorFolder = Path.Combine(assetsFolder, ARMORS_FOLDER_NAME);
+            var ammoFolder = Path.Combine(assetsFolder, AMMO_FOLDER_NAME);
+            var firemodesFolder = Path.Combine(assetsFolder, FIREMODES_FOLDER_NAME);
             var explosionsFolder = Path.Combine(assetsFolder, "Explosions");
-            var consumablesFolder = Path.Combine(assetsFolder, "Consumables");
+            var consumablesFolder = Path.Combine(assetsFolder, CONSUMABLES_FOLDER_NAME);
 
-            var transformFolder = Path.Combine(assetsFolder, "Transforms");
-            var craftingReceiptsFolder = Path.Combine(assetsFolder, "Crafting Recipes");
+            var transformFolder = Path.Combine(assetsFolder, TRANSFORMS_FOLDER_NAME);
+            var craftingReceiptsFolder = Path.Combine(assetsFolder, RECIPES_FOLDER_NAME);
             var datadiskFolder = Path.Combine(assetsFolder, DATADISKS_FOLDER_NAME);
 
             var descriptorsFolder = Path.Combine(assetsFolder, DESCRIPTORS_FOLDER_NAME);
             var localizationFolder = Path.Combine(assetsFolder, LOCALIZATION_FOLDER_NAME);
-            var factionRewardsFolder = Path.Combine(assetsFolder, "FactionRewards");
+            var factionRewardsFolder = Path.Combine(assetsFolder, FACTIONREWARDS_FOLDER_NAME);
 
-            var soundFolder = Path.Combine(assetsFolder, "Sounds");
-            var bundlesFolder = Path.Combine(assetsFolder, "Bundles");
+            var soundFolder = Path.Combine(assetsFolder, SOUNDS_FOLDER_NAME);
+            var bundlesFolder = Path.Combine(assetsFolder, BUNDLE_FOLDER_NAME);
 
             Directory.CreateDirectory(assetsFolder);
 
@@ -189,26 +198,26 @@ namespace QM_ImporterAPI.Services
             Directory.CreateDirectory(soundFolder);
             Directory.CreateDirectory(bundlesFolder);
 
-            ExportItems(meleeWeapon, weaponsFolder);
-            ExportItems(rangedWeapon, weaponsFolder);
-            ExportItems(ammoItem, ammoFolder);
-            ExportItems(fireModeRecord, firemodesFolder);
-            ExportItems(explosionRecord, explosionsFolder);
-            ExportItems(consumable, consumablesFolder);
+            ExportHelper.ExportItem(meleeWeapon, weaponsFolder);
+            ExportHelper.ExportItem(rangedWeapon, weaponsFolder);
+            ExportHelper.ExportItem(ammoItem, ammoFolder);
+            ExportHelper.ExportItem(fireModeRecord, firemodesFolder);
+            ExportHelper.ExportItem(explosionRecord, explosionsFolder);
+            ExportHelper.ExportItem(consumable, consumablesFolder);
 
-            ExportItems(armorItem, armorFolder);
-            ExportItems(oneDatadisk, datadiskFolder);
+            ExportHelper.ExportItem(armorItem, armorFolder);
+            ExportHelper.ExportItem(oneDatadisk, datadiskFolder);
 
-            ExportCustomDescriptor(customWeaponDescriptor, descriptorsFolder);
-            ExportCustomDescriptor(customAmmoDescriptor, descriptorsFolder);
-            ExportCustomDescriptor(fireModeDescriptor, descriptorsFolder);
-            ExportCustomDescriptor(explosionDescriptor, descriptorsFolder);
-            ExportCustomDescriptor(consumableDescriptor, descriptorsFolder);
-            ExportCustomDescriptor(datadiskDescriptor, descriptorsFolder);
+            ExportHelper.ExportCustomDescriptor(customWeaponDescriptor, descriptorsFolder);
+            ExportHelper.ExportCustomDescriptor(customAmmoDescriptor, descriptorsFolder);
+            ExportHelper.ExportCustomDescriptor(fireModeDescriptor, descriptorsFolder);
+            ExportHelper.ExportCustomDescriptor(explosionDescriptor, descriptorsFolder);
+            ExportHelper.ExportCustomDescriptor(consumableDescriptor, descriptorsFolder);
+            ExportHelper.ExportCustomDescriptor(datadiskDescriptor, descriptorsFolder);
 
-            ExportCustom(localizationItem, $"{rangedWeapon.Id}_localization", localizationFolder);
-            ExportCustom(factionTemplate, $"{rangedWeapon.Id}_factionReward", factionRewardsFolder);
-            ExportCustom(rangedWeaponReceipt, $"{rangedWeapon.Id}_craftingReceipt", craftingReceiptsFolder);
+            ExportHelper.ExportCustom(localizationItem, $"{rangedWeapon.Id}_localization", localizationFolder);
+            ExportHelper.ExportCustom(factionTemplate, $"{rangedWeapon.Id}_factionReward", factionRewardsFolder);
+            ExportHelper.ExportCustom(rangedWeaponReceipt, $"{rangedWeapon.Id}_craftingReceipt", craftingReceiptsFolder);
 
             CreateTraitMod(rootPath);
             CreateTooltipImage(rootPath);
@@ -256,24 +265,24 @@ namespace QM_ImporterAPI.Services
             Directory.CreateDirectory(spritesFolder);
             Directory.CreateDirectory(datadiskFolder);
 
-            ExportItems(mercenaryClass, mercenaryClassesFolder);
-            ExportItems(mercenaryProfile, mercenaryProfilesFolder);
-            ExportCustomDescriptor(mercenaryClassDescriptor, descriptorsFolder);
+            ExportHelper.ExportItem(mercenaryClass, mercenaryClassesFolder);
+            ExportHelper.ExportItem(mercenaryProfile, mercenaryProfilesFolder);
+            ExportHelper.ExportCustomDescriptor(mercenaryClassDescriptor, descriptorsFolder);
 
             if (mercenaryDatadisk != null)
             {
-                ExportItems(mercenaryDatadisk, datadiskFolder);
-                ExportCustomDescriptor(datadiskDescriptor, descriptorsFolder);
+                ExportHelper.ExportItem(mercenaryDatadisk, datadiskFolder);
+                ExportHelper.ExportCustomDescriptor(datadiskDescriptor, descriptorsFolder);
             }
 
             if (mercenaryDatadiskProfile != null)
             {
-                ExportItems(mercenaryDatadiskProfile, datadiskFolder);
-                ExportCustomDescriptor(datadiskProfileDescriptor, descriptorsFolder);
+                ExportHelper.ExportItem(mercenaryDatadiskProfile, datadiskFolder);
+                ExportHelper.ExportCustomDescriptor(datadiskProfileDescriptor, descriptorsFolder);
             }
 
-            ExportCustom(localizationItem, $"{mercenaryClass.Id}_localization", localizationFolder);
-            ExportCustom(locForProfile, $"{mercenaryProfile.Id}_localization", localizationFolder);
+            ExportHelper.ExportCustom(localizationItem, $"{mercenaryClass.Id}_localization", localizationFolder);
+            ExportHelper.ExportCustom(locForProfile, $"{mercenaryProfile.Id}_localization", localizationFolder);
 
             ExportHelper.CreateVoidFile("92x92_Icon_Sprite", spritesFolder);
             ExportHelper.CreateVoidFile("24x24_SmallIcon_Sprite", spritesFolder);
@@ -289,7 +298,7 @@ namespace QM_ImporterAPI.Services
 
             var testTooltipImage = CustomTooltipImage.GetExample("test_tooltip_image");
 
-            ExportCustom(testTooltipImage, $"{testTooltipImage.Tag}_tooltip", tooltipsFolder);
+            ExportHelper.ExportCustom(testTooltipImage, $"{testTooltipImage.Tag}_tooltip", tooltipsFolder);
         }
 
         public static void CreateTraitMod(string rootPath)
@@ -304,7 +313,7 @@ namespace QM_ImporterAPI.Services
                 .Select(id => Data.ItemTraits.GetRecord(id))
                 .First(x => x != null);
 
-            ExportItems(traitRecord, traitsFolder);
+            ExportHelper.ExportItem(traitRecord, traitsFolder);
         }
 
         public static void CreateConsumableMod(string rootPath)
@@ -335,18 +344,18 @@ namespace QM_ImporterAPI.Services
 
             var assetsFolder = Path.Combine(rootPath, ASSETS_FOLDER_NAME);
 
-            var consumablesFolder = Path.Combine(assetsFolder, "Consumables");
+            var consumablesFolder = Path.Combine(assetsFolder, CONSUMABLES_FOLDER_NAME);
             var trashFolder = Path.Combine(assetsFolder, "Trash");
 
-            var transformFolder = Path.Combine(assetsFolder, "Transforms");
-            var craftingReceiptsFolder = Path.Combine(assetsFolder, "Crafting Recipes");
+            var transformFolder = Path.Combine(assetsFolder, TRANSFORMS_FOLDER_NAME);
+            var craftingReceiptsFolder = Path.Combine(assetsFolder, RECIPES_FOLDER_NAME);
             var datadiskFolder = Path.Combine(assetsFolder, DATADISKS_FOLDER_NAME);
 
             var descriptorsFolder = Path.Combine(assetsFolder, DESCRIPTORS_FOLDER_NAME);
             var localizationFolder = Path.Combine(assetsFolder, LOCALIZATION_FOLDER_NAME);
-            var factionRewardsFolder = Path.Combine(assetsFolder, "FactionRewards");
+            var factionRewardsFolder = Path.Combine(assetsFolder, FACTIONREWARDS_FOLDER_NAME);
 
-            var soundFolder = Path.Combine(assetsFolder, "Sounds");
+            var soundFolder = Path.Combine(assetsFolder, SOUNDS_FOLDER_NAME);
 
             Directory.CreateDirectory(assetsFolder);
 
@@ -362,16 +371,16 @@ namespace QM_ImporterAPI.Services
 
             Directory.CreateDirectory(soundFolder);
 
-            ExportItems(trash, trashFolder);
-            ExportItems(consumable, consumablesFolder);
-            ExportItems(oneDatadisk, datadiskFolder);
+            ExportHelper.ExportItem(trash, trashFolder);
+            ExportHelper.ExportItem(consumable, consumablesFolder);
+            ExportHelper.ExportItem(oneDatadisk, datadiskFolder);
 
-            ExportCustomDescriptor(consumableDescriptor, descriptorsFolder);
-            ExportCustomDescriptor(trashDescriptor, descriptorsFolder);
+            ExportHelper.ExportCustomDescriptor(consumableDescriptor, descriptorsFolder);
+            ExportHelper.ExportCustomDescriptor(trashDescriptor, descriptorsFolder);
 
-            ExportCustom(localizationItem, $"{consumable.Id}_localization", localizationFolder);
-            ExportCustom(factionTemplate, $"{consumable.Id}_factionReward", factionRewardsFolder);
-            ExportCustom(consumableReceipt, $"{consumable.Id}_craftingReceipt", craftingReceiptsFolder);
+            ExportHelper.ExportCustom(localizationItem, $"{consumable.Id}_localization", localizationFolder);
+            ExportHelper.ExportCustom(factionTemplate, $"{consumable.Id}_factionReward", factionRewardsFolder);
+            ExportHelper.ExportCustom(consumableReceipt, $"{consumable.Id}_craftingReceipt", craftingReceiptsFolder);
         }
 
         public static void CreateGrenadeMod(string rootPath)
@@ -407,15 +416,15 @@ namespace QM_ImporterAPI.Services
 
             var grenadesFolder = Path.Combine(assetsFolder, "Grenades");
 
-            var transformFolder = Path.Combine(assetsFolder, "Transforms");
-            var craftingReceiptsFolder = Path.Combine(assetsFolder, "Crafting Recipes");
+            var transformFolder = Path.Combine(assetsFolder, TRANSFORMS_FOLDER_NAME);
+            var craftingReceiptsFolder = Path.Combine(assetsFolder, RECIPES_FOLDER_NAME);
             var datadiskFolder = Path.Combine(assetsFolder, DATADISKS_FOLDER_NAME);
 
             var descriptorsFolder = Path.Combine(assetsFolder, DESCRIPTORS_FOLDER_NAME);
             var localizationFolder = Path.Combine(assetsFolder, LOCALIZATION_FOLDER_NAME);
-            var factionRewardsFolder = Path.Combine(assetsFolder, "FactionRewards");
+            var factionRewardsFolder = Path.Combine(assetsFolder, FACTIONREWARDS_FOLDER_NAME);
 
-            var soundFolder = Path.Combine(assetsFolder, "Sounds");
+            var soundFolder = Path.Combine(assetsFolder, SOUNDS_FOLDER_NAME);
             var spritesFolder = Path.Combine(assetsFolder, SPRITES_FOLDER_NAME);
 
             Directory.CreateDirectory(assetsFolder);
@@ -435,16 +444,16 @@ namespace QM_ImporterAPI.Services
             Directory.CreateDirectory(soundFolder);
             Directory.CreateDirectory(spritesFolder);
 
-            ExportItems(grenade, grenadesFolder);
+            ExportHelper.ExportItem(grenade, grenadesFolder);
             if (oneDatadisk != null)
             {
-                ExportItems(oneDatadisk, datadiskFolder);
+                ExportHelper.ExportItem(oneDatadisk, datadiskFolder);
             }
-            ExportCustomDescriptor(grenadeDescriptor, descriptorsFolder);
+            ExportHelper.ExportCustomDescriptor(grenadeDescriptor, descriptorsFolder);
 
-            ExportCustom(localizationItem, $"{grenade.Id}_localization", localizationFolder);
-            ExportCustom(factionTemplate, $"{grenade.Id}_factionReward", factionRewardsFolder);
-            ExportCustom(grenadeReceipt, $"{grenade.Id}_craftingReceipt", craftingReceiptsFolder);
+            ExportHelper.ExportCustom(localizationItem, $"{grenade.Id}_localization", localizationFolder);
+            ExportHelper.ExportCustom(factionTemplate, $"{grenade.Id}_factionReward", factionRewardsFolder);
+            ExportHelper.ExportCustom(grenadeReceipt, $"{grenade.Id}_craftingReceipt", craftingReceiptsFolder);
         }
 
         public static void CreateAugmentationMod(string rootPath)
@@ -481,29 +490,41 @@ namespace QM_ImporterAPI.Services
             Directory.CreateDirectory(spritesFolder);
             Directory.CreateDirectory(weaponsFolder);
 
-            ExportItems(augmentationWeapon, weaponsFolder);
-            ExportItems(augmentationRecord, augmentationsFolder);
+            ExportHelper.ExportItem(augmentationWeapon, weaponsFolder);
+            ExportHelper.ExportItem(augmentationRecord, augmentationsFolder);
 
-            ExportCustomDescriptor(augmentationDescriptor, descriptorsFolder);
-            ExportCustomDescriptor(augmentationWeaponDescriptor, descriptorsFolder);
+            ExportHelper.ExportCustomDescriptor(augmentationDescriptor, descriptorsFolder);
+            ExportHelper.ExportCustomDescriptor(augmentationWeaponDescriptor, descriptorsFolder);
 
-            ExportCustom(localizationItem, $"{augmentation.Id.TrimId()}_localization", localizationFolder);
-            ExportCustom(weaponLocalizationItem, $"{augmentationWeapon.Id.TrimId()}_localization", localizationFolder);
+            ExportHelper.ExportCustom(localizationItem, $"{augmentation.Id.TrimId()}_localization", localizationFolder);
+            ExportHelper.ExportCustom(weaponLocalizationItem, $"{augmentationWeapon.Id.TrimId()}_localization", localizationFolder);
         }
 
-        private static void ExportItems<TRecord>(TRecord item, string basePath) where TRecord : ConfigTableRecord
+        public static void CreateImplantMod(string rootPath)
         {
-            ExportHelper.ExportItem(item, basePath);
-        }
+            var implant = Data.Items.Ids
+                .Select(id => Data.Items.GetSimpleRecord<ImplantRecord>(id))
+                .First(x => x != null);
 
-        private static void ExportCustomDescriptor<TDesc>(TDesc descriptor, string basePath) where TDesc : CustomBaseDescriptor
-        {
-            ExportHelper.ExportCustomDescriptor(descriptor, basePath);
-        }
+            var implantDescriptor = CustomImplantDescriptor.GetExample(implant.Id);
+            var localizationItem = LocalizationTemplate.GetExample(implant.Id);
 
-        private static void ExportCustom<T>(T item, string fileName, string basePath) where T : class, new()
-        {
-            ExportHelper.ExportCustom(item, fileName, basePath);
+            var assetsFolder = Path.Combine(rootPath, ASSETS_FOLDER_NAME);
+            var implantsFolder = Path.Combine(assetsFolder, IMPLANTS_FOLDER_NAME);
+            var descriptorsFolder = Path.Combine(assetsFolder, DESCRIPTORS_FOLDER_NAME);
+            var localizationFolder = Path.Combine(assetsFolder, LOCALIZATION_FOLDER_NAME);
+            var spritesFolder = Path.Combine(assetsFolder, SPRITES_FOLDER_NAME);
+            var soundFolder = Path.Combine(assetsFolder, SOUNDS_FOLDER_NAME);
+
+            Directory.CreateDirectory(implantsFolder);
+            Directory.CreateDirectory(descriptorsFolder);
+            Directory.CreateDirectory(localizationFolder);
+            Directory.CreateDirectory(spritesFolder);
+            Directory.CreateDirectory(soundFolder);
+
+            ExportHelper.ExportItem(implant, implantsFolder);
+            ExportHelper.ExportCustomDescriptor(implantDescriptor, descriptorsFolder);
+            ExportHelper.ExportCustom(localizationItem, $"{implant.Id}_localization", localizationFolder);
         }
     }
 }

@@ -9,7 +9,7 @@ namespace QM_ImporterAPI.Services.Loaders
     /// <summary>
     /// Loader for mercenary class items. Handles mercenary classes with descriptors and mercenary classes without descriptors.
     /// </summary>
-    public class MercenaryClassLoader : BaseItemLoader
+    internal class MercenaryClassLoader : BaseItemLoader
     {
         protected override string LoaderName => nameof(MercenaryClassLoader);
 

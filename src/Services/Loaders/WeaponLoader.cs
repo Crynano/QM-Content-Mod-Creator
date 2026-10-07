@@ -10,7 +10,7 @@ namespace QM_ImporterAPI.Services.Loaders
     /// <summary>
     /// Loader for weapon items. Handles weapons with descriptors and weapons without descriptors.
     /// </summary>
-    public class WeaponLoader : BaseItemLoader
+    internal class WeaponLoader : BaseItemLoader
     {
         protected override string LoaderName => nameof(WeaponLoader);
 

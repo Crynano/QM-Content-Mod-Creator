@@ -14,8 +14,7 @@ namespace QM_ImporterAPI.Services
         /// <param name="givenPath">String path where the Assets folder is. Make sure is valid and not null.</param>
         public static void LoadModFromDirectory(string givenPath)
         {
-            var modLoader = new ModLoader();
-            modLoader.LoadModFromDirectory(givenPath);
+            ModLoader.LoadModFromDirectory(givenPath);
         }
 
         /// <summary>
@@ -25,8 +24,7 @@ namespace QM_ImporterAPI.Services
         /// <param name="modContext">The mod context that provides the necessary information for loading the mod. This parameter cannot be null.</param>
         public static void LoadModFromContext(IModContext modContext)
         {
-            var modLoader = new ModLoader();
-            modLoader.LoadModFromContext(modContext);
+            ModLoader.LoadModFromContext(modContext);
         }
 
         #region Helper Methods
