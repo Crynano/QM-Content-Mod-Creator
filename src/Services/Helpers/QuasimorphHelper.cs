@@ -34,6 +34,16 @@ namespace QM_ImporterAPI.Services.Helpers
             return list.Ids.Contains(id);
         }
 
+        public static bool IsGameId(string id, ItemPropertyIconSheet list)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                Logger.LogDebug("ID is not game ID because its empty or null.");
+                return false;
+            }
+            return list.GetSpriteByTag(id) != null;
+        }
+
         public static SoundBank[] GetAudiosFromExistingWeapons(string id, int category)
         {
             WeaponDescriptor existingWeaponDescriptor = GetExistingWeaponDescriptor(id);
@@ -101,6 +111,36 @@ namespace QM_ImporterAPI.Services.Helpers
         #endregion
 
         #region Sprites
+
+        public static Sprite LoadSpriteFromMercenaries(string assetFolderPath, string path, string propertyName, Func<string, Sprite> loadFunc)
+        {
+            if (IsGameId(path, Data.MercenaryClasses))
+            {
+                var propertyFromItem = GetPropertyFromList<MercenaryClassRecord, MercenaryClassDescriptor>(path, propertyName, Data.MercenaryClasses);
+                if (propertyFromItem is Sprite spriteProperty)
+                {
+                    return CloneSprite(spriteProperty);
+                }
+                Logger.LogWarning("Failed to load sprite for property [" + propertyName + "] from existing game item with ID: " + path + ". The property is either missing or not a Sprite.");
+            }
+            var fullPath = Helper.ResolvePath(assetFolderPath, path);
+            return loadFunc(fullPath);
+        }
+
+        public static Sprite LoadSpriteFromItem<TDescriptor>(string assetFolderPath, string path, string propertyName, Func<string, Sprite> loadFunc) where TDescriptor : ItemContentDescriptor
+        {
+            if (IsGameId(path))
+            {
+                var propertyFromItem = GetPropertyFromItem<TDescriptor>(path, propertyName);
+                if (propertyFromItem is Sprite spriteProperty)
+                {
+                    return CloneSprite(spriteProperty);
+                }
+                Logger.LogWarning("Failed to load sprite for property [" + propertyName + "] from existing game item with ID: " + path + ". The property is either missing or not a Sprite.");
+            }
+            var fullPath = Helper.ResolvePath(assetFolderPath, path);
+            return loadFunc(fullPath);
+        }
 
         public static Sprite LoadSpriteFromWeapon(string assetFolderPath, string path, string propertyName, Func<string, Sprite> loadFunc)
         {
@@ -289,10 +329,10 @@ namespace QM_ImporterAPI.Services.Helpers
 
             var properties = type.GetProperties(bindingAttr);
 
-            foreach (var item in properties)
-            {
-                Logger.LogDebug($"Listing property {item} for {id}");
-            }
+            //foreach (var item in properties)
+            //{
+            //    Logger.LogDebug($"Listing property {item} for {id}");
+            //}
 
             object returnValue;
             if (properties.ToList().Find(x => x.Name.Equals(propertyName)) == null)

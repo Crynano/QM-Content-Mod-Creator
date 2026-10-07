@@ -9,7 +9,7 @@ namespace QM_ImporterAPI.Services.Loaders
     /// <summary>
     /// Loader for localization files.
     /// </summary>
-    public class LocalizationLoader : BaseItemLoader
+    internal class LocalizationLoader : BaseItemLoader
     {
         protected override string LoaderName => nameof(LocalizationLoader);
 

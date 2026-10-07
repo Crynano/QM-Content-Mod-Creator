@@ -21,14 +21,14 @@ namespace QM_ImporterAPI.Commands.Create
             {
                 if (tokens.Length == 0)
                 {
-                    return "<color=red>ERROR: </color>No folder path provided. Syntax: create-mod <folder-path>";
+                    return "<color=red>ERROR: </color>No folder path provided. Syntax: create-merc-mod <folder-path>";
                 }
 
                 var providedPath = tokens[0];
 
                 if (string.IsNullOrEmpty(providedPath))
                 {
-                    return "<color=red>ERROR: </color>No folder path provided. Syntax: create-mod <folder-path>";
+                    return "<color=red>ERROR: </color>No folder path provided. Syntax: create-merc-mod <folder-path>";
                 }
                 else if (!Path.IsPathRooted(providedPath))
                 {

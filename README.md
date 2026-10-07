@@ -3,11 +3,13 @@
 [![Support on Ko-fi](https://img.shields.io/badge/Support-Ko--fi-ff5f5f?logo=kofi&logoColor=white)](https://ko-fi.com/crynano)
 [![Author: Crynano](https://img.shields.io/badge/Author-Crynano-2f6f91)](https://github.com/Crynano)
 
-> **Requires the Quasimorph Beta Branch.** This mod is not compatible with the stable branch.
-
 Content Mod Creator helps you create Quasimorph weapon and item mods without having to touch code!
 It's a straight upgrade from the Weapon and Item Importer API I've previously developed.
-It handles folder creation, settings, image, audio and configuration so you can focus on building fun content! (Can't wait to see more content mods)
+It handles folder creation, settings, image, audio, configuration and validations so you can focus on building stuff
+
+If anything you've created fails, there's a detailed result summary printed in the console, and errors are logged in `Player.log` for further inspection.
+
+If you need any help, feel free to ask in the Quasimorph modding community on Discord or Steam.
 
 ## Table of Contents
 - [Features](#features)
@@ -19,17 +21,16 @@ It handles folder creation, settings, image, audio and configuration so you can 
 - [Tips and Tricks](#tips-and-tricks)
 - [Restrictions](#restrictions)
 - [Troubleshooting](#troubleshooting)
+- [Changelog](#changelog)
 - [Support](#support)
 - [Special Thanks](#special-thanks)
 - [Other Mods](#my-other-quasimorph-mods)
-
-> **Requires Quasimorph Beta Branch** — see [Restrictions](#restrictions) for details.
 
 ## Features
 - Creates mod folder structure and settings for you.
 - Imports JSON, images, and audio assets.
 - Supports weapons, armor, ammo, firemodes, explosions, consumables, traits, datadisks, and implants.
-- Supports custom mercenary class mods.
+- Supports grenades, trash items, custom mercenary class and mercenary profile mods.
 - Reduces repetitive setup so you can iterate faster.
 - Works through simple in-game console commands.
 
@@ -39,7 +40,8 @@ It handles folder creation, settings, image, audio and configuration so you can 
 | --- | --- |
 | `create-mod "PathToAFolder"` | Creates a full mod template folder (all content types) |
 | `create-weapon-mod "PathToAFolder"` | Creates a weapon-focused mod template folder |
-| `create-consumable-mod "PathToAFolder"` | Creates a consumable-focused mod template folder |
+| `create-consumable-mod "PathToAFolder"` | Creates a consumable-focused mod template folder (includes trash items) |
+| `create-grenade-mod "PathToAFolder"` | Creates a grenade-focused mod template folder |
 | `create-merc-mod "PathToAFolder"` | Creates a mercenary class mod template folder |
 | `create-trait-mod "PathToAFolder"` | Creates a trait mod template folder |
 
@@ -58,6 +60,10 @@ It handles folder creation, settings, image, audio and configuration so you can 
 | `export-weapons "PathToAFolder"` | Exports 250+ in-game weapons for reference |
 | `export-armor "PathToAFolder"` | Exports in-game armor records for reference |
 | `export-chips "PathToAFolder"` | Exports all in-game item chips (datadisks) for reference |
+| `export-mercenaryclass "PathToAFolder"` | Exports in-game mercenary classes for reference |
+| `export-mercenaryprofile "PathToAFolder"` | Exports in-game mercenary profiles for reference |
+
+All `create-*` and `import-mod`/`update-mod` commands also have an `api-` prefixed alias (e.g. `api-create-mod`).
 
 ## Create a Mod from Scratch
 1. Install Content Mod Creator
@@ -202,7 +208,18 @@ export-chips "C:/Temp/ChipDump"
 - Errors during import appear in red directly in the developer console, not just in `Player.log`. If you see a red message after running `import-mod`, that is your first signal something went wrong.
 - Missing images or audio:
   Verify file names, paths, and that files exist under your mod `Assets` folder.
-  ## Support
+  ## Changelog
+- **Trash**: Added trash item support (`CustomTrashDescriptor`), included in the consumable template.
+- **Consumables**: Updated consumable creation and loading.
+- **Mercenaries**: Added mercenary classes and mercenary profiles, with `create-merc-mod`, `export-mercenaryclass` and `export-mercenaryprofile`.
+- **Grenades**: Added grenade records and descriptors, with `create-grenade-mod`.
+- **Import results**: Improved import result summaries, merging warnings and errors across loaders.
+- **Stability**: Fixed an exception when printing errors while the game is loading, and improved log messages and error details (e.g. muzzle loading).
+- **Crafting**: Recipes now check that items exist in-game before being added.
+- **Icons**: Tooltip icons and trait icons can be added or replaced.
+- **Commands**: Renamed the migrate command to `migrate-old-mod` and cleaned up commands.
+
+## Support
 If this project helps your workflow and you want to support updates:
 
 - [Support Content Mod Creator on Ko-fi](https://ko-fi.com/crynano)

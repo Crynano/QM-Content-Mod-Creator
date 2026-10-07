@@ -12,11 +12,9 @@ using System.Linq;
 
 namespace QM_ImporterAPI.Services
 {
-    internal class ModLoader
+    internal static class ModLoader
     {
         private const string ASSETS_FOLDER_NAME = "Assets";
-
-        private readonly List<ImportableJson> ImportableJsons = new List<ImportableJson>();
 
         /// <summary>
         /// Static collection of all item loaders. Initialized once and reused across all ModLoader instances.
@@ -24,25 +22,32 @@ namespace QM_ImporterAPI.Services
         /// </summary>
         private static readonly List<BaseItemLoader> Loaders = new List<BaseItemLoader>
         {
-            new SpriteImageLoader(),     // Sprite images with no dependencies.
-            new TraitLoader(),           // Load traits, only depend on sprite images
-            new FireModeLoader(),        // Fire modes before weapons
-            new ExplosionLoader(),       // Explosions before weapons/ammo
-            new AmmoLoader(),            // Ammo before weapons
-            new WeaponLoader(),          // Weapons depend on traits, fire modes, ammo
-            new ConsumableLoader(),      // Consumables
-            new DatadiskLoader(),        // Datadisks
-            new CraftingLoader(),        // Crafting recipes (may reference items above)
-            new FactionRewardsLoader(),  // Faction rewards (may reference items)
-            new LocalizationLoader(),    // Localization last (labels for all items)
+            new SpriteImageLoader(),        // Sprite images with no dependencies.
+            new TraitLoader(),              // Load traits, only depend on sprite images
+            new MercenaryClassLoader(),     // Mercenary classes, only depend on sprite images
+            new MercenaryProfileLoader(),   // Mercenary profiles
+            new FireModeLoader(),           // Fire
+            new ExplosionLoader(),          // Explosions before weapons/ammo
+            new AmmoLoader(),               // Ammo before weapons
+            new AugmentationLoader(),       // Augmentations
+            new WeaponLoader(),             // Weapons depend on traits, fire modes, ammo
+            new TrashLoader(),              // Trash
+            new ConsumableLoader(),         // Consumables
+            new GrenadeLoader(),            // Grenades
+            new WoundLoader(),              // Wounds
+            new ImplantLoader(),            // Implants
+            new DatadiskLoader(),           // Datadisks
+            new CraftingLoader(),           // Crafting recipes (may reference items above)
+            new FactionRewardsLoader(),     // Faction rewards (may reference items)
+            new LocalizationLoader(),       // Localization last (labels for all items),
         };
 
-        internal void LoadModFromContext(IModContext modContext)
+        internal static void LoadModFromContext(IModContext modContext)
         {
             LoadModFromDirectory(modContext.ModContentPath);
         }
 
-        internal void LoadModFromDirectory(string givenPath)
+        internal static void LoadModFromDirectory(string givenPath)
         {
             // Here we could try to get the mod name from the directory name or a config file
             // The file is modmanifest.json, which is the steam standard for it.
@@ -73,8 +78,8 @@ namespace QM_ImporterAPI.Services
             var jsonFiles = Directory.GetFiles(assetFolderPath, "*.json", SearchOption.AllDirectories);
             Logger.LogDebug($"Found {jsonFiles.Length} json files in the ASSET folder. Starting to load them...");
 
-            LoadImportableJsons(jsonFiles);
-            ProcessImportableJsons(assetFolderPath);
+            var importableJsons = LoadImportableJsons(jsonFiles);
+            ProcessImportableJsons(assetFolderPath, importableJsons);
 
             Logger.LogDebug($"Finished loading mod from directory '{givenPath}'");
         }
@@ -121,8 +126,9 @@ namespace QM_ImporterAPI.Services
             Logger.LogInfo($"Finished reprinting json files in: {givenPath}. Duration {stopwatch.ElapsedMilliseconds}ms");
         }
 
-        private void LoadImportableJsons(string[] jsonFilesPath)
+        private static IEnumerable<ImportableJson> LoadImportableJsons(string[] jsonFilesPath)
         {
+            var result = new List<ImportableJson>();
             Logger.LogDebug($"{nameof(LoadImportableJsons)}: Loading importable JSONs");
             var importJsonStopwatch = Stopwatch.StartNew();
 
@@ -132,19 +138,20 @@ namespace QM_ImporterAPI.Services
                 var importableJson = JsonConvert.DeserializeObject<ImportableJson>(json, JsonExporterSettings.DeserializerSettings);
                 if (importableJson != null && !string.IsNullOrEmpty(importableJson.RecordType))
                 {
-                    ImportableJsons.Add(importableJson);
+                    result.Add(importableJson);
                 }
             }
             importJsonStopwatch.Stop();
             Logger.LogDebug($"Finished loading json files in: {importJsonStopwatch.ElapsedMilliseconds}ms. Starting to process them...");
+            return result;
         }
 
-        private void ProcessImportableJsons(string assetFolderPath)
+        private static void ProcessImportableJsons(string assetFolderPath, IEnumerable<ImportableJson> importableJsons)
         {
             Logger.LogDebug($"{nameof(ProcessImportableJsons)}: Processing mod JSONs");
             var stopWatch = Stopwatch.StartNew();
 
-            var deserializedImportableJsons = ImportableJsons
+            var deserializedImportableJsons = importableJsons
                 .Select(json => json.Deserialize())
                 .Where(json => json != null)
                 .ToList();
@@ -160,7 +167,7 @@ namespace QM_ImporterAPI.Services
 
             stopWatch.Stop();
             cumulativeOperation.SetExecutionTime(stopWatch.ElapsedMilliseconds);
-            Logger.LogInfo("Import Operation Result: \n" + cumulativeOperation.Print());
+            Logger.LogInfo(cumulativeOperation.Print());
         }
     }
 }

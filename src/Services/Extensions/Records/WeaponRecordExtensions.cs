@@ -12,7 +12,7 @@ namespace QM_ImporterAPI.Services.Extensions.Records
 {
     internal static class WeaponRecordExtensions
     {
-        internal static ImportOperationResult SetDescriptorProperties(this WeaponRecord weapon, CustomWeaponDescriptor customWeaponDescriptor, string assetFolderPath)
+        internal static ImportOperationResult SetWeaponDescriptorProperties(this WeaponRecord weapon, CustomWeaponDescriptor customWeaponDescriptor, string assetFolderPath)
         {
             var operationResult = new ImportOperationResult();
             var weaponDescriptor = ScriptableObject.CreateInstance<WeaponDescriptor>();

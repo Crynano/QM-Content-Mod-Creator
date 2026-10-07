@@ -1,5 +1,6 @@
 using MGSC;
 using QM_ImporterAPI.Services.ErrorManagement;
+using QM_ImporterAPI.Services.Helpers;
 using QM_ImporterAPI.Templates.Descriptors;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,7 @@ namespace QM_ImporterAPI.Services.Loaders
     /// <summary>
     /// Loader for weapon items. Handles weapons with descriptors and weapons without descriptors.
     /// </summary>
-    public class WeaponLoader : BaseItemLoader
+    internal class WeaponLoader : BaseItemLoader
     {
         protected override string LoaderName => nameof(WeaponLoader);
 
@@ -40,12 +41,12 @@ namespace QM_ImporterAPI.Services.Loaders
 
             // Load weapon records without descriptors (replacements)
             var weaponRecordsWithoutDescriptor = weaponRecords
-                .Where(wr => !weaponDescriptors.Any(d => d.ItemId.Equals(wr.Id)))
+                .Where(wr => !weaponDescriptors.Any(d => d.ItemId.TrimId().Equals(wr.Id.TrimId())))
                 .ToList();
 
             foreach (var weaponRecord in weaponRecordsWithoutDescriptor)
             {
-                Logger.LogDebug($"Trying to add weapon '{weaponRecord.Id}' (without descriptor) to the game!");
+                Logger.LogDebug($"Trying to REPLACE weapon '{weaponRecord.Id}' to the game!");
                 var opResult = ItemCreator.ReplaceWeapon(weaponRecord, assetFolderPath);
                 operationResult.Absorb(opResult);
             }

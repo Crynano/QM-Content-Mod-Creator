@@ -8,7 +8,7 @@ namespace QM_ImporterAPI.Services.Loaders
     /// <summary>
     /// Loader for crafting and transformation recipes.
     /// </summary>
-    public class CraftingLoader : BaseItemLoader
+    internal class CraftingLoader : BaseItemLoader
     {
         protected override string LoaderName => nameof(CraftingLoader);
 

@@ -9,7 +9,7 @@ namespace QM_ImporterAPI.Services.Loaders
     /// <summary>
     /// Loader for datadisk items.
     /// </summary>
-    public class DatadiskLoader : BaseItemLoader
+    internal class DatadiskLoader : BaseItemLoader
     {
         protected override string LoaderName => nameof(DatadiskLoader);
 

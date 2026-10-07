@@ -8,7 +8,7 @@ namespace QM_ImporterAPI.Services.Loaders
     /// <summary>
     /// Loader for item trait records.
     /// </summary>
-    public class TraitLoader : BaseItemLoader
+    internal class TraitLoader : BaseItemLoader
     {
         protected override string LoaderName => nameof(TraitLoader);
 

@@ -8,7 +8,7 @@ namespace QM_ImporterAPI.Services.Loaders
     /// <summary>
     /// Loader for faction reward templates.
     /// </summary>
-    public class FactionRewardsLoader : BaseItemLoader
+    internal class FactionRewardsLoader : BaseItemLoader
     {
         protected override string LoaderName => nameof(FactionRewardsLoader);
 

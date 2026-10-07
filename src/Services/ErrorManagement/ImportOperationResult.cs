@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using MGSC;
+using System.Collections.Generic;
 using System.Text;
 
 namespace QM_ImporterAPI.Services.ErrorManagement
@@ -12,9 +13,7 @@ namespace QM_ImporterAPI.Services.ErrorManagement
         public double ExecutionTime { get; private set; } = 0f;
         public List<string> ErrorMessages { get; private set; } = new List<string>();
         public List<string> WarningMessages { get; private set; } = new List<string>();
-        public List<string> ContentList { get; private set; } = new List<string>();
-        public bool HasErrors => ErrorMessages.Count > 0;
-        public bool HasWarnings => WarningMessages.Count > 0;
+        private List<string> ContentList { get; set; } = new List<string>();
 
         public void AddItem(string itemId)
         {
@@ -93,6 +92,7 @@ namespace QM_ImporterAPI.Services.ErrorManagement
         {
             string msg = "";
 
+            msg += $"Import Operation Result:\n";
             msg += $"Result: {this.IsSuccess}\n";
             msg += $"Execution Time: {this.ExecutionTime}ms\n";
 
@@ -126,24 +126,12 @@ namespace QM_ImporterAPI.Services.ErrorManagement
             return msg;
         }
 
-        public string GetWarningsAsString()
+        public void AddItem(ConfigTableRecord item)
         {
-            StringBuilder sb = new StringBuilder();
-            foreach (var warning in WarningMessages)
-            {
-                sb.AppendLine(warning);
-            }
-            return sb.ToString();
-        }
-
-        public string GetErrorsAsString()
-        {
-            StringBuilder sb = new StringBuilder();
-            foreach (var error in ErrorMessages)
-            {
-                sb.AppendLine(error);
-            }
-            return sb.ToString();
+#if DEBUG
+            Logger.LogDebug($"Adding item with ID: \"{item.Id}\" of type \"{item.GetType().Name}\" to content list.");
+#endif
+            ContentList.Add(item.Id);
         }
     }
 
