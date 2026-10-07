@@ -9,7 +9,7 @@ namespace QM_ImporterAPI.Services.Loaders
     /// <summary>
     /// Loader for grenade items.
     /// </summary>
-    public class GrenadeLoader : BaseItemLoader
+    internal class GrenadeLoader : BaseItemLoader
     {
         protected override string LoaderName => nameof(GrenadeLoader);
 

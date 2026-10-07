@@ -9,7 +9,7 @@ namespace QM_ImporterAPI.Services.Loaders
     /// <summary>
     /// Loader for consumable items.
     /// </summary>
-    public class ConsumableLoader : BaseItemLoader
+    internal class ConsumableLoader : BaseItemLoader
     {
         protected override string LoaderName => nameof(ConsumableLoader);
 

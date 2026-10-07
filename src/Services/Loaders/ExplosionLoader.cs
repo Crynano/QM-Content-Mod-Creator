@@ -9,7 +9,7 @@ namespace QM_ImporterAPI.Services.Loaders
     /// <summary>
     /// Loader for explosion items.
     /// </summary>
-    public class ExplosionLoader : BaseItemLoader
+    internal class ExplosionLoader : BaseItemLoader
     {
         protected override string LoaderName => nameof(ExplosionLoader);
 

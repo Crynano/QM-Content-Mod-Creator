@@ -8,7 +8,7 @@ namespace QM_ImporterAPI.Services.Loaders
     /// <summary>
     /// Loader for mercenary profile records.
     /// </summary>
-    public class MercenaryProfileLoader : BaseItemLoader
+    internal class MercenaryProfileLoader : BaseItemLoader
     {
         protected override string LoaderName => nameof(MercenaryProfileLoader);
 

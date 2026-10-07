@@ -9,7 +9,7 @@ namespace QM_ImporterAPI.Services.Loaders
     /// <summary>
     /// Loader for trash item records.
     /// </summary>
-    public class TrashLoader : BaseItemLoader
+    internal class TrashLoader : BaseItemLoader
     {
         protected override string LoaderName => nameof(TrashLoader);
 

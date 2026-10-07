@@ -9,7 +9,7 @@ namespace QM_ImporterAPI.Services.Loaders
     /// <summary>
     /// Loader for fire mode items.
     /// </summary>
-    public class FireModeLoader : BaseItemLoader
+    internal class FireModeLoader : BaseItemLoader
     {
         protected override string LoaderName => nameof(FireModeLoader);
 

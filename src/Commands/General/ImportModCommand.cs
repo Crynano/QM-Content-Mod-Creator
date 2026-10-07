@@ -44,8 +44,7 @@ namespace QM_ImporterAPI.Commands.General
                     return "<color=red>ERROR: </color>Provided path does not exist.";
                 }
 
-                var modLoader = new ModLoader();
-                modLoader.LoadModFromDirectory(providedPath);
+                ModLoader.LoadModFromDirectory(providedPath);
 
                 return $"<color=green>Imported mod successfully!</color>";
             }
