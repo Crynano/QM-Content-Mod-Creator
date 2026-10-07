@@ -47,7 +47,7 @@ namespace QM_ImporterAPI.Services.Helpers
             return null;
         }
 
-        private static bool ValidatePath(string providedPath, out string errorMessage)
+        public static bool ValidatePath(string providedPath, out string errorMessage)
         {
             errorMessage = null;
             if (string.IsNullOrEmpty(providedPath))

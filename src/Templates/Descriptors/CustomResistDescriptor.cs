@@ -1,19 +1,21 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace QM_ImporterAPI.Templates.Descriptors
 {
-    public class CustomArmorDescriptor : CustomItemContentDescriptor
+    [Serializable]
+    public class CustomResistDescriptor : CustomItemContentDescriptor
     {
-        public List<ArmorPartInfo> Parts { get; set; }
+        public List<CustomArmorPartInfo> Parts { get; set; }
 
-        public CustomArmorDescriptor()
+        public CustomResistDescriptor()
         {
 
         }
 
-        public static CustomArmorDescriptor GetExample(string id = null)
+        public static CustomResistDescriptor GetExample(string id = null)
         {
-            return new CustomArmorDescriptor
+            return new CustomResistDescriptor
             {
                 ItemId = id ?? "example_weaponid",
                 ImageProperties = new ImageProperties()
@@ -22,33 +24,33 @@ namespace QM_ImporterAPI.Templates.Descriptors
                     SmallIconSpriteIdOrPath = "Sprites/ExampleWeaponSmall.png",
                     ShadowOnFloorSpriteIdOrPath = "Sprites/ExampleWeaponShadow.png"
                 },
-                Parts = new List<ArmorPartInfo>()
+                Parts = new List<CustomArmorPartInfo>()
                 {
-                    new ArmorPartInfo()
+                    new CustomArmorPartInfo()
                     {
                         ArmorType = "ClothCommon",
                         ArmorPart = "Hip",
                         TextureIdOrPath = "Textures/ExampleTextureAtlas.png"
                     },
-                    new ArmorPartInfo()
+                    new CustomArmorPartInfo()
                     {
                         ArmorType = "ClothCommon",
                         ArmorPart = "RThigh",
                         TextureIdOrPath = "Textures/ExampleTextureAtlas.png"
                     },
-                    new ArmorPartInfo()
+                    new CustomArmorPartInfo()
                     {
                         ArmorType = "ClothCommon",
                         ArmorPart = "LThigh",
                         TextureIdOrPath = "Textures/ExampleTextureAtlas.png"
                     },
-                    new ArmorPartInfo()
+                    new CustomArmorPartInfo()
                     {
                         ArmorType = "ClothCommon",
                         ArmorPart = "RLeg",
                         TextureIdOrPath = "Textures/ExampleTextureAtlas.png"
                     },
-                    new ArmorPartInfo()
+                    new CustomArmorPartInfo()
                     {
                         ArmorType = "ClothCommon",
                         ArmorPart = "LLeg",
@@ -59,7 +61,8 @@ namespace QM_ImporterAPI.Templates.Descriptors
         }
     }
 
-    public class ArmorPartInfo
+    [Serializable]
+    public struct CustomArmorPartInfo
     {
         public string ArmorType { get; set; }
         public string ArmorPart { get; set; }
