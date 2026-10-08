@@ -67,6 +67,7 @@ namespace QM_ImporterAPI.Services.Importing
             var normals = new List<Vector3>();
             var uvs = new List<Vector2>();
             var tris = new List<int>();
+            bool hasNormals = false;
 
             var invariantCulture = CultureInfo.InvariantCulture;
 
@@ -95,18 +96,46 @@ namespace QM_ImporterAPI.Services.Importing
                         break;
                     case "vn":
                         verticesNormals.Add(new Vector3(float.Parse(lineContents[1], invariantCulture), float.Parse(lineContents[2], invariantCulture), float.Parse(lineContents[3], invariantCulture)));
+                        hasNormals = true;
                         break;
                     case "vt":
                         verticesTexture.Add(new Vector2(float.Parse(lineContents[1], invariantCulture), float.Parse(lineContents[2], invariantCulture)));
                         break;
                     case "f":
-                        for (int j = 1; j <= 3; j++)
+                        for (int j = 2; j < lineContents.Length - 1; j++)
                         {
-                            var face = lineContents[j].Split('/');
-                            vertices.Add(verticesCache[int.Parse(face[0]) - 1]);
-                            uvs.Add((face.Length > 1 && face[1].Length > 0) ? verticesTexture[int.Parse(face[1]) - 1] : Vector2.zero);
-                            normals.Add((face.Length > 2) ? verticesNormals[int.Parse(face[2]) - 1] : Vector3.up);
-                            tris.Add(vertices.Count - 1);
+                            foreach (var k in new[] { 1, j, j + 1 })
+                            {
+                                var face = lineContents[k].Split('/');
+
+                                int vi = int.Parse(face[0]);
+                                vi = vi < 0 ? verticesCache.Count + vi : vi - 1;
+                                vertices.Add(verticesCache[vi]);
+
+                                if (face.Length > 1 && face[1].Length > 0)
+                                {
+                                    int ti = int.Parse(face[1]);
+                                    ti = ti < 0 ? verticesTexture.Count + ti : ti - 1;
+                                    uvs.Add(verticesTexture[ti]);
+                                }
+                                else
+                                {
+                                    uvs.Add(Vector2.zero);
+                                }
+
+                                if (face.Length > 2 && face[2].Length > 0)
+                                {
+                                    int ni = int.Parse(face[2]);
+                                    ni = ni < 0 ? verticesNormals.Count + ni : ni - 1;
+                                    normals.Add(verticesNormals[ni]);
+                                }
+                                else
+                                {
+                                    normals.Add(Vector3.up);
+                                }
+
+                                tris.Add(vertices.Count - 1);
+                            }
                         }
                         break;
                     default:
@@ -121,11 +150,23 @@ namespace QM_ImporterAPI.Services.Importing
             }
 
             Mesh val = new Mesh();
+            if (vertices.Count > 65535)
+            {
+                val.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+            }
             val.SetVertices(vertices);
-            val.SetNormals(normals);
             val.SetUVs(0, uvs);
             val.SetTriangles(tris, 0);
+            if (hasNormals)
+            {
+                val.SetNormals(normals);
+            }
+            else
+            {
+                val.RecalculateNormals();
+            }
             val.RecalculateBounds();
+            val.RecalculateTangents();
 
             return val;
         }
