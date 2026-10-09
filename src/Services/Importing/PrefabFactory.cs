@@ -1,4 +1,5 @@
-﻿using QM_ImporterAPI.Services.ErrorManagement;
+﻿using MGSC;
+using QM_ImporterAPI.Services.ErrorManagement;
 using QM_ImporterAPI.Services.Helpers;
 using System;
 using System.Collections.Generic;
@@ -29,7 +30,6 @@ namespace QM_ImporterAPI.Services.Importing
 
             var resolvedPath = Helper.ResolveAndValidatePath(root, assetPath);
             result.Absorb(resolvedPath);
-
             if (!resolvedPath.IsSuccess)
             {
                 return result.SetResult(null);
@@ -97,6 +97,8 @@ namespace QM_ImporterAPI.Services.Importing
 
             var meshRenderer = prefabInstance.AddComponent<MeshRenderer>();
             // Maybe its a good idea to clone any of the default objects.
+
+            prefabInstance.AddComponent<ItemBone>();
 
             return prefabInstance;
         }

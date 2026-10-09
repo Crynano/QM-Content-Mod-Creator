@@ -27,13 +27,14 @@ namespace QM_ImporterAPI.Services.Helpers
         {
             var result = new ImportOperationResult<string>();
 
-            var resolvedPath = ResolvePath(basePath, path);
-            var isValid = ValidatePath(resolvedPath, out string errorMessage);
-
+            var isValid = ValidatePath(basePath, out string errorMessage);
             if (!isValid)
             {
-                result.AddWarning(errorMessage);
+                result.AddError(errorMessage);
+                return result;
             }
+
+            var resolvedPath = ResolvePath(basePath, path);
 
             return result.SetResult(resolvedPath);
         }
@@ -57,12 +58,12 @@ namespace QM_ImporterAPI.Services.Helpers
             }
             else if (!Path.IsPathRooted(providedPath))
             {
-                errorMessage = "Provided path must be an absolute path.";
+                errorMessage = $"Path {providedPath} must be an absolute path.";
                 return false;
             }
             else if (!Directory.Exists(providedPath))
             {
-                errorMessage = "Provided path does not exist.";
+                errorMessage = $"Path {providedPath} does not exist.";
                 return false;
             }
             return true;

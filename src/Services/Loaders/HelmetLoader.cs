@@ -2,6 +2,7 @@
 using QM_ImporterAPI.Services.ErrorManagement;
 using QM_ImporterAPI.Services.Extensions;
 using QM_ImporterAPI.Services.Extensions.Descriptors;
+using QM_ImporterAPI.Services.Images;
 using QM_ImporterAPI.Services.Importing;
 using QM_ImporterAPI.Services.Validation;
 using QM_ImporterAPI.Templates.Descriptors;
@@ -49,36 +50,39 @@ namespace QM_ImporterAPI.Services.Loaders
 
         private static ImportOperationResult SetHelmetDescriptorProperties<TRecord>(TRecord record, CustomHelmetDescriptor customBaseDescriptor, string assetFolderPath, out GameObject helmetPrefab) where TRecord : ItemRecord
         {
-            var operationResult = new ImportOperationResult();
+            var result = new ImportOperationResult();
             helmetPrefab = null;
             var baseDescriptor = ScriptableObject.CreateInstance<HelmetDescriptor>();
 
             if (customBaseDescriptor == null)
             {
-                operationResult.AddWarning($"{nameof(CustomHelmetDescriptor)} for {record.Id} is null.");
-                return operationResult;
+                return result.AddWarning($"{nameof(CustomHelmetDescriptor)} for {record.Id} is null.");
             }
 
             if (customBaseDescriptor.Part == null)
             {
-                operationResult.AddError($"{nameof(CustomHelmetDescriptor)} for {record.Id} must contain one armor part.");
-                return operationResult;
+                return result.AddError($"{nameof(CustomHelmetDescriptor)} for {record.Id} must contain one armor part.");
             }
 
+            var parts = customBaseDescriptor.Part.ToGameList();
             if (!string.IsNullOrWhiteSpace(customBaseDescriptor.PrefabPath))
             {
-                var part = customBaseDescriptor.Part;
+                var part = parts[0];
+                var texResult = TextureImporter.ImportFromFile(assetFolderPath, customBaseDescriptor.Part.TextureIdOrPath);
+                result.Absorb(texResult);
+
+                part.Texture = texResult.Result;
+
                 if (string.IsNullOrWhiteSpace(part.ArmorType) || string.IsNullOrWhiteSpace(part.ArmorPart))
                 {
-                    operationResult.AddError($"The armor part for {record.Id} must specify both ArmorType and ArmorPart when using PrefabPath.");
-                    return operationResult;
+                    return result.AddError($"The armor part for {record.Id} must specify both ArmorType and ArmorPart when using PrefabPath.");
                 }
 
                 var prefabResult = PrefabFactory.LoadPrefab(customBaseDescriptor.PrefabPath, assetFolderPath);
-                operationResult.Absorb(prefabResult);
+                result.Absorb(prefabResult);
                 if (!prefabResult.IsSuccess)
                 {
-                    return operationResult;
+                    return result;
                 }
 
                 helmetPrefab = prefabResult.Result;
@@ -91,10 +95,10 @@ namespace QM_ImporterAPI.Services.Loaders
             }
 
             baseDescriptor.LoadSprites(customBaseDescriptor, assetFolderPath);
-            baseDescriptor._parts = customBaseDescriptor.Part.ToGameList();
+            baseDescriptor._parts = parts;
 
             record.ContentDescriptor = baseDescriptor;
-            return operationResult;
+            return result;
         }
 
         private static void RegisterHelmetPrefab(CustomHelmetDescriptor descriptor, GameObject prefab, ImportOperationResult operationResult)

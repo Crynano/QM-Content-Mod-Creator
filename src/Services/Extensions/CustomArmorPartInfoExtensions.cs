@@ -1,4 +1,5 @@
 ﻿using MGSC;
+using QM_ImporterAPI.Services.Helpers;
 using QM_ImporterAPI.Services.Images;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,7 +19,6 @@ namespace QM_ImporterAPI.Services.Extensions
             {
                 ArmorType = customPart.ArmorType,
                 ArmorPart = customPart.ArmorPart,
-                Texture = TextureImporter.ImportFromFile(customPart.TextureIdOrPath)
             };
         }
 
