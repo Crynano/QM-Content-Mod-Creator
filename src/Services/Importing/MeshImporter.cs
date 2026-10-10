@@ -81,7 +81,6 @@ namespace QM_ImporterAPI.Services.Importing
 
                 var lineContents = text.Split(new char[1] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                 var operationType = lineContents[0];
-                Logger.LogDebug($"Processing line {i + 1}: {text}");
 
                 switch (operationType)
                 {
@@ -139,7 +138,6 @@ namespace QM_ImporterAPI.Services.Importing
                         }
                         break;
                     default:
-                        Logger.LogDebug($"OBJ Comment? -> {text}");
                         break;
                 }
             }

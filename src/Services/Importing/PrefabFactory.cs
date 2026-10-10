@@ -42,6 +42,7 @@ namespace QM_ImporterAPI.Services.Importing
                 return result.SetResult(null);
             }
 
+            Logger.LogDebug($"Loading model from path: {finalPath}");
             var modelExtension = GetModelExtension(finalPath);
 
             Mesh meshResult;
@@ -58,6 +59,7 @@ namespace QM_ImporterAPI.Services.Importing
             }
 
             var prefabFromModel = PrepareModelForGame(meshResult);
+            Logger.LogDebug($"Prefab prepared for model with id: {prefabFromModel.name}");
 
             if (prefabFromModel != null)
             {

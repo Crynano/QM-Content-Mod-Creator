@@ -72,6 +72,7 @@ namespace QM_ImporterAPI.Services.Loaders
                 result.Absorb(texResult);
 
                 part.Texture = texResult.Result;
+                parts[0] = part;
 
                 if (string.IsNullOrWhiteSpace(part.ArmorType) || string.IsNullOrWhiteSpace(part.ArmorPart))
                 {
@@ -144,6 +145,7 @@ namespace QM_ImporterAPI.Services.Loaders
                 }
                 else
                 {
+                    operationResult.AddWarning($"A helmet prefab named '{prefab.name}' already exists for actor '{actorRecord.Id}' and was replaced. Each helmet needs a unique ArmorPart.");
                     armorArchType.Prefabs[prefabIndex] = prefab;
                 }
 

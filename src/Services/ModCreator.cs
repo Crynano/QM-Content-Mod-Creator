@@ -526,7 +526,51 @@ namespace QM_ImporterAPI.Services
             ExportHelper.ExportItem(helmet, helmetsFolder);
             ExportHelper.ExportCustomDescriptor(helmetDescriptor, descriptorsFolder);
             ExportHelper.ExportCustom(localizationItem, $"{helmet.Id}_localization", localizationFolder);
+
+            File.WriteAllText(Path.Combine(rootPath, "guide.txt"), HELMET_GUIDE);
         }
+
+        private const string HELMET_GUIDE =
+@"HELMET MOD GUIDE
+===============
+
+1. UNIQUE ArmorPart PER HELMET
+   The game picks the helmet model by prefab name. The prefab name is the
+   'ArmorPart' value of the helmet descriptor. If two helmets share the same
+   ArmorPart (the default is 'Head'), the last one loaded overwrites the others
+   and every item shows the same model.
+   -> Give every helmet a unique ArmorPart (e.g. Helmet_1, Helmet_2, ...).
+   -> A warning is logged when a prefab name is replaced.
+
+2. BLENDER EXPORT (OBJ)
+   - Export as .obj (only .obj is supported).
+   - Enable: UV Coordinates, Normals.
+   - Disable: Write Materials (the .mtl is ignored).
+   - Triangulated Mesh is optional (quads and n-gons are fan-triangulated).
+   - Apply Modifiers: on.
+   - Make sure the mesh has a UV map. Faces without UVs all sample texel (0,0).
+   - Only the active UV map is exported.
+   - Importing an FBX into Blender first and exporting as OBJ is fine.
+
+3. TEXTURE
+   - Use a PNG or JPG. The path (TextureIdOrPath) is relative to the mod's assets folder.
+   - Unwrap UVs against the exact image you ship. Keep UVs inside 0-1
+     (the texture uses Clamp wrapping and Point filtering).
+   - Several models can share the same texture file.
+   - If the file is missing a warning is logged and the model renders white.
+
+4. DESCRIPTOR REQUIREMENTS
+   - PrefabPath: path to the .obj file.
+   - Part.ArmorType and Part.ArmorPart must both be set when using PrefabPath.
+   - Helmets are attached to the 'Head' bone; only actors with a Head bone
+     and ArmorHeavy support are offered the helmet.
+
+5. TROUBLESHOOTING
+   - Model is white: the texture did not reach the descriptor (missing file or
+     wrong TextureIdOrPath). Check the log.
+   - All helmets look the same: duplicate ArmorPart (see 1).
+   - Helmet not offered to an actor: see the warnings logged by the loader.
+";
 
         public static void CreateImplantMod(string rootPath)
         {

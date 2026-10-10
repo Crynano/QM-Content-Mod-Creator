@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
-using UnityEngine.Windows.Speech;
 
 namespace QM_ImporterAPI.Services.Images
 {
