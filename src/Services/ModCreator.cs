@@ -29,6 +29,151 @@ namespace QM_ImporterAPI.Services
         private const string CONSUMABLES_FOLDER_NAME = "Consumables";
         private const string IMPLANTS_FOLDER_NAME = "Implants";
         private const string HELMETS_FOLDER_NAME = "Helmets";
+        private const string PROJECTILES_FOLDER_NAME = "Projectiles";
+
+        public static string CreateProjectileExample(string rootPath)
+        {
+            var projectilesFolder = Path.Combine(rootPath, ASSETS_FOLDER_NAME, PROJECTILES_FOLDER_NAME);
+            Directory.CreateDirectory(projectilesFolder);
+
+            var descriptor = GetExampleProjectileDescriptor();
+            ExportHelper.ExportCustomDescriptor(descriptor, projectilesFolder);
+            return projectilesFolder;
+        }
+
+        public static string CreateSpecificWeaponMod(string weaponId, string rootPath)
+        {
+            var weapon = Data.Items.GetSimpleRecord<WeaponRecord>(weaponId);
+            if (weapon == null)
+            {
+                return null;
+            }
+
+            var assetsFolder = Path.Combine(rootPath, ASSETS_FOLDER_NAME);
+            var weaponsFolder = Path.Combine(assetsFolder, WEAPONS_FOLDER_NAME);
+            var ammoFolder = Path.Combine(assetsFolder, AMMO_FOLDER_NAME);
+            var firemodesFolder = Path.Combine(assetsFolder, FIREMODES_FOLDER_NAME);
+            var projectilesFolder = Path.Combine(assetsFolder, PROJECTILES_FOLDER_NAME);
+            var localizationFolder = Path.Combine(assetsFolder, LOCALIZATION_FOLDER_NAME);
+
+            Directory.CreateDirectory(weaponsFolder);
+            Directory.CreateDirectory(ammoFolder);
+            Directory.CreateDirectory(firemodesFolder);
+            Directory.CreateDirectory(projectilesFolder);
+            Directory.CreateDirectory(localizationFolder);
+
+            var relatedIds = new HashSet<string> { weapon.Id };
+
+            ExportHelper.ExportItem(weapon, weaponsFolder);
+
+            AmmoRecord ammo = null;
+            if (!string.IsNullOrEmpty(weapon.DefaultAmmoId))
+            {
+                ammo = Data.Items.GetSimpleRecord<AmmoRecord>(weapon.DefaultAmmoId);
+                if (ammo != null)
+                {
+                    ExportHelper.ExportItem(ammo, ammoFolder);
+                    relatedIds.Add(ammo.Id);
+                }
+            }
+
+            foreach (var firemodeId in weapon.Firemodes ?? new List<string>())
+            {
+                var firemode = Data.Firemodes.Ids.Contains(firemodeId) ? Data.Firemodes.GetRecord(firemodeId) : null;
+                if (firemode == null)
+                {
+                    continue;
+                }
+                ExportHelper.ExportItem(firemode, firemodesFolder);
+                relatedIds.Add(firemode.Id);
+            }
+
+            var projectileId = !string.IsNullOrEmpty(weapon.OverrideProjectileId) ? weapon.OverrideProjectileId : ammo?.ProjectileId;
+            if (!string.IsNullOrEmpty(projectileId) && Data.Projectiles.Ids.Contains(projectileId))
+            {
+                ExportProjectile(Data.Projectiles.GetRecord(projectileId), projectilesFolder);
+                relatedIds.Add(projectileId);
+            }
+
+            var localization = ExtractLocalization(relatedIds);
+            ExportHelper.ExportCustom(localization, $"{weapon.Id}_localization", localizationFolder);
+
+            return assetsFolder;
+        }
+
+        private static void ExportProjectile(ProjectileRecord record, string folder)
+        {
+            var view = (record.ContentDescriptor as ProjectileDescriptor)?.Bullet as FlamethrowerProjectileView;
+            if (view == null)
+            {
+                ExportHelper.ExportItem(record, folder);
+                return;
+            }
+
+            const System.Reflection.BindingFlags flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic;
+            T Read<T>(Type declaring, string name) => (T)declaring.GetField(name, flags).GetValue(view);
+
+            var descriptor = new CustomFlamethrowerProjectileViewDescriptor
+            {
+                ItemId = record.Id,
+                BaseProjectileId = record.Id,
+                BulletSpeed = Read<float>(typeof(ProjectileView), "_bulletSpeed"),
+                MakeBloodDecals = Read<bool>(typeof(ProjectileView), "_makeBloodDecals"),
+                PutShotDecalsOnWalls = Read<bool>(typeof(ProjectileView), "_putShotDecalsOnWalls"),
+                PutBulletShellsOnFloor = Read<bool>(typeof(ProjectileView), "_putBulletShellsOnFloor"),
+                RotateBulletInShotDir = Read<bool>(typeof(ProjectileView), "_rotateBulletInShotDir"),
+                ShakeDuration = Read<float>(typeof(ProjectileView), "_shakeDuration"),
+                ShakeStrength = Read<float>(typeof(ProjectileView), "_shakeStrength"),
+                BulletLifetime = Read<float>(typeof(FlamethrowerProjectileView), "_bulletLifetime"),
+                EmitUntilTime = Read<float>(typeof(FlamethrowerProjectileView), "_emitUntlTime"),
+                EmitFireInterval = Read<float>(typeof(FlamethrowerProjectileView), "_emitFireInterval"),
+                FlameDropSpeed = Read<float>(typeof(FlamethrowerProjectileView), "_flameDropSpeed")
+            };
+            ExportHelper.ExportCustomDescriptor(descriptor, folder);
+        }
+
+        private static LocalizationTemplate ExtractLocalization(HashSet<string> ids)
+        {
+            var template = new LocalizationTemplate();
+            foreach (var language in MGSC.Localization.Instance.db)
+            {
+                foreach (var entry in language.Value)
+                {
+                    var parts = entry.Key.Split('.');
+                    if (parts.Length < 3 || !ids.Contains(parts[1]))
+                    {
+                        continue;
+                    }
+
+                    if (!template.Keys.TryGetValue(entry.Key, out var translations))
+                    {
+                        translations = new Dictionary<MGSC.Localization.Lang, string>();
+                        template.Keys.Add(entry.Key, translations);
+                    }
+                    translations[language.Key] = entry.Value;
+                }
+            }
+            return template;
+        }
+
+        private static CustomFlamethrowerProjectileViewDescriptor GetExampleProjectileDescriptor()
+        {
+            var flamethrowerId = Data.Projectiles.Ids
+                .FirstOrDefault(id =>
+                {
+                    var projectileDescriptor = Data.Projectiles.GetRecord(id)?.ContentDescriptor as ProjectileDescriptor;
+                    return projectileDescriptor != null
+                        && projectileDescriptor.Bullet != null
+                        && projectileDescriptor.Bullet.GetComponent<FlamethrowerProjectileView>() != null;
+                });
+
+            var example = CustomFlamethrowerProjectileViewDescriptor.GetExample("example_flamethrower_projectile");
+            if (flamethrowerId != null)
+            {
+                example.BaseProjectileId = flamethrowerId;
+            }
+            return example;
+        }
 
         public static void CreateWeaponMod(string rootPath)
         {
@@ -103,6 +248,8 @@ namespace QM_ImporterAPI.Services
             ExportHelper.ExportCustomDescriptor(customWeaponDescriptor, descriptorsFolder);
             ExportHelper.ExportCustomDescriptor(customAmmoDescriptor, descriptorsFolder);
             ExportHelper.ExportCustomDescriptor(fireModeDescriptor, descriptorsFolder);
+
+            CreateProjectileExample(rootPath);
 
             ExportHelper.ExportCustom(localizationItem, $"{rangedWeapon.Id}_localization", localizationFolder);
             ExportHelper.ExportCustom(factionTemplate, $"{rangedWeapon.Id}_factionReward", factionRewardsFolder);

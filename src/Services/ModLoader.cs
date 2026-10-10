@@ -28,6 +28,7 @@ namespace QM_ImporterAPI.Services
             new MercenaryProfileLoader(),   // Mercenary profiles
             new FireModeLoader(),           // Fire
             new ExplosionLoader(),          // Explosions before weapons/ammo
+            new FlamethrowerProjectileViewLoader(), // Projectile views, referenced by weapons through OverrideProjectileId
             new AmmoLoader(),               // Ammo before weapons
             new AugmentationLoader(),       // Augmentations
             new WeaponLoader(),             // Weapons depend on traits, fire modes, ammo
