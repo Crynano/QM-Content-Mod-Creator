@@ -22,7 +22,7 @@ namespace QM_ImporterAPI.Services.Extensions.Descriptors
                 operationResult.AddError($"Failed to load firemode icon sprite from path: {customFireModeDescriptor.SpriteIdOrPath}");
                 return operationResult;
             }
-            Logger.LogDebug($"Successfully loaded firemode icon for firemode with ID: {ammoRecord.Id}");
+            Logger.LogDebug($"Successfully loaded firemode icon from {customFireModeDescriptor.SpriteIdOrPath} for firemode with ID: {ammoRecord.Id}");
             ammoRecord.ContentDescriptor = descriptor;
             return operationResult;
         }

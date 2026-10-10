@@ -202,15 +202,17 @@ namespace QM_ImporterAPI.Services.Helpers
 
         public static Sprite LoadSpriteFromFiremode(string assetFolderPath, string path, string propertyName, Func<string, Sprite> loadFunc)
         {
-            if (IsGameId(path))
+            if (IsGameId(path, Data.Firemodes))
             {
-                var propertyFromItem = GetPropertyFromItem<FireModeDescriptor>(path, propertyName);
+                var propertyFromItem = GetPropertyFromList<FireModeRecord, FireModeDescriptor>(path, propertyName, Data.Firemodes);
+                Logger.LogDebug($"Property from item for firemode {path} and property {propertyName}: {propertyFromItem}");
                 if (propertyFromItem is Sprite spriteProperty)
                 {
                     return CloneSprite(spriteProperty);
                 }
                 Logger.LogWarning("Failed to load sprite for property [" + propertyName + "] from existing game item with ID: " + path + ". The property is either missing or not a Sprite.");
             }
+            Logger.LogWarning($"\"{path}\" is not a valid game ID for Firemodes. Attempting to load sprite from path.");
             var fullPath = Helper.ResolvePath(assetFolderPath, path);
             return loadFunc(fullPath);
         }
@@ -412,7 +414,8 @@ namespace QM_ImporterAPI.Services.Helpers
         public static TScriptable GetExistingItem<TRecord, TScriptable>(string id, ConfigRecordCollection<TRecord> list)
             where TRecord : ConfigTableRecord where TScriptable : ScriptableObject
         {
-            if(string.IsNullOrEmpty(id))
+            Logger.LogDebug($"{nameof(GetExistingItem)}: with {id} and list of type {list.GetType()}");
+            if (string.IsNullOrEmpty(id))
             {
                 Logger.LogDebug("ID is empty or null. Cannot get existing item.");
             }
