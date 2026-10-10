@@ -1,9 +1,10 @@
-﻿using System;
+﻿using QM_ImporterAPI.Services.ErrorManagement;
+using System;
 using System.IO;
 
 namespace QM_ImporterAPI.Services.Helpers
 {
-    public static class Helper
+    internal static class Helper
     {
         private static T StringToEnum<T>(string type) where T : Enum
         {
@@ -22,6 +23,22 @@ namespace QM_ImporterAPI.Services.Helpers
             return Path.Combine(basePath, path);
         }
 
+        public static ImportOperationResult<string> ResolveAndValidatePath(string basePath, string path)
+        {
+            var result = new ImportOperationResult<string>();
+
+            var isValid = ValidatePath(basePath, out string errorMessage);
+            if (!isValid)
+            {
+                result.AddError(errorMessage);
+                return result;
+            }
+
+            var resolvedPath = ResolvePath(basePath, path);
+
+            return result.SetResult(resolvedPath);
+        }
+
         public static string FilterToken(string[] tokens, int index)
         {
             if (tokens.Length > index)
@@ -31,7 +48,28 @@ namespace QM_ImporterAPI.Services.Helpers
             return null;
         }
 
-        public static string ValidatePath(string providedPath)
+        public static bool ValidatePath(string providedPath, out string errorMessage)
+        {
+            errorMessage = null;
+            if (string.IsNullOrEmpty(providedPath))
+            {
+                errorMessage = "No folder path provided.";
+                return false;
+            }
+            else if (!Path.IsPathRooted(providedPath))
+            {
+                errorMessage = $"Path {providedPath} must be an absolute path.";
+                return false;
+            }
+            else if (!Directory.Exists(providedPath))
+            {
+                errorMessage = $"Path {providedPath} does not exist.";
+                return false;
+            }
+            return true;
+        }
+
+        public static string ValidatePathForConsole(string providedPath)
         {
             if (string.IsNullOrEmpty(providedPath))
             {

@@ -28,6 +28,7 @@ namespace QM_ImporterAPI.Services
         private const string TRANSFORMS_FOLDER_NAME = "Transforms";
         private const string CONSUMABLES_FOLDER_NAME = "Consumables";
         private const string IMPLANTS_FOLDER_NAME = "Implants";
+        private const string HELMETS_FOLDER_NAME = "Helmets";
 
         public static void CreateWeaponMod(string rootPath)
         {
@@ -499,6 +500,76 @@ namespace QM_ImporterAPI.Services
             ExportHelper.ExportCustom(localizationItem, $"{augmentation.Id.TrimId()}_localization", localizationFolder);
             ExportHelper.ExportCustom(weaponLocalizationItem, $"{augmentationWeapon.Id.TrimId()}_localization", localizationFolder);
         }
+
+        public static void CreateHelmetMod(string rootPath)
+        {
+            var helmet = Data.Items.Ids
+                .Select(id => Data.Items.GetSimpleRecord<HelmetRecord>(id))
+                .First(x => x != null);
+
+            var helmetDescriptor = CustomHelmetDescriptor.GetExample(helmet.Id);
+            var localizationItem = LocalizationTemplate.GetExample(helmet.Id);
+
+            var assetsFolder = Path.Combine(rootPath, ASSETS_FOLDER_NAME);
+            var helmetsFolder = Path.Combine(assetsFolder, HELMETS_FOLDER_NAME);
+            var descriptorsFolder = Path.Combine(assetsFolder, DESCRIPTORS_FOLDER_NAME);
+            var localizationFolder = Path.Combine(assetsFolder, LOCALIZATION_FOLDER_NAME);
+            var spritesFolder = Path.Combine(assetsFolder, SPRITES_FOLDER_NAME);
+            var modelsFolder = Path.Combine(assetsFolder, "Models");
+
+            Directory.CreateDirectory(helmetsFolder);
+            Directory.CreateDirectory(descriptorsFolder);
+            Directory.CreateDirectory(localizationFolder);
+            Directory.CreateDirectory(spritesFolder);
+            Directory.CreateDirectory(modelsFolder);
+
+            ExportHelper.ExportItem(helmet, helmetsFolder);
+            ExportHelper.ExportCustomDescriptor(helmetDescriptor, descriptorsFolder);
+            ExportHelper.ExportCustom(localizationItem, $"{helmet.Id}_localization", localizationFolder);
+
+            File.WriteAllText(Path.Combine(rootPath, "guide.txt"), HELMET_GUIDE);
+        }
+
+        private const string HELMET_GUIDE =
+@"HELMET MOD GUIDE
+===============
+
+1. UNIQUE ArmorPart PER HELMET
+   The game picks the helmet model by prefab name. The prefab name is the
+   'ArmorPart' value of the helmet descriptor. If two helmets share the same
+   ArmorPart (the default is 'Head'), the last one loaded overwrites the others
+   and every item shows the same model.
+   -> Give every helmet a unique ArmorPart (e.g. Helmet_1, Helmet_2, ...).
+   -> A warning is logged when a prefab name is replaced.
+
+2. BLENDER EXPORT (OBJ)
+   - Blender forward is Y and up is Z. When exporting, Forward Axis must be set to -Z and Up Axis to Y.
+   - Export as .obj (only .obj is supported).
+   - Enable: UV Coordinates, Normals.
+   - Disable: Write Materials (the .mtl is ignored).
+   - Triangulated Mesh is optional (quads and n-gons are fan-triangulated).
+   - Apply Modifiers: on.
+   - Make sure the mesh has a UV map. Faces without UVs all sample texel (0,0).
+   - Only the active UV map is exported.
+   - Importing an FBX into Blender first and exporting as OBJ is fine.
+
+3. TEXTURE
+   - Use a PNG or JPG. The path (TextureIdOrPath) is relative to the mod's assets folder.
+   - Unwrap UVs against the exact image you ship. Keep UVs inside 0-1
+     (the texture uses Clamp wrapping and Point filtering).
+   - Several models can share the same texture file.
+   - If the file is missing a warning is logged and the model renders white.
+
+4. DESCRIPTOR REQUIREMENTS
+   - PrefabPath: path to the .obj file.
+   - Part.ArmorType and Part.ArmorPart must both be set when using PrefabPath.
+
+5. TROUBLESHOOTING
+   - Model is white: the texture did not reach the descriptor (missing file or
+     wrong TextureIdOrPath). Check the log.
+   - All helmets look the same: duplicate ArmorPart (see 1).
+   - Helmet not offered to an actor: see the warnings logged by the loader.
+";
 
         public static void CreateImplantMod(string rootPath)
         {

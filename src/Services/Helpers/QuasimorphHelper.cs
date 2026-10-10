@@ -62,6 +62,49 @@ namespace QM_ImporterAPI.Services.Helpers
             }
         }
 
+        internal static ImportOperationResult<GameObject> GetHelmetPrefab(string helmetItemId)
+        {
+            var result = new ImportOperationResult<GameObject>();
+
+            var sourceRecord = Data.Items.GetSimpleRecord<HelmetRecord>(helmetItemId);
+            var sourceParts = (sourceRecord?.ContentDescriptor as HelmetDescriptor)?._parts;
+
+            if (sourceParts == null || sourceParts.Count == 0)
+            {
+                result.AddError($"'{helmetItemId}' is not a helmet with an armor part.");
+                return result;
+            }
+
+            var sourcePart = sourceParts[0];
+            var sourceName = sourcePart.ArmorPart;
+            var sourceType = sourcePart.ArmorType;
+
+            foreach (ActorRecord actorRecord in Data.Actors.Records)
+            {
+                if (!(actorRecord.ContentDescriptor is ActorDescriptor actorDescriptor) || actorDescriptor.ArmorArchTypes == null)
+                {
+                    continue;
+                }
+
+                foreach (var archType in actorDescriptor.ArmorArchTypes)
+                {
+                    if (archType.ArmorType != sourceType || archType.Prefabs == null)
+                    {
+                        continue;
+                    }
+
+                    var prefab = archType.Prefabs.Find(p => p != null && p.name == sourceName);
+                    if (prefab != null)
+                    {
+                        return result.SetResult(prefab);
+                    }
+                }
+            }
+
+            result.AddError($"no prefab named '{sourceName}' of type '{sourceType}' was found on any actor.");
+            return result;
+        }
+
         public static GameObject GetPrefabFromExistingWeapon(string id)
         {
             return GetExistingWeaponDescriptor(id)?.Prefab;
@@ -458,6 +501,20 @@ namespace QM_ImporterAPI.Services.Helpers
             return null;
         }
         #endregion
+
+        public static HelmetDescriptor GetExistingHelmetDescriptor(string id)
+        {
+            HelmetDescriptor result = null;
+            if (string.IsNullOrEmpty(id))
+            {
+                Logger.LogDebug("ID is empty or null. Cannot get existing helmet descriptor.");
+            }
+            else if (Data.Items.Ids.Contains(id))
+            {
+                result = Data.Items.GetSimpleRecord<HelmetRecord>(id).ContentDescriptor as HelmetDescriptor;
+            }
+            return result;
+        }
 
         public static WeaponDescriptor GetExistingWeaponDescriptor(string id)
         {

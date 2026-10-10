@@ -15,6 +15,11 @@ namespace QM_ImporterAPI.Services.ErrorManagement
         public List<string> WarningMessages { get; private set; } = new List<string>();
         private List<string> ContentList { get; set; } = new List<string>();
 
+        public void AddItem(string itemId)
+        {
+            ContentList.Add(itemId);
+        }
+
         public ImportOperationResult AddError(string message)
         {
             ErrorMessages.Add(message);
@@ -134,9 +139,10 @@ namespace QM_ImporterAPI.Services.ErrorManagement
     {
         public T Result { get; private set; }
 
-        public void SetResult(T item)
+        public ImportOperationResult<T> SetResult(T item)
         {
             Result = item;
+            return this;
         }
     }
 }

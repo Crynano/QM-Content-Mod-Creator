@@ -25,10 +25,10 @@ namespace QM_ImporterAPI.Commands.Create
                     return "<color=red>ERROR: </color>No folder path provided.";
                 }
 
-                var errorMessage = Helper.ValidatePath(providedPath);
-                if (!string.IsNullOrEmpty(errorMessage))
+                var isValid = Helper.ValidatePath(providedPath, out string errorMessage);
+                if (!isValid)
                 {
-                    return errorMessage;
+                    return $"<color=red>ERROR: </color>{errorMessage}";
                 }
 
                 ModCreator.CreateImplantMod(providedPath);

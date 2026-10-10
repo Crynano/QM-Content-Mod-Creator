@@ -1,4 +1,4 @@
-﻿using MGSC;
+using MGSC;
 using QM_ImporterAPI.Services;
 using QM_ImporterAPI.Services.Helpers;
 using System;
@@ -7,12 +7,12 @@ using UnityEngine;
 
 namespace QM_ImporterAPI.Commands.Create
 {
-    [ConsoleCommand(new string[] { "create-mod", "api-create-mod" })]
-    public class CreateModScaffoldingCommand
+    [ConsoleCommand(new string[] { "create-helmet-mod", "api-create-helmet-mod" })]
+    public class CreateHelmetModCommand
     {
         public static string Help(string command, bool verbose)
         {
-            return "Creates folders and example files to start creating a content mod using the Importer API. Syntax: create-mod <folder-path>";
+            return "Creates folders and example files (based on an existing helmet) to start creating a helmet mod using the Importer API. Syntax: create-helmet-mod <folder-path>";
         }
 
         public string Execute(string[] tokens)
@@ -25,13 +25,13 @@ namespace QM_ImporterAPI.Commands.Create
                     return "<color=red>ERROR: </color>No folder path provided.";
                 }
 
-                var errorMessage = Helper.ValidatePathForConsole(providedPath);
-                if (!string.IsNullOrEmpty(errorMessage))
+                var isValid = Helper.ValidatePath(providedPath, out string errorMessage);
+                if (!isValid)
                 {
-                    return errorMessage;
+                    return $"<color=red>ERROR: </color>{errorMessage}";
                 }
 
-                ModCreator.CreateExampleMod(providedPath);
+                ModCreator.CreateHelmetMod(providedPath);
 
                 return $"<color=green>Created Assets folder and example files at \"{providedPath}\".</color>";
             }
