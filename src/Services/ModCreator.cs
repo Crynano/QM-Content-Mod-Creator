@@ -543,6 +543,7 @@ namespace QM_ImporterAPI.Services
    -> A warning is logged when a prefab name is replaced.
 
 2. BLENDER EXPORT (OBJ)
+   - Blender forward is Y and up is Z. When exporting, Forward Axis must be set to -Z and Up Axis to Y.
    - Export as .obj (only .obj is supported).
    - Enable: UV Coordinates, Normals.
    - Disable: Write Materials (the .mtl is ignored).
@@ -562,8 +563,6 @@ namespace QM_ImporterAPI.Services
 4. DESCRIPTOR REQUIREMENTS
    - PrefabPath: path to the .obj file.
    - Part.ArmorType and Part.ArmorPart must both be set when using PrefabPath.
-   - Helmets are attached to the 'Head' bone; only actors with a Head bone
-     and ArmorHeavy support are offered the helmet.
 
 5. TROUBLESHOOTING
    - Model is white: the texture did not reach the descriptor (missing file or

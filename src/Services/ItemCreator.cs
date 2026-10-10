@@ -301,6 +301,10 @@ namespace QM_ImporterAPI.Services
             {
                 Data.Descriptors["implants"].AddDescriptor(record.Id, record.ItemDesc);
             }
+            else if (record is HelmetRecord)
+            {
+                Data.Descriptors["helmets"].AddDescriptor(record.Id, record.ItemDesc);
+            }
             else
             {
                 operationResult.AddWarning($"Item [{record.Id}] of type {record.GetType().Name} has NOT been added to Data.Descriptors");
