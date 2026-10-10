@@ -2,6 +2,7 @@
 using QM_ImporterAPI.Services.ErrorManagement;
 using QM_ImporterAPI.Services.Extensions;
 using QM_ImporterAPI.Services.Extensions.Descriptors;
+using QM_ImporterAPI.Services.Helpers;
 using QM_ImporterAPI.Services.Images;
 using QM_ImporterAPI.Services.Importing;
 using QM_ImporterAPI.Services.Validation;
@@ -64,22 +65,31 @@ namespace QM_ImporterAPI.Services.Loaders
                 return result.AddError($"{nameof(CustomHelmetDescriptor)} for {record.Id} must contain one armor part.");
             }
 
-            var parts = customBaseDescriptor.Part.ToGameList();
-            if (!string.IsNullOrWhiteSpace(customBaseDescriptor.PrefabPath))
+            if (string.IsNullOrWhiteSpace(customBaseDescriptor.PrefabIdOrPath))
             {
-                var part = parts[0];
-                var texResult = TextureImporter.ImportFromFile(assetFolderPath, customBaseDescriptor.Part.TextureIdOrPath);
-                result.Absorb(texResult);
+                return result.AddWarning($"The armor part for {record.Id} must specify a {nameof(CustomHelmetDescriptor.PrefabIdOrPath)} when using CustomHelmetDescriptor.");
+            }
 
-                part.Texture = texResult.Result;
-                parts[0] = part;
+            var parts = customBaseDescriptor.Part.ToGameList();
+            var part = parts[0];
+            var texResult = TextureImporter.ImportFromFile(assetFolderPath, customBaseDescriptor.Part.TextureIdOrPath);
+            result.Absorb(texResult);
 
-                if (string.IsNullOrWhiteSpace(part.ArmorType) || string.IsNullOrWhiteSpace(part.ArmorPart))
-                {
-                    return result.AddError($"The armor part for {record.Id} must specify both ArmorType and ArmorPart when using PrefabPath.");
-                }
+            part.Texture = texResult.Result;
+            parts[0] = part;
 
-                var prefabResult = PrefabFactory.LoadPrefab(customBaseDescriptor.PrefabPath, assetFolderPath);
+            if (QuasimorphHelper.IsGameId(customBaseDescriptor.PrefabIdOrPath))
+            {
+                // Here we must try to load the prefab from the game assets instead of the external file system.
+                var prefabResult = QuasimorphHelper.GetHelmetPrefab(customBaseDescriptor.PrefabIdOrPath);
+                result.Absorb(prefabResult);
+
+                helmetPrefab = prefabResult.Result;
+            }
+
+            if (!QuasimorphHelper.IsGameId(customBaseDescriptor.PrefabIdOrPath) && helmetPrefab == null)
+            {
+                var prefabResult = PrefabFactory.LoadPrefab(customBaseDescriptor.PrefabIdOrPath, assetFolderPath);
                 result.Absorb(prefabResult);
                 if (!prefabResult.IsSuccess)
                 {

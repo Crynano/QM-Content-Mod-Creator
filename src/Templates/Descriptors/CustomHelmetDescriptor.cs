@@ -5,14 +5,14 @@ namespace QM_ImporterAPI.Templates.Descriptors
     [Serializable]
     internal class CustomHelmetDescriptor : CustomResistDescriptor
     {
-        public string PrefabPath { get; set; }
+        public string PrefabIdOrPath { get; set; }
 
         public new static CustomHelmetDescriptor GetExample(string id = null)
         {
             return new CustomHelmetDescriptor()
             {
                 ItemId = id ?? "custom_helmet",
-                PrefabPath = "Models/ExampleHelmet.obj",
+                PrefabIdOrPath = "Models/ExampleHelmet.obj",
                 ImageProperties = new ImageProperties()
                 {
                     IconSpriteIdOrPath = "Sprites/Icon/icon.png",

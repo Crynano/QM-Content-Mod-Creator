@@ -72,6 +72,31 @@ namespace QM_ImporterAPI.Services.Importing
             }
         }
 
+        public static GameObject ClonePrefab(GameObject source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            EnsurePrefabsRoot();
+            var clone = UnityEngine.Object.Instantiate(source, ROOT_FOR_PREFABS, false);
+            clone.name = source.name;
+            return clone;
+        }
+
+        private static void EnsurePrefabsRoot()
+        {
+            if (ROOT_FOR_PREFABS == null)
+            {
+                var prefabsRoot = new GameObject("MgsPackMod_Prefabs");
+                prefabsRoot.transform.position = Vector3.zero;
+                prefabsRoot.SetActive(false);
+                GameObject.DontDestroyOnLoad(prefabsRoot);
+                ROOT_FOR_PREFABS = prefabsRoot.transform;
+            }
+        }
+
         private static GameObject PrepareModelForGame(Mesh meshResult)
         {
             if (meshResult == null)
@@ -81,14 +106,7 @@ namespace QM_ImporterAPI.Services.Importing
 
             meshResult.name = "ImportedMesh";
 
-            if (ROOT_FOR_PREFABS == null)
-            {
-                var prefabsRoot = new GameObject("MgsPackMod_Prefabs");
-                prefabsRoot.transform.position = Vector3.zero;
-                prefabsRoot.SetActive(false);
-                GameObject.DontDestroyOnLoad(prefabsRoot);
-                ROOT_FOR_PREFABS = prefabsRoot.transform;
-            }
+            EnsurePrefabsRoot();
 
             var prefabInstance = new GameObject("ImportedPrefab");
             prefabInstance.transform.SetParent(ROOT_FOR_PREFABS, false);
