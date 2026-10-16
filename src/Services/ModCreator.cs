@@ -531,6 +531,33 @@ namespace QM_ImporterAPI.Services
             ExportHelper.ExportCustom(consumableReceipt, $"{consumable.Id}_craftingReceipt", craftingReceiptsFolder);
         }
 
+        public static void CreateUsableItemMod(string rootPath)
+        {
+            var usable = Data.Items.Ids
+                .Select(id => Data.Items.GetSimpleRecord<UsableItemRecord>(id) ?? null)
+                .First(x => x != null);
+
+            var usableDescriptor = CustomUsableDescriptor.GetExample(usable.Id);
+            var factionTemplate = FactionTemplate.GetExample(usable.Id);
+            var localizationItem = LocalizationTemplate.GetExample(usable.Id);
+
+            var assetsFolder = Path.Combine(rootPath, ASSETS_FOLDER_NAME);
+            var usableFolder = Path.Combine(assetsFolder, "UsableItems");
+            var descriptorsFolder = Path.Combine(assetsFolder, DESCRIPTORS_FOLDER_NAME);
+            var localizationFolder = Path.Combine(assetsFolder, LOCALIZATION_FOLDER_NAME);
+            var factionRewardsFolder = Path.Combine(assetsFolder, FACTIONREWARDS_FOLDER_NAME);
+
+            Directory.CreateDirectory(usableFolder);
+            Directory.CreateDirectory(descriptorsFolder);
+            Directory.CreateDirectory(localizationFolder);
+            Directory.CreateDirectory(factionRewardsFolder);
+
+            ExportHelper.ExportItem(usable, usableFolder);
+            ExportHelper.ExportCustomDescriptor(usableDescriptor, descriptorsFolder);
+            ExportHelper.ExportCustom(localizationItem, $"{usable.Id}_localization", localizationFolder);
+            ExportHelper.ExportCustom(factionTemplate, $"{usable.Id}_factionReward", factionRewardsFolder);
+        }
+
         public static void CreateGrenadeMod(string rootPath)
         {
             var oneDatadisk = Data.Items.Ids
