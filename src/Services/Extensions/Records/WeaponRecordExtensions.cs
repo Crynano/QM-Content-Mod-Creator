@@ -121,9 +121,13 @@ namespace QM_ImporterAPI.Services.Extensions.Records
                 }
                 else
                 {
-                    muzzleResult.AddWarning($"Couldn't get muzzle from \"{muzzleId}\"");
-                    muzzleResult.SetResult(new Muzzle[0]);
+                    muzzleResult.AddWarning($"Couldn't get muzzle from \"{muzzleId}\". A default one will be added.");
                 }
+            }
+
+            if (muzzleResult.Result == null)
+            {
+                muzzleResult.SetResult(new Muzzle[0]);
             }
 
             return muzzleResult;
