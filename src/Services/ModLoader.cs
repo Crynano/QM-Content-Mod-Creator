@@ -38,6 +38,7 @@ namespace QM_ImporterAPI.Services
             new GrenadeLoader(),            // Grenades
             new WoundLoader(),              // Wounds
             new ImplantLoader(),            // Implants
+            new UsableItemLoader(),         // Usable items
             new DatadiskLoader(),           // Datadisks
             new CraftingLoader(),           // Crafting recipes (may reference items above)
             new FactionRewardsLoader(),     // Faction rewards (may reference items)

@@ -1,22 +1,19 @@
 ﻿namespace QM_ImporterAPI.Templates.Descriptors
 {
-    public class CustomConsumableDescriptor : CustomItemContentDescriptor
+    public class CustomUsableDescriptor : CustomItemContentDescriptor
     {
-        public string UseSoundPathOrId { get; set; }
+        public CustomUsableDescriptor() { }
 
-        public CustomConsumableDescriptor() { }
-
-        public static CustomConsumableDescriptor GetExample(string id)
+        public static CustomUsableDescriptor GetExample(string id)
         {
-            return new CustomConsumableDescriptor
+            return new CustomUsableDescriptor
             {
-                ItemId = id ?? "example_consumableid",
-                UseSoundPathOrId = id ?? "Sounds/example_use_sound.wav",
+                ItemId = id ?? "example_usableid",
                 ImageProperties = new ImageProperties()
                 {
-                    IconSpriteIdOrPath = "Sprites/ExampleWeapon.png",
-                    SmallIconSpriteIdOrPath = "Sprites/ExampleWeaponSmall.png",
-                    ShadowOnFloorSpriteIdOrPath = "Sprites/ExampleWeaponShadow.png"
+                    IconSpriteIdOrPath = id ?? "Sprites/ExampleWeapon.png",
+                    SmallIconSpriteIdOrPath = id ?? "Sprites/ExampleWeaponSmall.png",
+                    ShadowOnFloorSpriteIdOrPath = id ?? "Sprites/ExampleWeaponShadow.png"
                 },
             };
         }

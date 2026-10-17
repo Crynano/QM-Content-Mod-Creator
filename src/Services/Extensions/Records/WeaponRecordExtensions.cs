@@ -31,7 +31,7 @@ namespace QM_ImporterAPI.Services.Extensions.Records
             {
                 return operationResult;
             }
-            weaponDescriptor._muzzles = new Muzzle[1] { muzzleResult.Result };
+            weaponDescriptor._muzzles = muzzleResult.Result;
 
             weaponDescriptor.LoadSprites(customWeaponDescriptor, assetFolderPath);
 
@@ -100,25 +100,34 @@ namespace QM_ImporterAPI.Services.Extensions.Records
                 QuasimorphHelper.GetTextureFromExistingWeapon);
         }
 
-        private static ImportOperationResult<Muzzle> LoadMuzzle(CustomWeaponDescriptor customWeaponDescriptor, GameObject prefab)
+        private static ImportOperationResult<Muzzle[]> LoadMuzzle(CustomWeaponDescriptor customWeaponDescriptor, GameObject prefab)
         {
             var modelProperties = customWeaponDescriptor.ModelProperties;
-            var muzzleResult = new ImportOperationResult<Muzzle>();
+            var muzzleResult = new ImportOperationResult<Muzzle[]>();
+            var muzzleId = modelProperties.MuzzleId;
 
-            var isGameId = QuasimorphHelper.IsGameId(modelProperties.MuzzleId);
+            if (string.IsNullOrEmpty(muzzleId))
+            {
+                return muzzleResult.SetResult(new Muzzle[0]);
+            }
+
+            var isGameId = QuasimorphHelper.IsGameId(muzzleId);
             if (isGameId)
             {
-                var muzzle = QuasimorphHelper.GetMuzzleFromExistingWeapon(modelProperties.MuzzleId);
+                var muzzle = QuasimorphHelper.GetMuzzleFromExistingWeapon(muzzleId);
                 if (muzzle != null)
+                {
                     muzzleResult.SetResult(muzzle);
+                }
+                else
+                {
+                    muzzleResult.AddWarning($"Couldn't get muzzle from \"{muzzleId}\". A default one will be added.");
+                }
             }
 
             if (muzzleResult.Result == null)
             {
-                muzzleResult.AddWarning($"Muzzle ID \"{modelProperties.MuzzleId}\" is not a valid game ID. Attempting to load default muzzle.");
-                var defaultMuzzleResult = LoadDefaultMuzzle(prefab);
-                muzzleResult.Absorb(defaultMuzzleResult);
-                muzzleResult.SetResult(defaultMuzzleResult.Result);
+                muzzleResult.SetResult(new Muzzle[0]);
             }
 
             return muzzleResult;
@@ -193,51 +202,8 @@ namespace QM_ImporterAPI.Services.Extensions.Records
             }
         }
 
-        private static ImportOperationResult<Muzzle> LoadDefaultMuzzle(GameObject parentGO)
-        {
-            var result = new ImportOperationResult<Muzzle>();
-            if (parentGO is null)
-            {
-                result.AddError($"Prefab for muzzle is null!");
-                return result;
-            }
-
-            var muzzleTransform = parentGO.transform.Find("Muzzle") ?? parentGO.transform.GetComponentInChildren<Muzzle>()?.transform;
-            if (muzzleTransform is null)
-            {
-                result.AddWarning($"Prefab for muzzle is missing a child named \"Muzzle\". Added a default one in prefab root.");
-                muzzleTransform = new GameObject("Muzzle").transform;
-                muzzleTransform.SetParent(parentGO.transform);
-                muzzleTransform.localPosition = Vector3.zero;
-
-                var itemBone = muzzleTransform.gameObject.AddComponent<ItemBone>();
-                itemBone.TargetBoneId = "Muzzle";
-            }
-
-            var muzzle = muzzleTransform.gameObject.GetComponent<Muzzle>();
-            if (muzzle is null)
-            {
-                result.AddWarning($"Prefab for muzzle is missing a Muzzle component. Added a default one.");
-                muzzle = muzzleTransform.gameObject.AddComponent<Muzzle>();
-            }
-
-            muzzle._additLightIntencityMult = 0.5f;
-
-            AnimationCurve val2 = new AnimationCurve()
-            {
-                keys = new Keyframe[3]
-                {
-                    new Keyframe(0f, 0f),
-                    new Keyframe(0.05f, 0.5f),
-                    new Keyframe(0.1f, 0f)
-                }
-            };
-            muzzle._muzzleIntensityCurve = val2;
-
-            result.SetResult(muzzle);
-            return result;
-        }
         #endregion
+
         internal static ImportOperationResult CheckWeaponPropertiesRestrictions(this WeaponRecord weaponRecord)
         {
             var operationResult = new ImportOperationResult();

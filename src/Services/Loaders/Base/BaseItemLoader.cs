@@ -105,7 +105,7 @@ namespace QM_ImporterAPI.Services.Loaders
         /// </summary>
         protected void LogLoadStart(int recordCount, int descriptorCount)
         {
-            Logger.LogDebug($"{LoaderName}: Found {recordCount} records and {descriptorCount} descriptors.");
+            Logger.LogDebug($"[LOADER][{LoaderName}]: Found {recordCount} records and {descriptorCount} descriptors.");
         }
 
         /// <summary>
@@ -113,7 +113,7 @@ namespace QM_ImporterAPI.Services.Loaders
         /// </summary>
         protected void LogLoadStart(int recordCount)
         {
-            Logger.LogDebug($"{LoaderName}: Found {recordCount} records.");
+            Logger.LogDebug($"[LOADER][{LoaderName}]: Found {recordCount} records.");
         }
     }
 }

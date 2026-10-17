@@ -115,9 +115,9 @@ namespace QM_ImporterAPI.Services.Helpers
             return GetExistingWeaponDescriptor(id)?.Texture;
         }
 
-        public static Muzzle GetMuzzleFromExistingWeapon(string id)
+        public static Muzzle[] GetMuzzleFromExistingWeapon(string id)
         {
-            return GetExistingWeaponDescriptor(id)?._muzzles.FirstOrDefault();
+            return GetExistingWeaponDescriptor(id)?._muzzles;
         }
 
         public static bool IsItemInFactionTable(string tableName, string rewardId)
